@@ -216,6 +216,17 @@
   <!-- PAGE: ADMIN -->
   <div class="page" id="pg_admin">
     <div class="box bkpbox"><h2>💾 Backup & Restore</h2><p style="font-size:13px;color:#555">⚠️ રોજ Backup Download કરી Google Drive/Pen-drive માં રાખો.</p><div class="dlbar"><button class="xls" onclick="backupDownload()">📥 Backup Download</button><button class="set" onclick="document.getElementById('restoreFile').click()">📤 Backup Restore</button><input type="file" id="restoreFile" accept=".json" style="display:none" onchange="backupRestore(event)"></div></div>
+    
+    <div class="box adminbox" style="border: 2px solid #e74c3c; background: #fdf2f2;">
+      <h2>🔥 Data Delete / Purge (ડેટા સાફ કરો)</h2>
+      <p style="font-size:13px;color:#c0392b;font-weight:bold;">⚠️ ચેતવણી: નક્કી કરેલ સમયગાળાનો તમામ ટ્રાન્ઝેક્શન ડેટા (History, Stock, Repairing, 4P, Suggestion) કાયમ માટે ડિલીટ થઈ જશે.</p>
+      <div class="row">
+        <div><label>📅 થી (Start Date)</label><input type="date" id="purgeFrom"></div>
+        <div><label>📅 સુધી (End Date)</label><input type="date" id="purgeTo"></div>
+        <div style="display:flex;align-items:flex-end"><button onclick="purgeDataRange()" style="background:#e74c3c;width:100%;margin-top:8px;">🔥 ડેટા ડિલીટ કરો</button></div>
+      </div>
+    </div>
+
     <div class="box adminbox" id="adminPanel"><h2>👑 Admin Panel</h2><button class="set" onclick="changeAdminPass()">🔑 મારો Password બદલો</button><div class="box stockbox" style="margin:12px 0;"><h2>🏢 Stock Department</h2><table><thead><tr><th>Department</th><th>User ID</th><th>Password</th><th>Action</th></tr></thead><tbody id="stockUser"></tbody></table></div><div class="box masterbox" style="margin:12px 0;"><h2>🏷️ Split Label Master</h2><div class="row"><div><label>નવું Label</label><input id="nLabel" placeholder="4P"></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addLabel()" style="width:100%">➕ ઉમેરો</button></div></div><div id="labelList" style="margin-top:10px"></div></div><h2>➕ Department / Office / User</h2><div class="row"><div><label>Department</label><input id="nDept" placeholder="Galaxy"></div><div><label>Office 🏢</label><input id="nOffice" placeholder="Office-1"></div><div><label>User ID</label><input id="nId" placeholder="galaxy1"></div><div><label>Password</label><input id="nPass" placeholder="Password"></div></div><label>🔀 Process (comma)</label><input id="nParts" placeholder="Process A, Process B"><button onclick="addUser()">User બનાવો</button><table><thead><tr><th>Dept</th><th>Office</th><th>Process</th><th>ID</th><th>Pass</th><th>Action</th></tr></thead><tbody id="userList"></tbody></table></div>
   </div>
 </div>
@@ -517,6 +528,70 @@ function applyCloudData(d){
 let cloudStarted=false;
 function startCloud(){ if(cloudStarted) return; if(window.firebaseReady && window.cloudListen){ cloudStarted=true; window.cloudListen(function(d){ applyCloudData(d); }); console.log("☁️ Cloud sync ચાલુ!"); } else { setTimeout(startCloud,500); } }
 startCloud();
+
+function purgeDataRange() {
+  if (cur.role !== "admin") { alert("⚠️ ફક્ત Admin જ ડેટા સાફ કરી શકે છે!"); return; }
+  let fromVal = document.getElementById("purgeFrom").value;
+  let toVal = document.getElementById("purgeTo").value;
+  if (!fromVal || !toVal) { alert("કૃપા કરીને બંને તારીખો (થી અને સુધી) પસંદ કરો!"); return; }
+  
+  let startMs = new Date(fromVal + "T00:00:00").getTime();
+  let endMs = new Date(toVal + "T23:59:59.999").getTime();
+  
+  if (startMs > endMs) { alert("શરૂઆતની તારીખ અંતિમ તારીખ કરતાં મોટી ન હોઈ શકે!"); return; }
+  
+  let formattedFrom = new Date(startMs).toLocaleDateString('en-GB');
+  let formattedTo = new Date(endMs).toLocaleDateString('en-GB');
+  
+  if (!confirm(`⚠️ ચેતવણી: શું તમે ખરેખર ${formattedFrom} થી ${formattedTo} વચ્ચેનો તમામ ડેટા ડિલીટ કરવા માંગો છો? આ ફેરફાર પાછો મેળવી શકાશે નહીં!`)) {
+    return;
+  }
+  
+  // 1. Filter out data (stock items)
+  let initialStockCount = data.length;
+  data = data.filter(d => {
+    let t = d.sentMs || d.recvTime || 0;
+    return t < startMs || t > endMs;
+  });
+  let deletedStock = initialStockCount - data.length;
+  
+  // 2. Filter out hist (history logs)
+  let initialHistCount = hist.length;
+  hist = hist.filter(h => {
+    let t = h.sentMs || h.recvTime || 0;
+    return t < startMs || t > endMs;
+  });
+  let deletedHist = initialHistCount - hist.length;
+  
+  // 3. Filter out reps (repairing logs)
+  let initialRepsCount = reps.length;
+  reps = reps.filter(r => {
+    let t = r.sentMs || r.recvTime || 0;
+    return t < startMs || t > endMs;
+  });
+  let deletedReps = initialRepsCount - reps.length;
+  
+  // 4. Filter out sugs (suggestions)
+  let initialSugsCount = sugs.length;
+  sugs = sugs.filter(s => {
+    let t = s.sentMs || 0;
+    return t < startMs || t > endMs;
+  });
+  let deletedSugs = initialSugsCount - sugs.length;
+  
+  // 5. Filter out fourP (4P history)
+  let initialFourPCount = fourP.length;
+  fourP = fourP.filter(f => {
+    let t = f.movedMs || 0;
+    return t < startMs || t > endMs;
+  });
+  let deletedFourP = initialFourPCount - fourP.length;
+  
+  save();
+  refresh();
+  
+  alert(`✅ સફળતાપૂર્વક ડેટા સાફ કરાયો!\n\nડિલીટ કરેલ ડેટા વિગત:\n- સ્ટોક કાપણ: ${deletedStock}\n- હિસ્ટ્રી ટ્રાન્ઝેક્શન: ${deletedHist}\n- રીપેરીંગ રેકોર્ડ્સ: ${deletedReps}\n- સજેશન: ${deletedSugs}\n- 4P રેકોર્ડ્સ: ${deletedFourP}`);
+}
 </script>
 
 </body>
