@@ -20,6 +20,16 @@
   const db = getDatabase(app);
   const dbRef = ref(db, "stockdata/main");
   
+  const originalDateNow = Date.now;
+  let serverTimeOffset = 0;
+  onValue(ref(db, ".info/serverTimeOffset"), (s) => {
+    serverTimeOffset = s.val() || 0;
+  });
+  window.getSyncedTime = function() {
+    return originalDateNow() + serverTimeOffset;
+  };
+  Date.now = window.getSyncedTime;
+
   let saveTimeout = null;
   window.cloudSave = function(p) {
     if (saveTimeout) clearTimeout(saveTimeout);
