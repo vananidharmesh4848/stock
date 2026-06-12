@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Diamond Stock System</title>
+<script>
+  window.onerror = function(msg, url, line, col, error) {
+    alert("JS Error: " + msg + " at " + url + ":" + line + (error ? "\n" + error.stack : ""));
+    return false;
+  };
+  window.addEventListener("unhandledrejection", function(event) {
+    alert("Unhandled Promise Rejection: " + event.reason);
+  });
+</script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
   import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
@@ -37,9 +46,10 @@
       try {
         await set(dbRef, p);
       } catch(e) {
-        console.log("Save err", e);
+        console.error("Save err", e);
+        alert("Firebase Save Error: " + e.message);
       }
-    }, 400); // 400ms debounce
+    }, 150); // 150ms debounce
   };
   
   window.cloudListen = function(cb){ onValue(dbRef, (s)=>{ if(s.exists()) cb(s.val()); }); };
