@@ -19,7 +19,19 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const dbRef = ref(db, "stockdata/main");
-  window.cloudSave = async function(p){ try{ await set(dbRef, p); }catch(e){ console.log("Save err",e); } };
+  
+  let saveTimeout = null;
+  window.cloudSave = function(p) {
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(async () => {
+      try {
+        await set(dbRef, p);
+      } catch(e) {
+        console.log("Save err", e);
+      }
+    }, 400); // 400ms debounce
+  };
+  
   window.cloudListen = function(cb){ onValue(dbRef, (s)=>{ if(s.exists()) cb(s.val()); }); };
   window.cloudLoad = async function(cb){ try{ let s=await get(dbRef); cb(s.exists()?s.val():null); }catch(e){ cb(null); } };
   window.firebaseReady = true;
@@ -233,12 +245,16 @@ function baseName(s){ return (s||"").replace(/\s*\(ભાગ.*?\)/g,"").replace(
 function myLbl(){ return unitLabel(cur.dept,cur.office); }
 function noteHTML(n){ return n?`<span class="notebox">📝 ${n}</span>`:""; }
 
+let lastLocalUpdate = Number(localStorage.getItem("lastLocalUpdate") || "0");
 function save(){
+  let nowMs = Date.now();
+  lastLocalUpdate = nowMs;
+  localStorage.setItem("lastLocalUpdate", nowMs);
   localStorage.setItem("users",JSON.stringify(users)); localStorage.setItem("stock",JSON.stringify(data));
   localStorage.setItem("hist",JSON.stringify(hist)); localStorage.setItem("reps",JSON.stringify(reps));
   localStorage.setItem("sugs",JSON.stringify(sugs)); localStorage.setItem("labels",JSON.stringify(labels));
   localStorage.setItem("dstatus",JSON.stringify(dstatus)); localStorage.setItem("fourP",JSON.stringify(fourP));
-  if(window.cloudSave){ window.cloudSave({users,stock:data,hist,reps,sugs,labels,dstatus,fourP,updated:Date.now()}); }
+  if(window.cloudSave){ window.cloudSave({users,stock:data,hist,reps,sugs,labels,dstatus,fourP,updated:nowMs}); }
 }
 
 let curPage="";
@@ -446,9 +462,40 @@ function dlReportPDF(){ if(!reportKey) return; let {lbl,part}=reportKey; let rec
 function backupDownload(){ let backup={users,stock:data,hist,reps,sugs,labels,dstatus,fourP,backupDate:now(),version:"2.0"}; let str=JSON.stringify(backup,null,2); let blob=new Blob([str],{type:"application/json"}); let link=document.createElement("a"); link.href=URL.createObjectURL(blob); let d=new Date(); let fname="StockBackup_"+d.toISOString().slice(0,10)+"_"+d.getHours()+"-"+d.getMinutes()+".json"; link.download=fname; link.click(); alert("✅ Backup Download થઈ ગયું!\nFile: "+fname); }
 function backupRestore(event){ let file=event.target.files[0]; if(!file) return; if(!confirm("⚠️ Restore કરવાથી અત્યારનો data બદલાઈ જશે. ચાલુ રાખવું?")){ event.target.value=""; return; } let reader=new FileReader(); reader.onload=function(e){ try{ let b=JSON.parse(e.target.result); if(!b.users||!b.stock){ alert("❌ બરાબર backup file નથી!"); return; } users=b.users||[]; data=b.stock||[]; hist=b.hist||[]; reps=b.reps||[]; sugs=b.sugs||[]; labels=b.labels||["Marking","4P","Mejik","Direct"]; dstatus=b.dstatus||{}; fourP=b.fourP||[]; save(); alert("✅ Restore થઈ ગયું!"); location.reload(); }catch(err){ alert("❌ File વાંચવામાં ભૂલ!"); } }; reader.readAsText(file); event.target.value=""; }
 
-function applyCloudData(d){ if(!d) return; if(d.users) users=d.users; if(d.stock) data=d.stock; if(d.hist) hist=d.hist; if(d.reps) reps=d.reps; if(d.sugs) sugs=d.sugs; if(d.labels) labels=d.labels; if(d.dstatus) dstatus=d.dstatus; if(d.fourP) fourP=d.fourP; localStorage.setItem("users",JSON.stringify(users)); localStorage.setItem("stock",JSON.stringify(data)); localStorage.setItem("hist",JSON.stringify(hist)); localStorage.setItem("reps",JSON.stringify(reps)); localStorage.setItem("sugs",JSON.stringify(sugs)); localStorage.setItem("labels",JSON.stringify(labels)); localStorage.setItem("dstatus",JSON.stringify(dstatus)); localStorage.setItem("fourP",JSON.stringify(fourP)); if(cur){ refresh(); fillDeptDropdown(); fillFilterDept(); fillHistDept(); fillRepDeptFilter(); fillRepairDropdown(); fillSugToChk(); fillSugFiltDept(); fillDashStatDept(); showUsers(); showLabels(); } }
+function applyCloudData(d){
+  if(!d) return;
+  let cloudUpdated = Number(d.updated || 0);
+  if (cloudUpdated && cloudUpdated <= lastLocalUpdate) return;
+  lastLocalUpdate = cloudUpdated || Date.now();
+  localStorage.setItem("lastLocalUpdate", lastLocalUpdate);
+  if(d.users) users=d.users;
+  if(d.stock) data=d.stock;
+  if(d.hist) hist=d.hist;
+  if(d.reps) reps=d.reps;
+  if(d.sugs) sugs=d.sugs;
+  if(d.labels) labels=d.labels;
+  if(d.dstatus) dstatus=d.dstatus;
+  if(d.fourP) fourP=d.fourP;
+  localStorage.setItem("users",JSON.stringify(users)); localStorage.setItem("stock",JSON.stringify(data));
+  localStorage.setItem("hist",JSON.stringify(hist)); localStorage.setItem("reps",JSON.stringify(reps));
+  localStorage.setItem("sugs",JSON.stringify(sugs)); localStorage.setItem("labels",JSON.stringify(labels));
+  localStorage.setItem("dstatus",JSON.stringify(dstatus)); localStorage.setItem("fourP",JSON.stringify(fourP));
+  if(cur){
+    refresh();
+    fillDeptDropdown();
+    fillFilterDept();
+    fillHistDept();
+    fillRepDeptFilter();
+    fillRepairDropdown();
+    fillSugToChk();
+    fillSugFiltDept();
+    fillDashStatDept();
+    showUsers();
+    showLabels();
+  }
+}
 let cloudStarted=false;
-function startCloud(){ if(cloudStarted) return; if(window.firebaseReady && window.cloudLoad){ cloudStarted=true; window.cloudLoad(function(d){ applyCloudData(d); }); window.cloudListen(function(d){ applyCloudData(d); }); console.log("☁️ Cloud sync ચાલુ!"); } else { setTimeout(startCloud,500); } }
+function startCloud(){ if(cloudStarted) return; if(window.firebaseReady && window.cloudListen){ cloudStarted=true; window.cloudListen(function(d){ applyCloudData(d); }); console.log("☁️ Cloud sync ચાલુ!"); } else { setTimeout(startCloud,500); } }
 startCloud();
 </script>
 
