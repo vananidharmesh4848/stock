@@ -6,21 +6,22 @@
 <title>Diamond Stock System</title>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-  import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+  import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
   const firebaseConfig = {
     apiKey: "AIzaSyADKss0WogDYUxD9hsM5AhzM2HVTHRBKz0",
     authDomain: "diamond-stock-b82c0.firebaseapp.com",
+    databaseURL: "https://diamond-stock-b82c0-default-rtdb.firebaseio.com",
     projectId: "diamond-stock-b82c0",
     storageBucket: "diamond-stock-b82c0.firebasestorage.app",
     messagingSenderId: "119668289861",
     appId: "1:119668289861:web:b70609f32585edb94b8e2c"
   };
   const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const DOC = doc(db, "stockdata", "main");
-  window.cloudSave = async function(p){ try{ await setDoc(DOC,p); }catch(e){ console.log("Save err",e); } };
-  window.cloudListen = function(cb){ onSnapshot(DOC,(s)=>{ if(s.exists()) cb(s.data()); }); };
-  window.cloudLoad = async function(cb){ try{ let s=await getDoc(DOC); cb(s.exists()?s.data():null); }catch(e){ cb(null); } };
+  const db = getDatabase(app);
+  const dbRef = ref(db, "stockdata/main");
+  window.cloudSave = async function(p){ try{ await set(dbRef, p); }catch(e){ console.log("Save err",e); } };
+  window.cloudListen = function(cb){ onValue(dbRef, (s)=>{ if(s.exists()) cb(s.val()); }); };
+  window.cloudLoad = async function(cb){ try{ let s=await get(dbRef); cb(s.exists()?s.val():null); }catch(e){ cb(null); } };
   window.firebaseReady = true;
   console.log("✅ Firebase જોડાઈ ગયું!");
 </script>
