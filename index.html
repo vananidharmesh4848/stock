@@ -571,7 +571,7 @@ function save(){
   localStorage.setItem("sugs",JSON.stringify(sugs)); localStorage.setItem("labels",JSON.stringify(labels));
   localStorage.setItem("managers",JSON.stringify(managers)); localStorage.setItem("dataentrys",JSON.stringify(dataentrys));
   localStorage.setItem("dstatus",JSON.stringify(dstatus)); localStorage.setItem("fourP",JSON.stringify(fourP));
-  if(window.cloudSave){ window.cloudSave({users,stock:data,hist,reps,sugs,labels,managers,dataentrys,dstatus,fourP,updated:nowMs,sugAll}); }
+  if(window.cloudSave){ window.cloudSave({users,stock:data,hist,reps,sugs,labels,managers,dataentrys,dstatus,fourP,updated:nowMs,sugAll,loginHistory:JSON.parse(localStorage.getItem("loginHistory")||"[]")}); }
 }
 
 let curPage="";
@@ -1093,6 +1093,7 @@ function applyCloudData(d){
   dstatus=d.dstatus || {};
   fourP=d.fourP || [];
   if(d.sugAll) { sugAll=d.sugAll; localStorage.setItem("sugAll",JSON.stringify(sugAll)); }
+  if(d.loginHistory) { localStorage.setItem("loginHistory",JSON.stringify(d.loginHistory)); }
   localStorage.setItem("users",JSON.stringify(users)); localStorage.setItem("stock",JSON.stringify(data));
   localStorage.setItem("hist",JSON.stringify(hist)); localStorage.setItem("reps",JSON.stringify(reps));
   localStorage.setItem("sugs",JSON.stringify(sugs)); localStorage.setItem("labels",JSON.stringify(labels));
