@@ -6,11 +6,11 @@
 <title>Diamond Stock System</title>
 <script>
   window.onerror = function(msg, url, line, col, error) {
-    alert("JS Error: " + msg + " at " + url + ":" + line + (error ? "\n" + error.stack : ""));
+    console.error("JS Error: " + msg + " at " + url + ":" + line);
     return false;
   };
   window.addEventListener("unhandledrejection", function(event) {
-    alert("Unhandled Promise Rejection: " + event.reason);
+    console.error("Unhandled Promise Rejection: " + event.reason);
   });
 </script>
 <script type="module">
@@ -137,28 +137,183 @@
   .sugchk label{ display:flex; align-items:center; gap:5px; background:#fff; border:1px solid #ddd; padding:6px 10px; border-radius:6px; font-weight:normal; margin:0; }
   .sugchk input{ width:auto; }
   .ssel{ padding:3px; font-size:12px; border-radius:4px; }
+  .viewopt{ display:flex; gap:12px; margin:12px 0; }
+  .viewopt label{ flex:1; text-align:center; padding:14px 10px; border:2px solid #ccc; border-radius:8px; cursor:pointer; font-weight:bold; transition:all 0.2s; }
+  .viewopt label:hover{ border-color:#2980b9; background:#eaf2f8; }
+  .viewopt input[type="radio"]:checked + span{ color:#27ae60; }
+  .viewopt input[type="radio"]{ display:none; }
+  .viewopt label:has(input:checked){ border-color:#27ae60; background:#eafaf1; }
+  .reqbox{ background:#fff3cd; border:1px solid #ffc107; padding:12px; border-radius:6px; margin-top:10px; }
+  .reqbox h3{ color:#856404; margin:0 0 8px; }
+  .req-pending{ background:#fff3cd; border:1px solid #ffc107; padding:8px 12px; border-radius:6px; margin:4px 0; display:flex; justify-content:space-between; align-items:center; }
+  .req-approved{ background:#d4edda; border:1px solid #28a745; }
+  .req-rejected{ background:#f8d7da; border:1px solid #dc3545; }
+  /* Mobile view */
+  body.mobile-view .top{ padding:10px 12px; font-size:13px; flex-wrap:wrap; }
+  body.mobile-view .navbar{ padding:6px 8px; gap:4px; }
+  body.mobile-view .navbar button{ padding:7px 10px; font-size:12px; }
+  body.mobile-view .box{ margin:8px; padding:10px; }
+  body.mobile-view .row{ flex-direction:column; gap:6px; }
+  body.mobile-view .row > div{ min-width:100%; }
+  body.mobile-view input, body.mobile-view select, body.mobile-view textarea{ font-size:16px; padding:10px; }
+  body.mobile-view table{ font-size:12px; display:block; overflow-x:auto; }
+  body.mobile-view th, body.mobile-view td{ padding:5px 6px; white-space:nowrap; }
+  body.mobile-view .cards{ flex-direction:column; }
+  body.mobile-view .card{ min-width:100%; }
+  body.mobile-view h2{ font-size:16px; }
+  body.mobile-view .dlbar{ gap:4px; }
+  body.mobile-view button{ padding:8px 12px; font-size:13px; }
+  body.mobile-view .viewopt{ flex-direction:column; }
+  body.mobile-view #login{ margin-top:20px; margin-left:8px; margin-right:8px; }
+  @media(max-width:600px){
+    body:not(.mobile-view) .row{ flex-direction:column; }
+    body:not(.mobile-view) .row > div{ min-width:100%; }
+  }
+  /* Focus highlight for keyboard nav */
+  input:focus, select:focus, textarea:focus, button:focus{ outline:2px solid #2980b9; outline-offset:1px; }
+  select{ cursor:pointer; }
+  /* Dark Mode */
+  body.dark{ background:#1a1a2e; color:#e0e0e0; }
+  body.dark .top{ background:#0f0f23; }
+  body.dark .navbar{ background:#16213e; }
+  body.dark .navbar button{ background:#1a1a2e; }
+  body.dark .navbar button:hover{ background:#0f3460; }
+  body.dark .navbar button.active{ background:#e94560; }
+  body.dark .box{ background:#16213e; box-shadow:0 1px 5px #000; color:#e0e0e0; }
+  body.dark h2, body.dark h3{ color:#e0e0e0; }
+  body.dark label{ color:#ccc; }
+  body.dark input, body.dark select, body.dark textarea{ background:#1a1a2e; color:#e0e0e0; border-color:#333; }
+  body.dark th{ background:#0f3460; }
+  body.dark td{ border-color:#333; }
+  body.dark .adminbox{ background:#2a2a1e; border-color:#8e44ad; }
+  body.dark .stockbox{ background:#1a2e1a; border-color:#27ae60; }
+  body.dark .masterbox{ background:#2e2a1a; border-color:#e67e22; }
+  body.dark .repbox{ background:#2e1a1a; border-color:#c0392b; }
+  body.dark .schbox{ background:#1a2a2e; border-color:#2980b9; }
+  body.dark .sugbox{ background:#2e2e1a; border-color:#fbc02d; }
+  body.dark .statbox{ background:#1a2a2e; border-color:#2980b9; }
+  body.dark .histbox{ background:#1a2a2e; border-color:#2980b9; }
+  body.dark .bkpbox{ background:#1a2e2a; border-color:#16a085; }
+  body.dark .kapanbox{ background:#2e1a1a; border-color:#e74c3c; }
+  body.dark .fwdbox{ background:#2e2a1a; border-color:#e67e22; }
+  body.dark .finbox{ background:#2e1a1a; border-color:#c0392b; }
+  body.dark .splitbox{ background:#1a2e2a; border-color:#16a085; }
+  body.dark .fourpbox{ background:#2e2a1a; border-color:#e67e22; }
+  body.dark .reqbox{ background:#2e2a1a; border-color:#ffc107; }
+  body.dark .reqbox h3{ color:#ffc107; }
+  body.dark .notebox{ background:#3e3a1a; border-color:#fbc02d; color:#f39c12; }
+  body.dark .card{ background:#1a1a2e; border:1px solid #333; }
+  body.dark .sumline{ background:#1a2e2a; }
+  body.dark .datebar{ background:#1a2a2e; }
+  body.dark .partrow{ background:#1a2e2a; }
+  body.dark input[readonly]{ background:#222; color:#888; }
+  /* Loading Spinner */
+  .spinner-overlay{ position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.3); z-index:9999; display:flex; align-items:center; justify-content:center; }
+  .spinner-overlay.hide{ display:none !important; }
+  .spinner{ width:40px; height:40px; border:4px solid #ddd; border-top:4px solid #2980b9; border-radius:50%; animation:spin 0.8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  /* Inline Validation */
+  .input-error{ border-color:#e74c3c !important; background:#fff5f5 !important; }
+  .inline-error{ color:#e74c3c; font-size:11px; margin-top:2px; display:block; }
+  body.dark .input-error{ background:#2e1a1a !important; }
+  body.dark .inline-error{ color:#ff6b6b; }
+  /* Toast Notifications */
+  .toast-container{ position:fixed; top:20px; right:20px; z-index:10000; display:flex; flex-direction:column; gap:8px; }
+  .toast{ padding:12px 20px; border-radius:6px; color:#fff; font-size:14px; animation:slideIn 0.3s ease; min-width:250px; box-shadow:0 2px 10px rgba(0,0,0,0.2); }
+  .toast-success{ background:#27ae60; }
+  .toast-error{ background:#e74c3c; }
+  .toast-info{ background:#2980b9; }
+  .toast-warning{ background:#f39c12; }
+  @keyframes slideIn{ from{ transform:translateX(100%); opacity:0; } to{ transform:translateX(0); opacity:1; } }
+  /* Undo/Redo Bar */
+  .undobar{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#2c3e50; color:#fff; padding:8px 16px; border-radius:20px; display:flex; gap:8px; align-items:center; z-index:100; box-shadow:0 2px 10px rgba(0,0,0,0.3); }
+  .undobar button{ background:#34495e; margin:0; padding:6px 12px; font-size:13px; border-radius:12px; }
+  .undobar button:hover{ background:#2980b9; }
+  .undobar button:disabled{ opacity:0.4; cursor:not-allowed; }
+  /* Pagination */
+  .pagination{ display:flex; gap:4px; justify-content:center; margin-top:10px; flex-wrap:wrap; }
+  .pagination button{ padding:6px 12px; margin:0; font-size:12px; border-radius:4px; }
+  .pagination button.active{ background:#27ae60; }
+  .pagination button:disabled{ opacity:0.4; }
+  /* Notification Bell */
+  .notifbell{ position:relative; cursor:pointer; font-size:20px; }
+  .notifcount{ position:absolute; top:-6px; right:-8px; background:#e74c3c; color:#fff; font-size:10px; padding:2px 5px; border-radius:10px; min-width:16px; text-align:center; }
+  /* Quick Date Buttons */
+  .datequick{ display:flex; gap:4px; flex-wrap:wrap; margin-top:4px; }
+  .datequick button{ padding:4px 8px; font-size:11px; margin:0; border-radius:12px; background:#eaf2f8; color:#2980b9; border:1px solid #2980b9; }
+  .datequick button:hover{ background:#2980b9; color:#fff; }
+  body.dark .datequick button{ background:#1a2a2e; color:#5dade2; border-color:#5dade2; }
+  body.dark .datequick button:hover{ background:#5dade2; color:#000; }
+  /* Keyboard shortcut hint */
+  .kbd{ background:#eee; border:1px solid #ccc; border-radius:3px; padding:1px 5px; font-size:11px; font-family:monospace; }
+  body.dark .kbd{ background:#333; border-color:#555; color:#ccc; }
+  /* Password toggle */
+  .passwrap{ position:relative; }
+  .passwrap .togglepass{ position:absolute; right:8px; top:50%; transform:translateY(-50%); cursor:pointer; background:none; border:none; font-size:16px; margin-top:0; padding:4px; }
+  .capslock-warn{ color:#e74c3c; font-size:11px; font-weight:bold; margin-top:2px; }
+  /* Edit request badge */
+  .editreq{ background:#f39c12; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px; }
 </style>
 </head>
 <body>
+<div class="toast-container" id="toastContainer"></div>
+<div class="spinner-overlay hide" id="loadingSpinner"><div class="spinner"></div></div>
 
 <!-- LOGIN -->
 <div id="login" class="box" style="max-width:400px; margin-top:60px;">
   <h2>🔐 Login</h2>
-  <label>User ID</label><input id="uid" placeholder="દા.ત. admin">
-  <label>Password</label><input id="upass" type="password" placeholder="Password">
+  <label>User ID</label><input id="uid" placeholder="User ID">
+  <label>Password</label>
+  <div class="passwrap">
+    <input id="upass" type="password" placeholder="Password" onkeyup="checkCapsLock(event)">
+    <span class="togglepass" onclick="togglePassVisibility()">👁️</span>
+  </div>
+  <div id="capsWarn" class="capslock-warn" style="display:none">⚠️ Caps Lock ON</div>
+  <label style="display:flex;align-items:center;gap:8px;margin:10px 0;font-weight:normal;cursor:pointer"><input type="checkbox" id="rememberMe" style="width:auto"> Remember Me</label>
+  <div id="loginError" style="color:#e74c3c;font-size:12px;margin:4px 0;display:none"></div>
   <button onclick="login()">Login કરો</button>
-  <p style="font-size:13px;color:#888">Admin → id: <b>admin</b> , pass: <b>admin123</b></p>
+  <div id="loginAttemptsInfo" style="font-size:11px;color:#888;margin-top:4px"></div>
+  <hr style="margin:14px 0;border-color:#ddd">
+  <div class="viewopt">
+    <label onclick="setView('desktop')"><input type="radio" name="viewMode" value="desktop"><span>🖥️ Desktop</span></label>
+    <label onclick="setView('mobile')"><input type="radio" name="viewMode" value="mobile"><span>📱 Mobile</span></label>
+  </div>
+
 </div>
 
 <div id="app" class="hide">
-  <div class="top"><span>💎 Diamond Stock System</span><span><b id="who"></b> | <a href="#" onclick="logout()" style="color:#fff;">Logout</a></span></div>
+  <div class="top"><span>💎 Diamond Stock System</span><span style="display:flex;align-items:center;gap:12px"><span class="notifbell" onclick="showNotifications()" id="notifBell">🔔<span class="notifcount hide" id="notifCount">0</span></span> <span onclick="toggleDarkMode()" style="cursor:pointer" id="darkToggle">🌙</span> <span onclick="toggleViewMode()" style="cursor:pointer" id="viewToggle">📱</span> <b id="who"></b> | <a href="#" onclick="logout()" style="color:#fff;">Logout</a></span></div>
   <div class="navbar" id="navbar"></div>
+  <div class="undobar hide" id="undoBar"><button onclick="undoAction()" id="undoBtn" disabled>↩ Undo</button><button onclick="redoAction()" id="redoBtn" disabled>↪ Redo</button></div>
+
+  <!-- MY MASTER (visible to ALL users) -->
+  <div class="box masterbox" id="myMasterBox">
+    <h2 style="cursor:pointer" onclick="toggleMaster()">👤 મારા Master <span id="masterToggle">▼</span></h2>
+    <div id="masterContent" style="display:none">
+      <div class="row">
+        <div style="flex:1;min-width:280px">
+          <div class="box" style="background:#fff;border:1px solid #16a085;margin:0">
+            <h3 style="color:#16a085">👤 Manager List</h3>
+            <div class="row"><div style="flex:2"><input id="nMgr" placeholder="Manager Name"></div><div style="flex:1;display:flex;align-items:flex-end"><button class="addp" onclick="addMyManager()" style="width:100%">➕ ઉમેરો</button></div></div>
+            <div id="myMgrList" style="margin-top:10px"></div>
+          </div>
+        </div>
+        <div style="flex:1;min-width:280px">
+          <div class="box" style="background:#fff;border:1px solid #8e44ad;margin:0">
+            <h3 style="color:#8e44ad">📝 Data Entry Manager List</h3>
+            <div class="row"><div style="flex:2"><input id="nDE" placeholder="Data Entry Name"></div><div style="flex:1;display:flex;align-items:flex-end"><button class="addp" onclick="addMyDataEntry()" style="width:100%">➕ ઉમેરો</button></div></div>
+            <div id="myDEList" style="margin-top:10px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- KAPAN SEARCH -->
   <div class="box schbox">
     <h2>🔍 Kapan Search & Filter</h2>
     <div class="row">
-      <div><label>🔍 Kapan</label><input id="fSearch" oninput="refresh()" placeholder="Kapan"></div>
+      <div><label>🔍 Kapan</label><input id="fSearch" oninput="refresh()" onkeydown="if(event.key==='Enter'){onKapanEnter()}" placeholder="Kapan ટાઈપ કરો અને Enter દબાવો"></div>
       <div><label>Tag</label><select id="fTag" onchange="refresh()"><option value="">— બધા —</option><option value="urgent">🔴 Urgent</option><option value="agal">🟡 Agal</option><option value="regular">🟢 Regular</option></select></div>
       <div id="fStatusDiv"><label>Status</label><select id="fStatus" onchange="refresh()"><option value="">— બધા —</option><option value="Pending">⏳ Transit</option><option value="Received">🔵 Chalu</option></select></div>
       <div id="fDeptDiv"><label>Department</label><select id="fDept" onchange="refresh()"></select></div>
@@ -186,25 +341,81 @@
   <!-- PAGE: STOCK -->
   <div class="page" id="pg_stock">
     <div class="box"><h2>📥 Inbox — Receive કરવાનો માલ</h2><table><thead><tr><th>Item</th><th>Carat</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>📝</th><th>Tag</th><th>From</th><th>Date</th><th>Action</th></tr></thead><tbody id="inbox"></tbody></table></div>
-    <div class="box hide" id="sendDept"><h2>📤 કાપણ Stock ને પાછું મોકલો</h2><p style="font-size:13px;color:#555">⚠️ Manager + Data Entry ફરજિયાત.</p><div class="row"><div><label>🔍 Kapan શોધો</label><input id="pickSearch" oninput="fillPickDropdown()" placeholder="Kapan"></div><div><label>કયું Kapan</label><select id="pick" onchange="fillPick()"></select></div><div><label>Carat</label><input id="dCarat" readonly></div><div><label>Nang</label><input id="dNang" readonly></div><div><label>Vajan</label><input id="dVajan" readonly></div><div><label>Pis</label><input id="dPis" readonly></div></div><div class="row"><div><label>📝 વિગત</label><input id="dNote" placeholder="વિગત"></div><div><label>Manager <span class="reqstar">*</span></label><input id="dMgr" placeholder="Manager"></div><div><label>Data Entry <span class="reqstar">*</span></label><input id="dDent" placeholder="Data Entry"></div><div><label>Tag</label><select id="dTag"><option value="urgent">🔴 Urgent</option><option value="agal">🟡 Agal</option><option value="regular">🟢 Regular</option></select></div></div><button onclick="forwardItem()">📤 Stock ને મોકલો</button></div>
+    <div class="box hide" id="sendDept"><h2>📤 કાપણ Stock ને પાછું મોકલો</h2><p style="font-size:13px;color:#555">⚠️ Manager + Data Entry ફરજિયાત.</p><div class="row"><div><label>🔍 Kapan શોધો</label><input id="pickSearch" oninput="fillPickDropdown()" placeholder="Kapan"></div><div><label>કયું Kapan</label><select id="pick" onchange="fillPick()"></select></div><div><label>Carat</label><input id="dCarat" readonly></div><div><label>Nang</label><input id="dNang" readonly></div><div><label>Vajan</label><input id="dVajan" readonly></div><div><label>Pis</label><input id="dPis" readonly></div></div><div class="row"><div><label>📝 વિગત</label><input id="dNote" placeholder="વિગત"></div><div><label>Manager <span class="reqstar">*</span></label><select id="dMgr" onchange="onMgrChangeStock()"></select></div><div><label>Data Entry <span class="reqstar">*</span></label><select id="dDent" onchange="onDataEntryChange()"></select></div><div><label>Tag</label><select id="dTag"><option value="urgent">🔴 Urgent</option><option value="agal">🟡 Agal</option><option value="regular">🟢 Regular</option></select></div></div><button onclick="forwardItem()">📤 Stock ને મોકલો</button></div>
     <div class="box statbox hide" id="myStatBox"><h2>⚙️ મારી Process / Status</h2><p style="font-size:13px;color:#555">તમારી process ના status બનાવો (દા.ત. Stitching Chalu, Multi OK). પછી નીચે દરેક કાપણ ને status આપો.</p><div class="row"><div><label>નવો Status</label><input id="newStatus" placeholder="દા.ત. Multi Chalu"></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addMyStatus()" style="width:100%">➕ Status ઉમેરો</button></div></div><div id="myStatusList" style="margin-top:10px"></div></div>
     <div class="box kapanbox hide" id="kapanBox"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2>📦 Kapan Box — Transit</h2><div class="dlbar"><button class="xls" onclick="dlKapanExcel()">📊 Excel</button><button class="pdf" onclick="dlKapanPDF()">📄 PDF</button></div></div><table><thead><tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>Tag</th><th>From</th><th>To</th><th>Manager</th><th>Date</th></tr></thead><tbody id="kapanList"></tbody></table></div>
     <div class="box"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 id="title"></h2><div class="dlbar"><button class="xls" onclick="dlStockExcel()">📊 Excel</button><button class="pdf" onclick="dlStockPDF()">📄 PDF</button></div></div><div class="row" id="statFiltRow" style="background:#eaf2f8;padding:8px;border-radius:6px"><div><label>🔍 Status Filter</label><select id="statusFilter" onchange="showStock()"></select></div></div><table id="stockTable"><thead id="stockHead"></thead><tbody id="list"></tbody></table></div>
+    <div class="box repbox hide" id="kapanLogBox"><div style="display:flex;justify-content:space-between;align-items:center"><h2 id="kapanLogTitle">📜 Kapan Transaction Log</h2><button class="del" onclick="closeKapanLog()" style="font-size:12px">✖ બંધ કરો</button></div><table><thead><tr><th>#</th><th>Action</th><th>From</th><th>To</th><th>Manager</th><th>Data Entry</th><th>Recv By</th><th>Status</th><th>Date-Time</th></tr></thead><tbody id="kapanLogBody"></tbody></table></div>
   </div>
 
   <!-- PAGE: REPAIRING -->
   <div class="page" id="pg_rep">
-    <div class="box repbox"><h2>🔧 Repairing — બીજા Department ને મોકલો</h2><div class="row"><div><label>Kapan <span class="reqstar">*</span></label><input id="rpKapan" placeholder="Kapan"></div><div><label>Nang</label><input id="rpNang" type="number" value="0"></div><div><label>Vajan</label><input id="rpVajan" type="number" step="0.01" value="0"></div><div><label>Pis</label><input id="rpPis" type="number" value="0"></div></div><div class="row"><div><label>Jangad <span class="reqstar">*</span></label><input id="rpJangad" placeholder="જાંગડ"></div><div><label>કયા Dept ને</label><select id="rpTo"></select></div><div style="display:flex;align-items:flex-end"><button class="repsend" onclick="sendRepair()" style="width:100%">🔧 મોકલો</button></div></div></div>
-    <div class="box repbox"><h2>🔧 Repairing Inbox</h2><table><thead><tr><th>Kapan</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>Jangad</th><th>From</th><th>Date</th><th>Action</th></tr></thead><tbody id="repInbox"></tbody></table></div>
-    <div class="box repbox"><h2>🔧 મેં મોકલેલ Repairing</h2><table><thead><tr><th>Kapan</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>Jangad</th><th>To</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody id="repSent"></tbody></table></div>
-    <div class="box repbox"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2>🔧 Repairing History</h2><div class="dlbar"><button class="xls" onclick="dlRepHistExcel()">📊 Excel</button><button class="pdf" onclick="dlRepHistPDF()">📄 PDF</button></div></div><div class="row datebar"><div><label>🔍 Kapan</label><input id="rhSearch" oninput="showRepHist()" placeholder="Kapan"></div><div><label>Dept</label><select id="rhDept" onchange="showRepHist()"></select></div><div><label>📅 થી</label><input id="rhFrom" type="date" onchange="showRepHist()"></div><div><label>📅 સુધી</label><input id="rhTo" type="date" onchange="showRepHist()"></div><div style="display:flex;align-items:flex-end"><button onclick="clearRepHist()" style="background:#7f8c8d;width:100%">🔄</button></div></div><table><thead><tr><th>Kapan</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>Jangad</th><th>From</th><th>To</th><th>Issue D-T</th><th>Recv D-T</th><th>Status</th></tr></thead><tbody id="repHist"></tbody></table></div>
+    <div class="box repbox"><h2>🔧 Repairing — બીજા Department ને મોકલો</h2><div class="row"><div><label>Kapan <span class="reqstar">*</span></label><input id="rpKapan" placeholder="Kapan"></div><div><label>Nang</label><input id="rpNang" type="number" value="0"></div><div><label>Vajan</label><input id="rpVajan" type="number" step="0.01" value="0"></div><div><label>Pis</label><input id="rpPis" type="number" value="0"></div></div><div class="row"><div><label>Jangad <span class="reqstar">*</span></label><input id="rpJangad" placeholder="જાંગડ"></div><div><label>કયા Dept ને</label><select id="rpTo"></select></div><div><label>👤 Manager (કોણ મોકલે છે)</label><select id="rpManager" onchange="onManagerChange()"></select></div></div><div class="row"><div style="flex:2"><label>📝 Remark / નોંધ</label><input id="rpRemark" placeholder="Repairing વિશે નોંધ લખો..."></div><div style="display:flex;align-items:flex-end"><button class="repsend" onclick="sendRepair()" style="width:100%">🔧 મોકલો</button></div></div></div>
+    <div class="box repbox"><h2>🔧 Repairing Inbox</h2><table><thead><tr><th>Kapan</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>Jangad</th><th>From</th><th>Manager</th><th>Remark</th><th>Date</th><th>Action</th></tr></thead><tbody id="repInbox"></tbody></table></div>
+    <div class="box repbox"><h2>🔧 મેં મોકલેલ Repairing</h2><table><thead><tr><th>Kapan</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>Jangad</th><th>To</th><th>Manager</th><th>Remark</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody id="repSent"></tbody></table></div>
+    <div class="box repbox"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2>🔧 Repairing History</h2><div class="dlbar"><button class="xls" onclick="dlRepHistExcel()">📊 Excel</button><button class="pdf" onclick="dlRepHistPDF()">📄 PDF</button></div></div><div class="row datebar"><div><label>🔍 Kapan</label><input id="rhSearch" oninput="showRepHist()" placeholder="Kapan"></div><div><label>Dept</label><select id="rhDept" onchange="showRepHist()"></select></div><div><label>📅 થી</label><input id="rhFrom" type="date" onchange="showRepHist()"></div><div><label>📅 સુધી</label><input id="rhTo" type="date" onchange="showRepHist()"></div><div style="display:flex;align-items:flex-end"><button onclick="clearRepHist()" style="background:#7f8c8d;width:100%">🔄</button></div></div><table><thead><tr><th>Kapan</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>Jangad</th><th>From</th><th>To</th><th>Manager</th><th>Remark</th><th>Issue D-T</th><th>Recv D-T</th><th>Recv By</th><th>Status</th></tr></thead><tbody id="repHist"></tbody></table></div>
   </div>
 
   <!-- PAGE: SUGGESTION -->
   <div class="page" id="pg_sug">
     <div class="box sugbox" id="sugSendBox"><h2>💡 Suggestion મોકલો (Admin)</h2><div class="row"><div><label>Topic <span class="reqstar">*</span></label><input id="sgTopic" placeholder="Topic"></div></div><label>કયા Department ને <span class="reqstar">*</span> (એક કે વધારે)</label><div class="sugchk" id="sgToChk"></div><label style="margin-top:10px">વિગત <span class="reqstar">*</span></label><textarea id="sgDetail" rows="3" placeholder="વિગત"></textarea><button class="sugsend" onclick="sendSuggestion()">💡 મોકલો</button></div>
     <div class="box sugbox" id="sugInboxBox"><h2>💡 Admin ની Suggestions</h2><table><thead><tr><th>Topic</th><th>વિગત</th><th>Date</th><th>Status</th><th>Action</th></tr></thead><tbody id="sugInbox"></tbody></table></div>
+    <div class="box sugbox" id="sugAllBox">
+      <h2>📢 બધા માટે સૂચન બોક્સ</h2>
+      <p style="font-size:13px;color:#555;margin-bottom:10px">કોઈ પણ સમસ્યા / સૂચન? અહીં નાખો — Admin જોઈ લેશે!</p>
+      <div style="margin-bottom:10px">
+        <label style="font-size:13px;font-weight:bold;margin-bottom:4px">Quick Select</label>
+        <div style="display:flex;flex-wrap:wrap;gap:5px">
+          <button class="sugcat" onclick="quickSugAll('⏰ સમય વધારે લાગે છે','આ કામમાં સમય વધારે લાગે છે, કૃપા કરીને જુઓ.')" style="background:#e74c3c;font-size:12px;padding:4px 9px;margin:0">⏰ સમય વધારે</button>
+          <button class="sugcat" onclick="quickSugAll('🔧 Repairing વધી રહ્યું છે','Repairing ના કાપણ વધી રહ્યા છે.')" style="background:#e67e22;font-size:12px;padding:4px 9px;margin:0">🔧 Repairing</button>
+          <button class="sugcat" onclick="quickSugAll('📦 Kapan વધારે જમા થાય છે','Kapan નું પ્રમાણ વધી રહ્યું છે.')" style="background:#2980b9;font-size:12px;padding:4px 9px;margin:0">📦 Kapan</button>
+          <button class="sugcat" onclick="quickSugAll('👤 Manager ની Kapan વધારે','Manager પાસે Kapan વધારે જમા થઈ રહી છે.')" style="background:#8e44ad;font-size:12px;padding:4px 9px;margin:0">👤 Manager</button>
+          <button class="sugcat" onclick="quickSugAll('📊 Report સુધારો','Report માં સુધારો કરવો જોઈએ.')" style="background:#16a085;font-size:12px;padding:4px 9px;margin:0">📊 Report</button>
+          <button class="sugcat" onclick="quickSugAll('💡 નવી સુવિધા','નવી સુવિધા ઉમેરવી જોઈએ.')" style="background:#f39c12;font-size:12px;padding:4px 9px;margin:0">💡 નવું</button>
+          <button class="sugcat" onclick="quickSugAll('⚠️ Other','')" style="background:#7f8c8d;font-size:12px;padding:4px 9px;margin:0">⚠️ Other</button>
+        </div>
+      </div>
+      <div class="row"><div><label>Topic</label><input id="sgAllTopic" placeholder="Topic"></div></div>
+      <label>વિગત</label><textarea id="sgAllDetail" rows="3" placeholder="તમારી સમસ્યા / સૂચન..."></textarea>
+      <button class="sugsend" onclick="sendSugAll()" style="background:#8e44ad">📤 મોકલો</button>
+      <div id="sugAllList" style="margin-top:14px"><h3 style="font-size:15px;margin-bottom:6px;color:#555">તમારા સૂચનો</h3><div id="sugAllHist"></div></div>
+    </div>
     <div class="box sugbox"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2>💡 Suggestion History</h2><div class="dlbar"><button class="xls" onclick="dlSugHistExcel()">📊 Excel</button><button class="pdf" onclick="dlSugHistPDF()">📄 PDF</button></div></div><div class="row datebar"><div id="sgFiltDeptDiv"><label>Department</label><select id="sgFiltDept" onchange="showSugHist()"></select></div><div><label>📅 થી</label><input id="sgFiltFrom" type="date" onchange="showSugHist()"></div><div><label>📅 સુધી</label><input id="sgFiltTo" type="date" onchange="showSugHist()"></div><div style="display:flex;align-items:flex-end"><button onclick="clearSugHist()" style="background:#7f8c8d;width:100%">🔄</button></div></div><table><thead><tr><th>Topic</th><th>વિગત</th><th>Department</th><th>Date</th><th>Accept Time</th><th>કોણે</th><th>Status</th></tr></thead><tbody id="sugHist"></tbody></table></div>
+  </div>
+
+  <!-- PAGE: ANALYSIS -->
+  <div class="page" id="pg_anal">
+    <div class="box statbox">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+        <h2>📊 Analysis / વિશ્લેષણ</h2>
+        <div class="dlbar"><button class="xls" onclick="dlAnalysisExcel()">📊 Excel</button><button class="pdf" onclick="dlAnalysisPDF()">📄 PDF</button></div>
+      </div>
+      <div class="row datebar" style="margin-bottom:14px">
+        <div><label>📅 થી</label><input type="date" id="anFrom" onchange="showAnalysis()"></div>
+        <div><label>📅 સુધી</label><input type="date" id="anTo" onchange="showAnalysis()"></div>
+        <div style="display:flex;align-items:flex-end"><button onclick="document.getElementById('anFrom').value='';document.getElementById('anTo').value='';showAnalysis()" style="background:#7f8c8d;width:100%">🔄 Clear</button></div>
+      </div>
+      <!-- Auto AI Analysis -->
+      <div id="anAiBox" style="margin-bottom:16px"></div>
+      <!-- Overview Cards -->
+      <div class="cards" id="anCards" style="margin-bottom:16px"></div>
+      <hr style="margin:14px 0;border-color:#ddd">
+      <!-- Manager-wise Analysis -->
+      <h3>👤 Manager-wise Analysis</h3>
+      <div style="overflow-x:auto"><table id="anMgrTable"><thead><tr><th>Manager</th><th>કાપણ Sent</th><th>Carat Sent</th><th>Received</th><th>Pending</th><th>Avg Days</th><th>Repairing</th></tr></thead><tbody id="anMgrBody"></tbody></table></div>
+      <hr style="margin:14px 0;border-color:#ddd">
+      <!-- Repairing Analysis -->
+      <h3>🔧 Repairing Analysis</h3>
+      <div style="overflow-x:auto"><table id="anRepTable"><thead><tr><th>Department</th><th>Sent</th><th>Received</th><th>OK-Back</th><th>Pending</th><th>Avg Days</th></tr></thead><tbody id="anRepBody"></tbody></table></div>
+      <hr style="margin:14px 0;border-color:#ddd">
+      <!-- Department-wise Summary -->
+      <h3>🏬 Department-wise Summary</h3>
+      <div style="overflow-x:auto"><table id="anDeptTable"><thead><tr><th>Department</th><th>Sent Out</th><th>Received In</th><th>Currently Held</th><th>Forwarded</th></tr></thead><tbody id="anDeptBody"></tbody></table></div>
+      <hr style="margin:14px 0;border-color:#ddd">
+      <!-- Action Log Summary -->
+      <h3>📋 Action Log Summary</h3>
+      <div style="overflow-x:auto"><table id="anActTable"><thead><tr><th>Action</th><th>Count</th><th>% of Total</th></tr></thead><tbody id="anActBody"></tbody></table></div>
+    </div>
   </div>
 
   <!-- PAGE: HISTORY -->
@@ -215,20 +426,90 @@
 
   <!-- PAGE: ADMIN -->
   <div class="page" id="pg_admin">
-    <div class="box bkpbox"><h2>💾 Backup & Restore</h2><p style="font-size:13px;color:#555">⚠️ રોજ Backup Download કરી Google Drive/Pen-drive માં રાખો.</p><div class="dlbar"><button class="xls" onclick="backupDownload()">📥 Backup Download</button><button class="set" onclick="document.getElementById('restoreFile').click()">📤 Backup Restore</button><input type="file" id="restoreFile" accept=".json" style="display:none" onchange="backupRestore(event)"></div></div>
-    
-    <div class="box adminbox" style="border: 2px solid #e74c3c; background: #fdf2f2;">
-      <h2>🔥 Data Delete / Purge (ડેટા સાફ કરો)</h2>
+
+    <!-- NOTIFICATION + SUGGESTION PANEL -->
+    <div class="box adminbox" id="notifPanel"><h2>🔔 Notifications & Edit Approvals</h2><div id="notifList"></div></div>
+    <div class="box adminbox" id="adminSugPanel"><h2>💡 Suggestion — Admin</h2><div class="row"><div style="flex:2"><label>Topic</label><input id="sgTopicA" placeholder="Topic"></div></div><label>કયા Department ને <span class="reqstar">*</span></label><div class="sugchk" id="sgToChkA"></div><label style="margin-top:10px">વિગત</label><textarea id="sgDetailA" rows="3" placeholder="વિગત"></textarea><button class="sugsend" onclick="sendSugAdmin()">💡 મોકલો</button><hr style="margin:14px 0;border-color:#ddd"><h3>📥 Admin Inbox — Department તરફથી</h3><div style="overflow-x:auto"><table><thead><tr><th>Topic</th><th>વિગત</th><th>Department</th><th>Date</th></tr></thead><tbody id="sugAdminInbox"></tbody></table></div></div>
+
+    <!-- MAIN ADMIN PANEL (ALL IN ONE BOX) -->
+    <div class="box adminbox" id="adminPanel">
+      <h2>👑 Admin Panel</h2>
+
+      <!-- Password Change -->
+      <button class="set" onclick="changeAdminPass()">🔑 મારો Password બદલો</button>
+      <hr style="margin:14px 0;border-color:#ddd">
+
+      <!-- Admin Settings -->
+      <h3>⚙️ Admin Settings</h3>
+      <div class="row">
+        <div style="flex:1;min-width:250px">
+          <h4 style="margin:8px 0 4px">🔒 Security</h4>
+          <label>Session Timeout (minutes)</label><input id="setSessionTimeout" type="number" min="1" max="480" value="30" onchange="saveAdminSettings()">
+          <label>Max Login Attempts (0=unlimited)</label><input id="setMaxAttempts" type="number" min="0" max="20" value="5" onchange="saveAdminSettings()">
+          <label>Lockout Duration (seconds)</label><input id="setLockoutDuration" type="number" min="10" max="3600" value="300" onchange="saveAdminSettings()">
+          <label><input type="checkbox" id="setAutoLogout" checked onchange="saveAdminSettings()"> Enable Auto-Logout</label>
+        </div>
+        <div style="flex:1;min-width:250px">
+          <h4 style="margin:8px 0 4px">⌨️ Keyboard Shortcuts</h4>
+          <label><input type="checkbox" id="setShortcuts" checked onchange="saveAdminSettings()"> Enable Keyboard Shortcuts</label>
+          <div style="margin-top:6px;font-size:12px;color:#555">
+            <p><span class="kbd">Ctrl</span>+<span class="kbd">Z</span> Undo &nbsp; <span class="kbd">Ctrl</span>+<span class="kbd">Y</span> Redo</p>
+            <p><span class="kbd">Enter</span> Next field &nbsp; <span class="kbd">↑↓</span> Select dropdown</p>
+            <p><span class="kbd">Ctrl</span>+<span class="kbd">S</span> Save &nbsp; <span class="kbd">Esc</span> Close modal</p>
+          </div>
+        </div>
+        <div style="flex:1;min-width:250px">
+          <h4 style="margin:8px 0 4px">🎨 Appearance</h4>
+          <label><input type="checkbox" id="setDarkMode" onchange="toggleDarkMode()"> Dark Mode</label>
+          <label><input type="checkbox" id="setMobileView" onchange="toggleMobileViewSetting()"> Mobile View Default</label>
+          <label><input type="checkbox" id="setShowHints" checked onchange="saveAdminSettings()"> Show Keyboard Hints</label>
+        </div>
+      </div>
+      <hr style="margin:14px 0;border-color:#ddd">
+
+      <!-- Backup & Restore -->
+      <h3>💾 Backup & Restore</h3>
+      <p style="font-size:13px;color:#555">⚠️ રોજ Backup Download કરી Google Drive/Pen-drive માં રાખો.</p>
+      <div class="dlbar"><button class="xls" onclick="backupDownload()">📥 Backup Download</button><button class="set" onclick="document.getElementById('restoreFile').click()">📤 Backup Restore</button><input type="file" id="restoreFile" accept=".json" style="display:none" onchange="backupRestore(event)"></div>
+      <hr style="margin:14px 0;border-color:#ddd">
+
+      <!-- Data Purge -->
+      <h3>🔥 Data Delete / Purge (ડેટા સાફ કરો)</h3>
       <p style="font-size:13px;color:#c0392b;font-weight:bold;">⚠️ ચેતવણી: નક્કી કરેલ સમયગાળાનો તમામ ટ્રાન્ઝેક્શન ડેટા (History, Stock, Repairing, 4P, Suggestion) કાયમ માટે ડિલીટ થઈ જશે.</p>
       <div class="row">
         <div><label>📅 થી (Start Date)</label><input type="date" id="purgeFrom"></div>
         <div><label>📅 સુધી (End Date)</label><input type="date" id="purgeTo"></div>
         <div style="display:flex;align-items:flex-end"><button onclick="purgeDataRange()" style="background:#e74c3c;width:100%;margin-top:8px;">🔥 ડેટા ડિલીટ કરો</button></div>
       </div>
-    </div>
+      <hr style="margin:14px 0;border-color:#ddd">
 
-    <div class="box adminbox" id="adminPanel"><h2>👑 Admin Panel</h2><button class="set" onclick="changeAdminPass()">🔑 મારો Password બદલો</button><div class="box stockbox" style="margin:12px 0;"><h2>🏢 Stock Department</h2><table><thead><tr><th>Department</th><th>User ID</th><th>Password</th><th>Action</th></tr></thead><tbody id="stockUser"></tbody></table></div><div class="box masterbox" style="margin:12px 0;"><h2>🏷️ Split Label Master</h2><div class="row"><div><label>નવું Label</label><input id="nLabel" placeholder="4P"></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addLabel()" style="width:100%">➕ ઉમેરો</button></div></div><div id="labelList" style="margin-top:10px"></div></div><h2>➕ Department / Office / User</h2><div class="row"><div><label>Department</label><input id="nDept" placeholder="Galaxy"></div><div><label>Office 🏢</label><input id="nOffice" placeholder="Office-1"></div><div><label>User ID</label><input id="nId" placeholder="galaxy1"></div><div><label>Password</label><input id="nPass" placeholder="Password"></div></div><label>🔀 Process (comma)</label><input id="nParts" placeholder="Process A, Process B"><button onclick="addUser()">User બનાવો</button><table><thead><tr><th>Dept</th><th>Office</th><th>Process</th><th>ID</th><th>Pass</th><th>Action</th></tr></thead><tbody id="userList"></tbody></table></div>
+      <!-- Stock Department -->
+      <div class="box stockbox" style="margin:12px 0;"><h2>🏢 Stock Department</h2><table><thead><tr><th>Department</th><th>User ID</th><th>Password</th><th>Action</th></tr></thead><tbody id="stockUser"></tbody></table></div>
+      <hr style="margin:14px 0;border-color:#ddd">
+
+      <!-- Split Label Master -->
+      <div class="box masterbox" style="margin:12px 0;"><h2>🏷️ Split Label Master</h2><div class="row"><div><label>નવું Label</label><input id="nLabel" placeholder="4P"></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addLabel()" style="width:100%">➕ ઉમેરો</button></div></div><div id="labelList" style="margin-top:10px"></div></div>
+      <hr style="margin:14px 0;border-color:#ddd">
+
+      <!-- Manager Master -->
+      <div class="box masterbox" style="margin:12px 0;"><h2>👤 Manager Master</h2><div class="row"><div><label>Manager નું નામ</label><input id="nManager" placeholder="Manager Name"></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addManager()" style="width:100%">➕ ઉમેરો</button></div></div><div id="managerList" style="margin-top:10px"></div></div>
+      <hr style="margin:14px 0;border-color:#ddd">
+
+      <!-- Data Entry Master -->
+      <div class="box masterbox" style="margin:12px 0;"><h2>📝 Data Entry Manager Master</h2><div class="row"><div><label>Data Entry નું નામ</label><input id="nDEAdmin" placeholder="Data Entry Name"></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addDEAdmin()" style="width:100%">➕ ઉમેરો</button></div></div><div id="deAdminList" style="margin-top:10px"></div></div>
+      <hr style="margin:14px 0;border-color:#ddd">
+
+      <!-- Users -->
+      <div class="row"><div><label>Department</label><input id="nDept" placeholder="Galaxy"></div><div><label>Office 🏢</label><input id="nOffice" placeholder="Office-1"></div><div><label>User ID</label><input id="nId" placeholder="galaxy1"></div><div><label>Password</label><input id="nPass" placeholder="Password"></div></div><label>🔀 Process (comma)</label><input id="nParts" placeholder="Process A, Process B"><button onclick="addUser()">User બનાવો</button>
+      <table><thead><tr><th>Dept</th><th>Office</th><th>Process</th><th>ID</th><th>Pass</th><th>Action</th></tr></thead><tbody id="userList"></tbody></table>
+    </div>
   </div>
+
+  <!-- PAGE: LOGIN HISTORY -->
+  <div class="page" id="pg_lhist">
+    <div class="box adminbox"><h2>🔐 Login History</h2><p style="font-size:12px;color:#555">ક્યા PC થી કોણે login કર્યું તેની હિસ્ટ્રી.</p><div class="row datebar"><div><label>Search ID/PC</label><input id="lhSearch" oninput="showLoginHistory()" placeholder="Search..."></div><div><label>📅 થી</label><input type="date" id="lhFrom" onchange="showLoginHistory()"></div><div><label>📅 સુધી</label><input type="date" id="lhTo" onchange="showLoginHistory()"></div><div style="display:flex;align-items:flex-end"><button onclick="document.getElementById('lhSearch').value='';document.getElementById('lhFrom').value='';document.getElementById('lhTo').value='';showLoginHistory()" style="background:#7f8c8d;width:100%">🔄 Clear</button></div></div><div class="dlbar" style="margin-bottom:10px"><button class="xls" onclick="dlLoginHistExcel()">📊 Excel</button><button class="del" onclick="clearLoginHist()" style="background:#e74c3c">🗑️ Delete All</button></div><div style="overflow-x:auto;max-height:500px;overflow-y:auto"><table><thead><tr><th>#</th><th>User ID</th><th>Department</th><th>Role</th><th>PC / Browser</th><th>Date-Time</th><th>Action</th></tr></thead><tbody id="loginHistBody"></tbody></table></div></div>
+  </div>
+
 </div>
 <script>
 let users = JSON.parse(localStorage.getItem("users") || "null");
@@ -259,6 +540,10 @@ let reps = JSON.parse(localStorage.getItem("reps") || "[]");
 let sugs = JSON.parse(localStorage.getItem("sugs") || "[]");
 let labels = JSON.parse(localStorage.getItem("labels") || "null");
 if(!labels){ labels=["Marking","4P","Mejik","Direct"]; localStorage.setItem("labels",JSON.stringify(labels)); }
+let managers = JSON.parse(localStorage.getItem("managers") || "null");
+if(!managers){ managers=[]; localStorage.setItem("managers",JSON.stringify(managers)); }
+let dataentrys = JSON.parse(localStorage.getItem("dataentrys") || "null");
+if(!dataentrys){ dataentrys=[]; localStorage.setItem("dataentrys",JSON.stringify(dataentrys)); }
 let dstatus = JSON.parse(localStorage.getItem("dstatus") || "{}");
 let fourP = JSON.parse(localStorage.getItem("fourP") || "[]");
 let cur=null, reportKey=null;
@@ -284,18 +569,19 @@ function save(){
   localStorage.setItem("users",JSON.stringify(users)); localStorage.setItem("stock",JSON.stringify(data));
   localStorage.setItem("hist",JSON.stringify(hist)); localStorage.setItem("reps",JSON.stringify(reps));
   localStorage.setItem("sugs",JSON.stringify(sugs)); localStorage.setItem("labels",JSON.stringify(labels));
+  localStorage.setItem("managers",JSON.stringify(managers)); localStorage.setItem("dataentrys",JSON.stringify(dataentrys));
   localStorage.setItem("dstatus",JSON.stringify(dstatus)); localStorage.setItem("fourP",JSON.stringify(fourP));
-  if(window.cloudSave){ window.cloudSave({users,stock:data,hist,reps,sugs,labels,dstatus,fourP,updated:nowMs}); }
+  if(window.cloudSave){ window.cloudSave({users,stock:data,hist,reps,sugs,labels,managers,dataentrys,dstatus,fourP,updated:nowMs,sugAll}); }
 }
 
 let curPage="";
-function showPage(pg){ curPage=pg; document.querySelectorAll(".page").forEach(p=>p.classList.remove("show")); let el=document.getElementById("pg_"+pg); if(el) el.classList.add("show"); document.querySelectorAll(".navbar button").forEach(b=>b.classList.toggle("active", b.dataset.pg===pg)); refresh(); }
-function buildNav(){ let isFull=(cur.role==="admin"||cur.role==="stock"); let items=[]; if(isFull) items.push(["dash","📊 Dashboard"]); if(isFull) items.push(["send","📤 કાપણ મોકલો"]); items.push(["stock","📥 Stock & Inbox"]); items.push(["rep","🔧 Repairing"]); items.push(["sug","💡 Suggestion"]); items.push(["hist","🕒 History"]); if(cur.role==="admin") items.push(["admin","👑 Admin"]); document.getElementById("navbar").innerHTML=items.map(it=>`<button data-pg="${it[0]}" onclick="showPage('${it[0]}')">${it[1]}</button>`).join(""); showPage(isFull?"dash":"stock"); }
+function showPage(pg){ curPage=pg; document.querySelectorAll(".page").forEach(p=>p.classList.remove("show")); let el=document.getElementById("pg_"+pg); if(el) el.classList.add("show"); document.querySelectorAll(".navbar button").forEach(b=>b.classList.toggle("active", b.dataset.pg===pg)); let sb=document.querySelector(".schbox"); if(sb) sb.style.display=pg==="admin"?"none":""; refresh(); }
+function buildNav(){ let isFull=(cur.role==="admin"||cur.role==="stock"); let items=[]; if(isFull) items.push(["dash","📊 Dashboard"]); if(isFull) items.push(["send","📤 કાપણ મોકલો"]); items.push(["stock","📥 Stock & Inbox"]); items.push(["rep","🔧 Repairing"]); items.push(["sug","💡 Suggestion"]); items.push(["anal","📊 Analysis"]); items.push(["hist","🕒 History"]); if(cur.role==="admin") items.push(["admin","👑 Admin"]); if(cur.role==="admin") items.push(["lhist","🔐 Login History"]); document.getElementById("navbar").innerHTML=items.map(it=>`<button data-pg="${it[0]}" onclick="showPage('${it[0]}')">${it[1]}</button>`).join(""); showPage(isFull?"dash":"stock"); }
 
 function startSession(u){ sessionStorage.setItem("curId",u.id); }
 function endSession(){ sessionStorage.removeItem("curId"); }
-window.addEventListener("load",()=>{ let sid=sessionStorage.getItem("curId"); if(sid){ let u=users.find(x=>x.id===sid); if(u){ cur=u; openApp(); } } });
-function login(){ let id=document.getElementById("uid").value.trim(),p=document.getElementById("upass").value.trim(); let u=users.find(x=>x.id===id&&x.pass===p&&x.id!==""); if(!u){ alert("ખોટો ID કે Password!"); return; } cur=u; startSession(u); openApp(); }
+window.addEventListener("load",()=>{ let savedId=localStorage.getItem("savedId"),savedPass=localStorage.getItem("savedPass"); if(savedId&&savedPass){ document.getElementById("uid").value=savedId; document.getElementById("upass").value=savedPass; document.getElementById("rememberMe").checked=true; } let vm=localStorage.getItem("viewMode")||"desktop"; applyView(vm); document.querySelectorAll('input[name="viewMode"]').forEach(r=>{ r.checked=(r.value===vm); }); applyDarkMode(); populateReqDept(); let sid=sessionStorage.getItem("curId"); if(sid){ let u=users.find(x=>x.id===sid); if(u){ cur=u; openApp(); } } });
+function login(){ let id=document.getElementById("uid").value.trim(),p=document.getElementById("upass").value.trim(); let maxAtt=parseInt(localStorage.getItem("adminMaxAttempts")||"5"); let lockDur=parseInt(localStorage.getItem("adminLockoutDuration")||"300"); let attData=JSON.parse(localStorage.getItem("loginAttempts")||'{"count":0,"lockedUntil":0}'); let nowMs=Date.now(); if(attData.lockedUntil&&nowMs<attData.lockedUntil){ let rem=Math.ceil((attData.lockedUntil-nowMs)/1000); document.getElementById("loginError").style.display="block"; document.getElementById("loginError").textContent="🔒 Locked! Try again in "+rem+"s"; return; } if(!id||!p){ document.getElementById("loginError").style.display="block"; document.getElementById("loginError").textContent="ID અને Password ભરો!"; return; } let u=users.find(x=>x.id===id&&x.pass===p&&x.id!==""); if(!u){ attData.count++; if(maxAtt>0&&attData.count>=maxAtt){ attData.lockedUntil=nowMs+(lockDur*1000); attData.count=0; localStorage.setItem("loginAttempts",JSON.stringify(attData)); document.getElementById("loginError").style.display="block"; document.getElementById("loginError").textContent="🔒 Too many attempts! Locked for "+lockDur+"s"; return; } localStorage.setItem("loginAttempts",JSON.stringify(attData)); let rem=maxAtt>0?" ("+(maxAtt-attData.count)+" left)":""; document.getElementById("loginError").style.display="block"; document.getElementById("loginError").textContent="ખોટો ID કે Password!"+rem; return; } attData.count=0; attData.lockedUntil=0; localStorage.setItem("loginAttempts",JSON.stringify(attData)); document.getElementById("loginError").style.display="none"; if(document.getElementById("rememberMe").checked){ localStorage.setItem("savedId",id); localStorage.setItem("savedPass",p); } else { localStorage.removeItem("savedId"); localStorage.removeItem("savedPass"); } cur=u; let lh=JSON.parse(localStorage.getItem("loginHistory")||"[]"); lh.unshift({id:u.id,dept:u.dept,role:u.role,at:now(),ts:Date.now(),ua:navigator.userAgent.substring(0,80)}); if(lh.length>200) lh=lh.slice(0,200); localStorage.setItem("loginHistory",JSON.stringify(lh)); startSession(u); openApp(); toast("✅ Login successful! Welcome "+u.dept,"success"); }
 function openApp(){
   document.getElementById("login").classList.add("hide"); document.getElementById("app").classList.remove("hide");
   document.getElementById("who").innerText=unitLabel(cur.dept,cur.office)+" ("+cur.id+")";
@@ -315,53 +601,224 @@ function openApp(){
   document.getElementById("deptWiseBox").classList.toggle("hide",!isFull);
   document.getElementById("sugSendBox").classList.toggle("hide",cur.role!=="admin");
   document.getElementById("sugInboxBox").classList.toggle("hide",cur.role!=="dept");
-  document.getElementById("sgFiltDeptDiv").classList.toggle("hide",cur.role!=="admin");
+  document.getElementById("sugAllBox").classList.toggle("hide",cur.role!=="admin");
   document.getElementById("fStatusDiv").classList.toggle("hide",!isFull);
   document.getElementById("fDeptDiv").classList.toggle("hide",!isFull);
-  fillDeptDropdown(); fillFilterDept(); fillHistDept(); fillRepDeptFilter(); fillRepairDropdown(); fillSugToChk(); fillSugFiltDept(); fillDashStatDept(); showUsers(); showLabels();
+  fillDeptDropdown(); fillFilterDept(); fillHistDept(); fillRepDeptFilter(); fillRepairDropdown(); fillManagerDropdown(); fillMgrDropdownStock(); fillDataEntryDropdown(); fillSugToChk(); fillSugFiltDept(); fillDashStatDept(); showUsers(); showLabels(); showManagers(); showDEAdminList(); showMyMgrList(); showMyDEList(); showGoogleReqs(); showAllowedEmails(); populateAdminReqDept(); loadAdminSettings(); applyDarkMode(); updateNotifCount(); showNotifications(); addInputValidation(); injectDateQuick(); resetActivityTimer();
   if(isFull){ partRows=[]; addPartRow(); addPartRow(); }
   buildNav();
 }
 function logout(){ endSession(); location.reload(); }
 
-function changeAdminPass(){ let a=users.find(u=>u.role==="admin"); let o=prompt("જૂનો Password:"); if(o===null) return; if(o.trim()!==a.pass){ alert("જૂનો ખોટો!"); return; } let np=prompt("નવો Password:"); if(np===null) return; np=np.trim(); if(!np) return; a.pass=np; save(); alert("✅ બદલાયો!"); }
-function addLabel(){ let l=document.getElementById("nLabel").value.trim(); if(!l) return; if(labels.includes(l)){ alert("પહેલેથી!"); return; } labels.push(l); save(); document.getElementById("nLabel").value=""; showLabels(); }
+// === TOAST NOTIFICATIONS ===
+function toast(msg,type){ let c=document.getElementById("toastContainer"); let t=document.createElement("div"); t.className="toast toast-"+(type||"info"); t.textContent=msg; c.appendChild(t); setTimeout(()=>{ t.style.opacity="0"; t.style.transition="opacity 0.3s"; setTimeout(()=>t.remove(),300); },3000); }
+
+// === XSS SANITIZATION ===
+function sanitize(s){ if(!s) return""; let d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+
+// === LOADING SPINNER ===
+function showLoading(){ document.getElementById("loadingSpinner").classList.remove("hide"); }
+function hideLoading(){ document.getElementById("loadingSpinner").classList.add("hide"); }
+
+// === DARK MODE ===
+function toggleDarkMode(){ let isDark=document.body.classList.toggle("dark"); localStorage.setItem("darkMode",isDark); let dt=document.getElementById("darkToggle"); if(dt) dt.textContent=isDark?"☀️":"🌙"; let cb=document.getElementById("setDarkMode"); if(cb) cb.checked=isDark; }
+function applyDarkMode(){ let isDark=localStorage.getItem("darkMode")==="true"; if(isDark){ document.body.classList.add("dark"); let dt=document.getElementById("darkToggle"); if(dt) dt.textContent="☀️"; } }
+
+// === CAPS LOCK ===
+function checkCapsLock(e){ let w=document.getElementById("capsWarn"); if(w) w.style.display=e.getModifierState("CapsLock")?"block":"none"; }
+
+// === PASSWORD TOGGLE ===
+function togglePassVisibility(){ let p=document.getElementById("upass"); if(p.type==="password"){ p.type="text"; } else { p.type="password"; } }
+
+// === ADMIN SETTINGS ===
+let adminSettings=JSON.parse(localStorage.getItem("adminSettings")||"null")||{sessionTimeout:30,maxAttempts:5,lockoutDuration:300,autoLogout:true,shortcuts:true,showHints:true};
+function saveAdminSettings(){ adminSettings.sessionTimeout=parseInt(document.getElementById("setSessionTimeout").value)||30; adminSettings.maxAttempts=parseInt(document.getElementById("setMaxAttempts").value)||5; adminSettings.lockoutDuration=parseInt(document.getElementById("setLockoutDuration").value)||300; adminSettings.autoLogout=document.getElementById("setAutoLogout").checked; adminSettings.shortcuts=document.getElementById("setShortcuts").checked; adminSettings.showHints=document.getElementById("setShowHints").checked; localStorage.setItem("adminSettings",JSON.stringify(adminSettings)); localStorage.setItem("adminMaxAttempts",adminSettings.maxAttempts); localStorage.setItem("adminLockoutDuration",adminSettings.lockoutDuration); toast("Settings saved!","success"); }
+function loadAdminSettings(){ if(!adminSettings) return; let e=(id,val)=>{ let el=document.getElementById(id); if(el) el.value=val; }; let c=(id,val)=>{ let el=document.getElementById(id); if(el) el.checked=val; }; e("setSessionTimeout",adminSettings.sessionTimeout); e("setMaxAttempts",adminSettings.maxAttempts); e("setLockoutDuration",adminSettings.lockoutDuration); c("setAutoLogout",adminSettings.autoLogout); c("setShortcuts",adminSettings.shortcuts); c("setShowHints",adminSettings.showHints); c("setDarkMode",document.body.classList.contains("dark")); c("setMobileView",document.body.classList.contains("mobile-view")); localStorage.setItem("adminMaxAttempts",adminSettings.maxAttempts); localStorage.setItem("adminLockoutDuration",adminSettings.lockoutDuration); }
+
+// === AUTO LOGOUT ===
+let activityTimer=null;
+function resetActivityTimer(){ if(!adminSettings.autoLogout) return; clearTimeout(activityTimer); activityTimer=setTimeout(()=>{ toast("⏰ Session expired! Auto-logout.","warning"); setTimeout(logout,2000); },adminSettings.sessionTimeout*60*1000); }
+document.addEventListener("mousemove",resetActivityTimer);
+document.addEventListener("keydown",resetActivityTimer);
+document.addEventListener("click",resetActivityTimer);
+
+// === UNDO/REDO ===
+let undoStack=[],redoStack=[];
+function pushUndo(action){ undoStack.push(action); if(undoStack.length>30) undoStack.shift(); redoStack=[]; updateUndoBar(); }
+function undoAction(){ if(!undoStack.length) return; let a=undoStack.pop(); redoStack.push(a); a.undo(); updateUndoBar(); refresh(); toast("↩ Undo","info"); }
+function redoAction(){ if(!redoStack.length) return; let a=redoStack.pop(); undoStack.push(a); a.redo(); updateUndoBar(); refresh(); toast("↪ Redo","info"); }
+function updateUndoBar(){ let bar=document.getElementById("undoBar"); if(!bar) return; let hasUndo=undoStack.length>0,hasRedo=redoStack.length>0; if(hasUndo||hasRedo){ bar.classList.remove("hide"); } else { bar.classList.add("hide"); } let ub=document.getElementById("undoBtn"),rb=document.getElementById("redoBtn"); if(ub) ub.disabled=!hasUndo; if(rb) rb.disabled=!hasRedo; }
+
+// === PAGINATION ===
+let PAGE_SIZE=20;
+function paginate(arr,page){ let start=(page-1)*PAGE_SIZE; return{rows:arr.slice(start,start+PAGE_SIZE),total:arr.length,pages:Math.ceil(arr.length/PAGE_SIZE),page:page}; }
+function renderPagination(containerId,totalPages,currentPage,fnName){ let el=document.getElementById(containerId); if(!el||totalPages<=1){ if(el) el.innerHTML=""; return; } let html=`<div class="pagination">`; html+=`<button ${currentPage===1?"disabled":""} onclick="${fnName}(${currentPage-1})">◀</button>`; for(let i=1;i<=totalPages;i++){ if(totalPages>7&&i>2&&i<totalPages-1&&Math.abs(i-currentPage)>1){ if(html.slice(-3)!=="...") html+=`<button disabled>...</button>`; continue; } html+=`<button class="${i===currentPage?"active":""}" onclick="${fnName}(${i})">${i}</button>`; } html+=`<button ${currentPage===totalPages?"disabled":""} onclick="${fnName}(${currentPage+1})">▶</button>`; html+=`</div>`; el.innerHTML=html; }
+
+// === DATE QUICK SELECTORS ===
+function dateQuick(type,inputId,changeFn){ let now=new Date(),from="",to=""; let iso=(d)=>d.toISOString().slice(0,10); if(type==="today"){ from=to=iso(now); } else if(type==="yesterday"){ let y=new Date(now); y.setDate(y.getDate()-1); from=to=iso(y); } else if(type==="week"){ let w=new Date(now); w.setDate(w.getDate()-7); from=iso(w); to=iso(now); } else if(type==="month"){ let m=new Date(now); m.setMonth(m.getMonth()-1); from=iso(m); to=iso(now); } else if(type==="30days"){ let d=new Date(now); d.setDate(d.getDate()-30); from=iso(d); to=iso(now); } else if(type==="all"){ from=""; to=""; } let parts=inputId.split(","); if(parts.length===2){ document.getElementById(parts[0]).value=from; document.getElementById(parts[1]).value=to; } if(changeFn) setTimeout(changeFn,50); }
+
+// === DEBOUNCED SEARCH ===
+let debounceTimers={};
+function debounce(key,fn,delay){ clearTimeout(debounceTimers[key]); debounceTimers[key]=setTimeout(fn,delay||300); }
+
+// === NOTIFICATIONS SYSTEM ===
+let notifications=JSON.parse(localStorage.getItem("notifications")||"[]");
+function addNotif(type,title,msg){ notifications.unshift({id:Date.now(),type,title,msg,time:now(),read:false}); if(notifications.length>100) notifications=notifications.slice(0,100); localStorage.setItem("notifications",JSON.stringify(notifications)); updateNotifCount(); }
+function markNotifRead(id){ let n=notifications.find(x=>x.id===id); if(n) n.read=true; localStorage.setItem("notifications",JSON.stringify(notifications)); updateNotifCount(); showNotifications(); }
+function markAllRead(){ notifications.forEach(n=>n.read=true); localStorage.setItem("notifications",JSON.stringify(notifications)); updateNotifCount(); showNotifications(); }
+function updateNotifCount(){ let unread=notifications.filter(n=>!n.read).length; let el=document.getElementById("notifCount"); if(el){ if(unread>0){ el.textContent=unread; el.classList.remove("hide"); } else { el.classList.add("hide"); } } }
+function showNotifications(){ let el=document.getElementById("notifList"); if(!el) return; let html=`<div style="margin-bottom:8px"><button onclick="markAllRead()" style="font-size:12px;padding:4px 8px;margin:0">✓ Mark all read</button></div>`; if(!notifications.length){ html+=`<p style="color:#888">No notifications</p>`; } else { notifications.slice(0,50).forEach(n=>{ let icon=n.type==="edit_request"?"✏️":n.type==="edit_approved"?"✅":n.type==="edit_rejected"?"❌":n.type==="warning"?"⚠️":"ℹ️"; html+=`<div class="req-pending ${n.read?"":"req-approved"}" style="cursor:pointer" onclick="markNotifRead(${n.id})"><div>${icon} <b>${sanitize(n.title)}</b><br><span class="small">${sanitize(n.msg)} | ${n.time}</span></div></div>`; }); } el.innerHTML=html; }
+
+// === EDIT REQUEST SYSTEM ===
+let editRequests=JSON.parse(localStorage.getItem("editRequests")||"[]");
+function requestEdit(type,id,field,newVal,currVal){ editRequests.push({id:Date.now(),type,itemId:id,field,newVal,currVal,requester:cur?myLbl():"unknown",status:"pending",time:now()}); localStorage.setItem("editRequests",JSON.stringify(editRequests)); addNotif("edit_request","Edit Request","Edit request for "+type+" #"+id+": change "+field+" from "+currVal+" to "+newVal); toast("📨 Edit request sent for admin approval","info"); }
+function approveEdit(reqId){ let r=editRequests.find(x=>x.id===reqId); if(!r) return; r.status="approved"; localStorage.setItem("editRequests",JSON.stringify(editRequests)); if(r.type==="stock"){ let item=data.find(d=>d.id===r.itemId); if(item) item[r.field]=r.newVal; } else if(r.type==="repair"){ let item=reps.find(x=>x.id===r.itemId); if(item) item[r.field]=r.newVal; } save(); addNotif("edit_approved","Edit Approved","Your edit was approved: "+r.field+" → "+r.newVal); toast("✅ Edit approved!","success"); showNotifications(); refresh(); }
+function rejectEdit(reqId){ let r=editRequests.find(x=>x.id===reqId); if(!r) return; r.status="rejected"; localStorage.setItem("editRequests",JSON.stringify(editRequests)); addNotif("edit_rejected","Edit Rejected","Your edit request was rejected: "+r.field); toast("❌ Edit rejected","error"); showNotifications(); }
+
+// === INPUT VALIDATION ===
+function validateNum(el,min,max){ let v=parseFloat(el.value); if(isNaN(v)){ el.classList.add("input-error"); let err=el.parentNode.querySelector(".inline-error"); if(err) err.textContent="Number required"; return false; } if(min!==undefined&&v<min){ el.classList.add("input-error"); let err=el.parentNode.querySelector(".inline-error"); if(err) err.textContent="Min value: "+min; return false; } if(max!==undefined&&v>max){ el.classList.add("input-error"); let err=el.parentNode.querySelector(".inline-error"); if(err) err.textContent="Max value: "+max; return false; } el.classList.remove("input-error"); let err=el.parentNode.querySelector(".inline-error"); if(err) err.textContent=""; return true; }
+function addValidation(el,min,max){ el.addEventListener("input",()=>validateNum(el,min,max)); el.addEventListener("blur",()=>validateNum(el,min,max)); }
+
+// === MOBILE VIEW TOGGLE ===
+function toggleMobileViewSetting(){ let cb=document.getElementById("setMobileView"); if(cb) setView(cb.checked?"mobile":"desktop"); }
+// === ADD INPUT VALIDATION TO NUMERIC FIELDS ===
+function addInputValidation(){ document.querySelectorAll('input[type="number"]').forEach(el=>{ if(!el.hasAttribute("min")) return; let min=parseFloat(el.getAttribute("min")); let max=parseFloat(el.getAttribute("max")); if(!isNaN(min)||!isNaN(max)){ addValidation(el,isNaN(min)?undefined:min,isNaN(max)?undefined:max); } }); }
+// === INJECT DATE QUICK SELECTORS ===
+function injectDateQuick(){ document.querySelectorAll(".datebar").forEach(bar=>{ if(bar.querySelector(".datequick")) return; let fromEl=bar.querySelector('input[type="date"]'); let toEl=bar.querySelectorAll('input[type="date"]')[1]; if(!fromEl||!toEl) return; let fnName=""; if(fromEl.id==="rhFrom") fnName="showRepHist"; else if(fromEl.id==="hFrom") fnName="showHistory"; else if(fromEl.id==="dhFrom") fnName="showDeptHist"; else if(fromEl.id==="sgFiltFrom") fnName="showSugHist"; if(!fnName) return; let qd=document.createElement("div"); qd.className="datequick"; qd.style.cssText="width:100%;margin-top:6px"; qd.innerHTML=`<button onclick="dateQuick('today','${fromEl.id},${toEl.id}',${fnName})">Today</button><button onclick="dateQuick('week','${fromEl.id},${toEl.id}',${fnName})">This Week</button><button onclick="dateQuick('month','${fromEl.id},${toEl.id}',${fnName})">This Month</button><button onclick="dateQuick('30days','${fromEl.id},${toEl.id}',${fnName})">30 Days</button><button onclick="dateQuick('all','${fromEl.id},${toEl.id}',${fnName})">All</button>`; bar.appendChild(qd); }); }
+
+// View Mode (Desktop/Mobile)
+function setView(mode){ localStorage.setItem("viewMode",mode); applyView(mode); document.querySelectorAll('input[name="viewMode"]').forEach(r=>{ r.checked=(r.value===mode); }); }
+function applyView(mode){ if(mode==="mobile"){ document.body.classList.add("mobile-view"); } else { document.body.classList.remove("mobile-view"); } let vt=document.getElementById("viewToggle"); if(vt) vt.textContent=mode==="mobile"?"🖥️ Desktop":"📱 Mobile"; }
+function toggleViewMode(){ let cur2=localStorage.getItem("viewMode")||"desktop"; let next=cur2==="desktop"?"mobile":"desktop"; setView(next); }
+// View Mode applied in main load handler
+
+// Google Login Request System - DISABLED
+let googleReqs=[];
+let allowedEmails=[];
+function requestGoogleLogin(){ toast("Email login disabled!","error"); }
+function populateReqDept(){}
+function showGoogleReqs(){}
+function approveGoogleReq(){}
+function rejectGoogleReq(){}
+function showAllowedEmails(){}
+function populateAdminReqDept(){}
+
+// Keyboard Navigation
+document.addEventListener("keydown",function(e){
+  if(adminSettings&&adminSettings.shortcuts===false) return;
+  if(e.ctrlKey&&e.key==="z"){ e.preventDefault(); undoAction(); return; }
+  if(e.ctrlKey&&e.key==="y"){ e.preventDefault(); redoAction(); return; }
+  if(e.key==="Enter"){
+    let tag=document.activeElement.tagName;
+    if(tag==="INPUT"||tag==="SELECT"){
+      let form=document.activeElement.closest("form");
+      if(form){ let inputs=[...form.querySelectorAll("input,select,textarea,button")]; let idx=inputs.indexOf(document.activeElement); if(idx<inputs.length-1){ e.preventDefault(); inputs[idx+1].focus(); } }
+      else { let all=[...document.querySelectorAll("input:not([type=hidden]),select,textarea")].filter(el=>{ let r=el.getBoundingClientRect(); return r.width>0&&r.height>0&&!el.readOnly&&!el.disabled; }); let idx=all.indexOf(document.activeElement); if(idx>=0&&idx<all.length-1){ e.preventDefault(); all[idx+1].focus(); } }
+    }
+  }
+  if(e.key==="ArrowDown"&&document.activeElement.tagName==="SELECT"){ e.preventDefault(); let sel=document.activeElement; if(sel.selectedIndex<sel.options.length-1) sel.selectedIndex++; sel.dispatchEvent(new Event("change")); }
+  if(e.key==="ArrowUp"&&document.activeElement.tagName==="SELECT"){ e.preventDefault(); let sel=document.activeElement; if(sel.selectedIndex>0) sel.selectedIndex--; sel.dispatchEvent(new Event("change")); }
+});
+
+function changeAdminPass(){ let a=users.find(u=>u.role==="admin"); let o=prompt("જૂનો Password:"); if(o===null) return; if(o.trim()!==a.pass){ toast("❌ જૂનો ખોટો!","error"); return; } let np=prompt("નવો Password:"); if(np===null) return; np=np.trim(); if(!np) return; a.pass=np; save(); toast("✅ બદલાયો!","success"); }
+function addLabel(){ let l=document.getElementById("nLabel").value.trim(); if(!l) return; if(labels.includes(l)){ toast("પહેલેથી!","warning"); return; } labels.push(l); save(); document.getElementById("nLabel").value=""; showLabels(); }
 function delLabel(l){ labels=labels.filter(x=>x!==l); save(); showLabels(); }
 function showLabels(){ if(cur.role!=="admin") return; document.getElementById("labelList").innerHTML=labels.map(l=>`<span class="lblbadge" style="font-size:13px;padding:5px 10px">${l} <a href="#" onclick="delLabel('${l}');return false;" style="color:#fff">✖</a></span>`).join(" ")||"<span class='small'>કોઈ નથી</span>"; }
-function addUser(){ let dept=document.getElementById("nDept").value.trim(),office=document.getElementById("nOffice").value.trim(),id=document.getElementById("nId").value.trim(),pass=document.getElementById("nPass").value.trim(),pr=document.getElementById("nParts").value.trim(); if(!dept||!id||!pass){ alert("ભરો!"); return; } if(dept.toLowerCase()==="stock"){ alert("Stock પહેલેથી!"); return; } if(users.find(x=>x.id===id)){ alert("ID પહેલેથી!"); return; } let parts=pr?pr.split(",").map(s=>s.trim()).filter(Boolean):["Main"]; if(!parts.length) parts=["Main"]; users.push({dept,office,id,pass,role:"dept",parts}); save(); ["nDept","nOffice","nId","nPass","nParts"].forEach(x=>document.getElementById(x).value=""); afterUserEdit(); }
-function setStock(i){ let s=users[i]; if(s.id===""){ let ni=prompt("Stock ID:"); if(ni===null) return; ni=ni.trim(); if(!ni) return; if(users.find((x,k)=>k!==i&&x.id===ni)){ alert("ID પહેલેથી!"); return; } let np=prompt("Stock Password:"); if(np===null) return; np=np.trim(); if(!np) return; s.id=ni; s.pass=np; save(); showUsers(); alert("✅ સેટ!"); } else { let np=prompt("નવો Password:",s.pass); if(np===null) return; np=np.trim(); if(!np) return; s.pass=np; save(); showUsers(); } }
+function addManager(){ let n=document.getElementById("nManager").value.trim(); if(!n) return; if(managers.includes(n)){ toast("પહેલેથી છે!","warning"); return; } managers.push(n); save(); document.getElementById("nManager").value=""; showManagers(); }
+function delManager(n){ managers=managers.filter(x=>x!==n); save(); showManagers(); }
+function editManager(i){ let nv=prompt("નવું નામ:",managers[i]); if(nv===null) return; nv=nv.trim(); if(!nv) return; let old=managers[i]; managers[i]=nv; reps.forEach(r=>{ if(r.manager===old) r.manager=nv; }); save(); showManagers(); }
+function showManagers(){ if(cur.role!=="admin") return; document.getElementById("managerList").innerHTML=managers.map((m,i)=>`<span class="mgr" style="font-size:13px;padding:5px 10px;margin:3px;display:inline-block">${m} <a href="#" onclick="editManager(${i});return false;" style="color:#fff">✏</a> <a href="#" onclick="delManager('${m}');return false;" style="color:#fff">✖</a></span>`).join(" ")||"<span class='small'>કોઈ Manager નથી</span>"; }
+function addDEAdmin(){ let n=document.getElementById("nDEAdmin").value.trim(); if(!n) return; if(dataentrys.includes(n)){ toast("પહેલેથી છે!","warning"); return; } dataentrys.push(n); save(); document.getElementById("nDEAdmin").value=""; showDEAdminList(); fillDataEntryDropdown(); showMyDEList(); }
+function delDEAdmin(n){ dataentrys=dataentrys.filter(x=>x!==n); save(); showDEAdminList(); fillDataEntryDropdown(); showMyDEList(); }
+function editDEAdmin(i){ let nv=prompt("નવું નામ:",dataentrys[i]); if(nv===null) return; nv=nv.trim(); if(!nv) return; let old=dataentrys[i]; dataentrys[i]=nv; data.forEach(d=>{ if(d.dataentry===old) d.dataentry=nv; }); hist.forEach(h=>{ if(h.dataentry===old) h.dataentry=nv; }); save(); showDEAdminList(); fillDataEntryDropdown(); showMyDEList(); }
+function showDEAdminList(){ if(cur.role!=="admin") return; document.getElementById("deAdminList").innerHTML=dataentrys.map((d,i)=>`<span class="mgr" style="font-size:13px;padding:5px 10px;margin:3px;display:inline-block;background:#8e44ad">${d} <a href="#" onclick="editDEAdmin(${i});return false;" style="color:#fff">✏</a> <a href="#" onclick="delDEAdmin('${d}');return false;" style="color:#fff">✖</a></span>`).join(" ")||"<span class='small'>કોઈ Data Entry નથી</span>"; }
+function fillManagerDropdown(){ let o=`<option value="">— Manager પસંદ કરો —</option>`; managers.forEach(m=>{ o+=`<option value="${m}">${m}</option>`; }); o+=`<option value="__add_new__">➕ નવો Manager ઉમેરો</option>`; let el=document.getElementById("rpManager"); if(el) el.innerHTML=o; }
+function onManagerChange(){ let el=document.getElementById("rpManager"); if(!el) return; if(el.value==="__add_new__"){ let n=prompt("Manager નું નામ લખો:"); if(n===null||!n.trim()){ el.value=""; return; } n=n.trim(); if(!managers.includes(n)){ managers.push(n); save(); } el.value=n; fillManagerDropdown(); } }
+function toggleMaster(){ let c=document.getElementById("masterContent"); let t=document.getElementById("masterToggle"); if(c.style.display==="none"){ c.style.display="block"; t.textContent="▲"; } else { c.style.display="none"; t.textContent="▼"; } }
+function addMyManager(){ let n=document.getElementById("nMgr").value.trim(); if(!n) return; if(managers.includes(n)){ toast("પહેલેથી છે!","warning"); return; } managers.push(n); save(); document.getElementById("nMgr").value=""; showMyMgrList(); fillManagerDropdown(); }
+function editMyManager(i){ let nv=prompt("નવું નામ:",managers[i]); if(nv===null) return; nv=nv.trim(); if(!nv) return; let old=managers[i]; managers[i]=nv; reps.forEach(r=>{ if(r.manager===old) r.manager=nv; }); save(); showMyMgrList(); fillManagerDropdown(); showManagers(); }
+function delMyManager(n){ if(!confirm("Delete "+n+"?")) return; managers=managers.filter(x=>x!==n); save(); showMyMgrList(); fillManagerDropdown(); showManagers(); }
+function showMyMgrList(){ let el=document.getElementById("myMgrList"); if(!el) return; el.innerHTML=managers.map((m,i)=>`<span class="mgr" style="font-size:13px;padding:5px 10px;margin:3px;display:inline-block">${m} <a href="#" onclick="editMyManager(${i});return false;" style="color:#fff">✏</a> <a href="#" onclick="delMyManager('${m.replace(/'/g,"\\'")}');return false;" style="color:#fff">✖</a></span>`).join(" ")||"<span class='small'>કોઈ Manager નથી</span>"; }
+function addMyDataEntry(){ let n=document.getElementById("nDE").value.trim(); if(!n) return; if(dataentrys.includes(n)){ toast("પહેલેથી છે!","warning"); return; } dataentrys.push(n); save(); document.getElementById("nDE").value=""; showMyDEList(); fillDataEntryDropdown(); }
+function editMyDataEntry(i){ let nv=prompt("નવું નામ:",dataentrys[i]); if(nv===null) return; nv=nv.trim(); if(!nv) return; let old=dataentrys[i]; dataentrys[i]=nv; reps.forEach(r=>{ if(r.dataentry===old) r.dataentry=nv; }); save(); showMyDEList(); fillDataEntryDropdown(); showDataEntryList(); }
+function delMyDataEntry(n){ if(!confirm("Delete "+n+"?")) return; dataentrys=dataentrys.filter(x=>x!==n); save(); showMyDEList(); fillDataEntryDropdown(); showDataEntryList(); }
+function showMyDEList(){ let el=document.getElementById("myDEList"); if(!el) return; el.innerHTML=dataentrys.map((d,i)=>`<span class="mgr" style="font-size:13px;padding:5px 10px;margin:3px;display:inline-block;background:#8e44ad">${d} <a href="#" onclick="editMyDataEntry(${i});return false;" style="color:#fff">✏</a> <a href="#" onclick="delMyDataEntry('${d.replace(/'/g,"\\'")}');return false;" style="color:#fff">✖</a></span>`).join(" ")||"<span class='small'>કોઈ Data Entry નથી</span>"; }
+function fillDataEntryDropdown(){ let o=`<option value="">— Data Entry પસંદ કરો —</option>`; dataentrys.forEach(d=>{ o+=`<option value="${d}">${d}</option>`; }); o+=`<option value="__add_new__">➕ નવો Data Entry ઉમેરો</option>`; let el=document.getElementById("dDent"); if(el) el.innerHTML=o; }
+function onDataEntryChange(){ let el=document.getElementById("dDent"); if(!el) return; if(el.value==="__add_new__"){ let n=prompt("Data Entry નું નામ લખો:"); if(n===null||!n.trim()){ el.value=""; return; } n=n.trim(); if(!dataentrys.includes(n)){ dataentrys.push(n); save(); } el.value=n; fillDataEntryDropdown(); } }
+function fillMgrDropdownStock(){ let o=`<option value="">— Manager પસંદ કરો —</option>`; managers.forEach(m=>{ o+=`<option value="${m}">${m}</option>`; }); o+=`<option value="__add_new__">➕ નવો Manager ઉમેરો</option>`; let el=document.getElementById("dMgr"); if(el) el.innerHTML=o; }
+function onMgrChangeStock(){ let el=document.getElementById("dMgr"); if(!el) return; if(el.value==="__add_new__"){ let n=prompt("Manager નું નામ લખો:"); if(n===null||!n.trim()){ el.value=""; return; } n=n.trim(); if(!managers.includes(n)){ managers.push(n); save(); } el.value=n; fillMgrDropdownStock(); } }
+function addUser(){ let dept=document.getElementById("nDept").value.trim(),office=document.getElementById("nOffice").value.trim(),id=document.getElementById("nId").value.trim(),pass=document.getElementById("nPass").value.trim(),pr=document.getElementById("nParts").value.trim(); if(!dept||!id||!pass){ toast("ભરો!","error"); return; } if(dept.toLowerCase()==="stock"){ toast("Stock પહેલેથી!","warning"); return; } if(users.find(x=>x.id===id)){ toast("ID પહેલેથી!","warning"); return; } let parts=pr?pr.split(",").map(s=>s.trim()).filter(Boolean):["Main"]; if(!parts.length) parts=["Main"]; users.push({dept,office,id,pass,role:"dept",parts}); save(); ["nDept","nOffice","nId","nPass","nParts"].forEach(x=>document.getElementById(x).value=""); afterUserEdit(); }
+function setStock(i){ let s=users[i]; if(s.id===""){ let ni=prompt("Stock ID:"); if(ni===null) return; ni=ni.trim(); if(!ni) return; if(users.find((x,k)=>k!==i&&x.id===ni)){ toast("ID પહેલેથી!","warning"); return; } let np=prompt("Stock Password:"); if(np===null) return; np=np.trim(); if(!np) return; s.id=ni; s.pass=np; save(); showUsers(); toast("✅ સેટ!","success"); } else { let np=prompt("નવો Password:",s.pass); if(np===null) return; np=np.trim(); if(!np) return; s.pass=np; save(); showUsers(); } }
 function editPass(i){ let np=prompt("નવો Password:",users[i].pass); if(np===null) return; np=np.trim(); if(!np) return; users[i].pass=np; save(); showUsers(); }
-function editId(i){ let ni=prompt("નવો ID:",users[i].id); if(ni===null) return; ni=ni.trim(); if(!ni) return; if(users.find((x,k)=>k!==i&&x.id===ni)){ alert("ID પહેલેથી!"); return; } users[i].id=ni; save(); showUsers(); }
+function editId(i){ let ni=prompt("નવો ID:",users[i].id); if(ni===null) return; ni=ni.trim(); if(!ni) return; if(users.find((x,k)=>k!==i&&x.id===ni)){ toast("ID પહેલેથી!","warning"); return; } users[i].id=ni; save(); showUsers(); }
 function renameRefs(oL,nL){ data.forEach(d=>{ if(d.from===oL)d.from=nL; if(d.to===oL)d.to=nL; }); hist.forEach(h=>{ if(h.from===oL)h.from=nL; if(h.to===oL)h.to=nL; }); reps.forEach(r=>{ if(r.from===oL)r.from=nL; if(r.to===oL)r.to=nL; }); sugs.forEach(s=>{ if(s.tos) s.tos=s.tos.map(t=>t===oL?nL:t); }); if(dstatus[oL]){ dstatus[nL]=dstatus[oL]; delete dstatus[oL]; } }
-function editDept(i){ let nd=prompt("નવું Department:",users[i].dept); if(nd===null) return; nd=nd.trim(); if(!nd) return; if(nd.toLowerCase()==="stock"){ alert("Stock નામ ન રખાય!"); return; } let oL=unitLabel(users[i].dept,users[i].office); users[i].dept=nd; renameRefs(oL,unitLabel(nd,users[i].office)); save(); afterUserEdit(); }
+function editDept(i){ let nd=prompt("નવું Department:",users[i].dept); if(nd===null) return; nd=nd.trim(); if(!nd) return; if(nd.toLowerCase()==="stock"){ toast("Stock નામ ન રખાય!","error"); return; } let oL=unitLabel(users[i].dept,users[i].office); users[i].dept=nd; renameRefs(oL,unitLabel(nd,users[i].office)); save(); afterUserEdit(); }
 function editOffice(i){ let no=prompt("નવું Office:",users[i].office||""); if(no===null) return; no=no.trim(); let oL=unitLabel(users[i].dept,users[i].office); users[i].office=no; renameRefs(oL,unitLabel(users[i].dept,no)); save(); afterUserEdit(); }
 function editParts(i){ let c=getParts(users[i]).join(", "); let np=prompt("Process:",c); if(np===null) return; let parts=np.trim()?np.split(",").map(s=>s.trim()).filter(Boolean):["Main"]; if(!parts.length) parts=["Main"]; users[i].parts=parts; save(); afterUserEdit(); }
 function delUser(i){ if(users[i].role!=="dept") return; if(!confirm("Delete?")) return; users.splice(i,1); save(); afterUserEdit(); }
-function afterUserEdit(){ showUsers(); fillDeptDropdown(); fillFilterDept(); fillHistDept(); fillRepDeptFilter(); fillRepairDropdown(); fillSugToChk(); fillSugFiltDept(); fillDashStatDept(); refresh(); }
+function afterUserEdit(){ showUsers(); showManagers(); showDEAdminList(); showMyMgrList(); showMyDEList(); fillDeptDropdown(); fillFilterDept(); fillHistDept(); fillRepDeptFilter(); fillRepairDropdown(); fillManagerDropdown(); fillMgrDropdownStock(); fillDataEntryDropdown(); fillSugToChk(); fillSugFiltDept(); fillDashStatDept(); refresh(); }
 function showUsers(){ if(cur.role!=="admin") return; document.getElementById("stockUser").innerHTML=users.map((u,i)=>{ if(u.role!=="stock") return ""; let idS=u.id===""?`<span class="lock">— set નથી —</span>`:u.id; let pS=u.pass===""?`<span class="lock">—</span>`:u.pass; let b=u.id===""?`<button class="set" onclick="setStock(${i})">⚙ ID+Pass</button>`:`<button class="edit" onclick="setStock(${i})">✏ Password</button>`; return `<tr><td>${u.dept}</td><td>${idS}</td><td>${pS}</td><td>${b}</td></tr>`; }).join(""); document.getElementById("userList").innerHTML=users.map((u,i)=>{ if(u.role!=="dept") return ""; let pr=getParts(u).map(p=>`<span class="partbadge">${p}</span>`).join(""); let off=u.office?`<span class="offbadge">${u.office}</span>`:"—"; return `<tr><td>${u.dept}</td><td>${off}</td><td>${pr}</td><td>${u.id}</td><td>${u.pass}</td><td><button class="edit" onclick="editDept(${i})">✏નામ</button><button class="edit" onclick="editOffice(${i})">✏Off</button><button class="edit" onclick="editParts(${i})">✏Proc</button><button class="edit" onclick="editId(${i})">✏ID</button><button class="edit" onclick="editPass(${i})">✏Pass</button><button class="del" onclick="delUser(${i})">Del</button></td></tr>`; }).join(""); }
 function destOptions(h){ let o=""; if(h) o+=`<option value="${STOCK_HOLD}|||Main">${STOCK_HOLD}</option>`; users.filter(u=>u.role==="dept").forEach(u=>{ let lbl=unitLabel(u.dept,u.office); let parts=getParts(u); if(parts.length===1) o+=`<option value="${lbl}|||${parts[0]}">${lbl}</option>`; else parts.forEach(p=>o+=`<option value="${lbl}|||${p}">${lbl} — ${p}</option>`); }); return o; }
 function fillDeptDropdown(){ document.getElementById("to").innerHTML=destOptions(false); document.getElementById("sfTo").innerHTML=destOptions(false); }
 function fillRepairDropdown(){ let o="",me=cur?myLbl():""; if(cur&&cur.role==="dept") o+=`<option value="${STOCK_DEPT}">🏢 Stock</option>`; users.filter(u=>u.role==="dept").forEach(u=>{ let lbl=unitLabel(u.dept,u.office); if(lbl!==me) o+=`<option value="${lbl}">${lbl}</option>`; }); if(document.getElementById("rpTo")) document.getElementById("rpTo").innerHTML=o; }
-function fillSugToChk(){ let html=users.filter(u=>u.role==="dept").map(u=>{ let lbl=unitLabel(u.dept,u.office); return `<label><input type="checkbox" class="sgcb" value="${lbl}"> ${lbl}</label>`; }).join(""); if(document.getElementById("sgToChk")) document.getElementById("sgToChk").innerHTML=html; }
+function fillSugToChk(){}
 function deptOptsList(first){ let o=first||""; users.filter(u=>u.role==="dept").forEach(u=>o+=`<option value="${unitLabel(u.dept,u.office)}">${unitLabel(u.dept,u.office)}</option>`); return o; }
 function fillSugFiltDept(){ if(document.getElementById("sgFiltDept")) document.getElementById("sgFiltDept").innerHTML=deptOptsList(`<option value="">— બધા —</option>`); }
 function fillFilterDept(){ document.getElementById("fDept").innerHTML=deptOptsList(`<option value="">— બધા —</option>`); }
 function fillHistDept(){ if(document.getElementById("hDept")) document.getElementById("hDept").innerHTML=deptOptsList(`<option value="">— બધા —</option>`); }
 function fillRepDeptFilter(){ if(document.getElementById("rhDept")) document.getElementById("rhDept").innerHTML=`<option value="">— બધા —</option><option value="${STOCK_DEPT}">Stock</option>`+deptOptsList(""); }
 function fillDashStatDept(){ if(document.getElementById("dashStatDept")) document.getElementById("dashStatDept").innerHTML=deptOptsList(`<option value="">— બધા Office —</option>`); }
-function clearFilter(){ ["fSearch","fTag","fStatus"].forEach(x=>document.getElementById(x).value=""); if(document.getElementById("fDept")) document.getElementById("fDept").value=""; refresh(); }
+function clearFilter(){ ["fSearch","fTag","fStatus"].forEach(x=>document.getElementById(x).value=""); if(document.getElementById("fDept")) document.getElementById("fDept").value=""; closeKapanLog(); refresh(); }
+function onKapanEnter(){ let s=(document.getElementById("fSearch").value||"").trim(); if(s.length>=2){ showKapanLog(s); } else { closeKapanLog(); } refresh(); }
+function closeKapanLog(){ document.getElementById("kapanLogBox").classList.add("hide"); document.getElementById("kapanLogBody").innerHTML=""; }
+function showKapanLog(kapan){
+  let kw=kapan.toLowerCase();
+  let logs=[];
+  hist.forEach(h=>{ if((h.item||"").toLowerCase().includes(kw)){
+    let action=h.action||"";
+    let from=h.from||"—",to=h.to||"—";
+    let mgr=h.manager||"—",de=h.dataentry||"—",recvBy="—",status=action;
+    if(action==="Receive"){ recvBy=mgr!=="—"?mgr:"—"; status="Received"; }
+    if(action==="Forward"){ status="Forwarded"; }
+    if(action==="Send"){ status="Issued"; }
+    if(action==="Split-Send"){ status="Split Sent"; }
+    if(action==="Split-Hold"){ status="Split Hold"; }
+    logs.push({action,from,to,mgr,de,recvBy,status,dt:h.sentAt||h.recvAt||"—",ms:h.sentMs||h.recvTime||0});
+  }});
+  reps.forEach(r=>{ if((r.kapan||"").toLowerCase().includes(kw)){
+    let action="Repairing: "+r.status;
+    let from=r.from||"—",to=r.to||"—";
+    let mgr=r.manager||"—",de="—",recvBy=r.recvManager?r.recvManager+" / "+(r.recvDataEntry||"—"):"—";
+    let dt=r.sentAt||"—";
+    if(r.status==="Received"){ dt=r.recvAt||dt; }
+    if(r.status==="OK-Back"){ dt=r.okAt||dt; }
+    logs.push({action,from,to,mgr,de,recvBy,status:r.status,dt,ms:r.sentMs||0});
+  }});
+  logs.sort((a,b)=>(a.ms||0)-(b.ms||0));
+  let body=logs.map((l,i)=>{
+    let mgrSpan=l.mgr!=="—"?"<span class='mgr'>"+l.mgr+"</span>":"—";
+    let deSpan=l.de!=="—"?"<span class='mgr' style='background:#8e44ad'>"+l.de+"</span>":"—";
+    let recvSpan=l.recvBy!=="—"?"<span class='mgr'>"+l.recvBy+"</span>":"—";
+    let stBadge=l.status.includes("Received")?"<span class='okfin'>"+l.status+"</span>":l.status.includes("OK")?"<span class='okfin'>"+l.status+"</span>":l.status.includes("Sent")||l.status.includes("Forward")||l.status.includes("Issue")?"<span class='chalu'>"+l.status+"</span>":"<span class='statbadge'>"+l.status+"</span>";
+    return `<tr><td>${i+1}</td><td>${l.action}</td><td>${l.from}</td><td>${l.to}</td><td>${mgrSpan}</td><td>${deSpan}</td><td>${recvSpan}</td><td>${stBadge}</td><td class="small">${l.dt}</td></tr>`;
+  }).join("");
+  document.getElementById("kapanLogTitle").innerText="📜 "+kapan+" — Full Transaction Log ("+logs.length+" entries)";
+  document.getElementById("kapanLogBody").innerHTML=body||`<tr><td colspan="9">કોઈ transaction નથી</td></tr>`;
+  document.getElementById("kapanLogBox").classList.remove("hide");
+  document.getElementById("kapanLogBox").scrollIntoView({behavior:"smooth",block:"start"});
+}
 function clearHist(){ ["hSearch","hFrom","hTo"].forEach(x=>document.getElementById(x).value=""); document.getElementById("hDept").value=""; showHistory(); }
 function clearDeptHist(){ ["dhSearch","dhFrom","dhTo"].forEach(x=>document.getElementById(x).value=""); showDeptHist(); }
 function clearRepHist(){ ["rhSearch","rhFrom","rhTo"].forEach(x=>document.getElementById(x).value=""); document.getElementById("rhDept").value=""; showRepHist(); }
 function clearSugHist(){ ["sgFiltFrom","sgFiltTo"].forEach(x=>document.getElementById(x).value=""); if(document.getElementById("sgFiltDept")) document.getElementById("sgFiltDept").value=""; showSugHist(); }
 
 function nameExists(item){ let b=baseName(item); return data.some(d=>baseName(d.item)===b)||hist.some(h=>baseName(h.item)===b); }
-function addItemFree(){ let item=document.getElementById("item").value.trim(),carat=parseFloat(document.getElementById("carat").value)||0,nang=parseInt(document.getElementById("nang").value)||0,vajan=parseFloat(document.getElementById("vajan").value)||0,pis=parseInt(document.getElementById("pis").value)||0,note=document.getElementById("note").value.trim(),tag=document.getElementById("tag").value,toVal=document.getElementById("to").value; if(!item||(carat===0&&nang===0&&pis===0)){ alert("Item અને Carat/Nang/Pis ભરો!"); return; } if(nameExists(item)){ alert("⚠️ આ Kapan નંબર પહેલેથી છે!"); return; } let [to,toPart]=toVal.split("|||"); let from=cur.role==="admin"?"Admin":STOCK_DEPT; let id=uid(); let rec={id,item,carat,nang,vajan,pis,note,tag,from,fromPart:"Main",to,toPart,label:"",manager:"",dataentry:"",fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0}; data.push(rec); hist.push({...rec,action:"Send"}); save(); ["item","note"].forEach(x=>document.getElementById(x).value=""); ["carat","nang","vajan","pis"].forEach(x=>document.getElementById(x).value="0"); refresh(); }
+function addItemFree(){ let item=document.getElementById("item").value.trim(),carat=parseFloat(document.getElementById("carat").value)||0,nang=parseInt(document.getElementById("nang").value)||0,vajan=parseFloat(document.getElementById("vajan").value)||0,pis=parseInt(document.getElementById("pis").value)||0,note=document.getElementById("note").value.trim(),tag=document.getElementById("tag").value,toVal=document.getElementById("to").value; if(!item||(carat===0&&nang===0&&pis===0)){ toast("Item અને Carat/Nang/Pis ભરો!","error"); return; } if(carat<0||nang<0||vajan<0||pis<0){ toast("Negative values not allowed!","error"); return; } if(nameExists(item)){ toast("⚠️ આ Kapan નંબર પહેલેથી છે!","error"); return; } let [to,toPart]=toVal.split("|||"); let from=cur.role==="admin"?"Admin":STOCK_DEPT; let id=uid(); let rec={id,item,carat,nang,vajan,pis,note,tag,from,fromPart:"Main",to,toPart,label:"",manager:"",dataentry:"",fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0}; data.push(rec); hist.push({...rec,action:"Send"}); pushUndo({undo:()=>{ data=data.filter(d=>d.id!==id); hist=hist.filter(h=>h.id!==id); save(); refresh(); },redo:()=>{ data.push(rec); hist.push({...rec,action:"Send"}); save(); refresh(); }}); save(); ["item","note"].forEach(x=>document.getElementById(x).value=""); ["carat","nang","vajan","pis"].forEach(x=>document.getElementById(x).value="0"); refresh(); toast("📤 મોકલાઈ ગયું!","success"); }
 
 function stockHeld(){ return data.map((d,idx)=>({...d,idx})).filter(d=>d.status==="Received"&&(d.to===STOCK_DEPT||d.to===STOCK_HOLD)); }
 function fillSFPick(){ let s=(document.getElementById("sfSearch").value||"").toLowerCase(); let list=stockHeld().filter(d=>!s||d.item.toLowerCase().includes(s)); document.getElementById("sfPick").innerHTML=list.map(d=>`<option value="${d.idx}">${d.item} — ${d.carat}ct</option>`).join("")||`<option value="">— કોઈ નથી —</option>`; fillSF(); }
 function fillSF(){ let i=document.getElementById("sfPick").value; if(i===""){ ["sfCarat","sfNang","sfVajan","sfPis"].forEach(x=>document.getElementById(x).value=""); return; } let d=data[i]; document.getElementById("sfCarat").value=d.carat; document.getElementById("sfNang").value=d.nang; document.getElementById("sfVajan").value=d.vajan||0; document.getElementById("sfPis").value=d.pis; }
-function stockForward(){ let i=document.getElementById("sfPick").value; if(i===""){ alert("કાપણ પસંદ કરો!"); return; } let src=data[i]; let tag=document.getElementById("sfTag").value,note=document.getElementById("sfNote").value.trim(); let [to,toPart]=document.getElementById("sfTo").value.split("|||"); let id=uid(); let rec={id,item:src.item,carat:src.carat,nang:src.nang,vajan:src.vajan||0,pis:src.pis,note,tag,from:STOCK_DEPT,fromPart:"Main",to,toPart,label:src.label||"",manager:"",dataentry:"",fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0}; data.push(rec); hist.push({...rec,action:"Send"}); data.splice(i,1); document.getElementById("sfNote").value=""; save(); refresh(); alert("✅ આગળ મોકલાઈ ગયું!"); }
+function stockForward(){ let i=document.getElementById("sfPick").value; if(i===""){ toast("કાપણ પસંદ કરો!","error"); return; } let src=data[i]; let tag=document.getElementById("sfTag").value,note=document.getElementById("sfNote").value.trim(); let [to,toPart]=document.getElementById("sfTo").value.split("|||"); let id=uid(); let rec={id,item:src.item,carat:src.carat,nang:src.nang,vajan:src.vajan||0,pis:src.pis,note,tag,from:STOCK_DEPT,fromPart:"Main",to,toPart,label:src.label||"",manager:"",dataentry:"",fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0}; data.push(rec); hist.push({...rec,action:"Send"}); data.splice(i,1); document.getElementById("sfNote").value=""; save(); refresh(); toast("✅ આગળ મોકલાઈ ગયું!","success"); }
 
 let partRows=[];
 function fillSplitPick(){ let s=(document.getElementById("spSearch").value||"").toLowerCase(); let list=data.map((d,idx)=>({...d,idx})).filter(d=>d.status==="Received"&&(d.to===STOCK_DEPT||d.to===STOCK_HOLD)&&(!s||d.item.toLowerCase().includes(s))); document.getElementById("splitPick").innerHTML=list.map(d=>`<option value="${d.idx}">${d.item} — ${d.carat}ct</option>`).join("")||`<option value="">— કોઈ નથી —</option>`; fillSplit(); }
@@ -370,24 +827,24 @@ function addPartRow(){ partRows.push("p"+Math.random().toString(36).slice(2,7));
 function delPartRow(rid){ if(partRows.length<=1) return; partRows=partRows.filter(x=>x!==rid); renderPartRows(); }
 function renderPartRows(){ let opts=destOptions(true); let lo=`<option value="">— Label —</option>`+labels.map(l=>`<option value="${l}">${l}</option>`).join(""); document.getElementById("partsBody").innerHTML=partRows.map(rid=>`<tr class="partrow"><td><input id="${rid}_c" type="number" step="0.01" value="0" oninput="updateSplitSum()" style="width:70px"></td><td><input id="${rid}_n" type="number" value="0" oninput="updateSplitSum()" style="width:55px"></td><td><input id="${rid}_v" type="number" step="0.01" value="0" style="width:60px"></td><td><input id="${rid}_p" type="number" value="0" oninput="updateSplitSum()" style="width:55px"></td><td><select id="${rid}_tag"><option value="urgent">🔴</option><option value="agal">🟡</option><option value="regular" selected>🟢</option></select></td><td><select id="${rid}_lbl">${lo}</select></td><td><input id="${rid}_note" placeholder="વિગત" style="width:100px"></td><td><select id="${rid}_to">${opts}</select></td><td><button class="del" onclick="delPartRow('${rid}')">✖</button></td></tr>`).join(""); updateSplitSum(); }
 function updateSplitSum(){ let tc=parseFloat(document.getElementById("spCarat").value)||0,tn=parseInt(document.getElementById("spNang").value)||0,tp=parseInt(document.getElementById("spPis").value)||0; let sc=0,sn=0,sp=0; partRows.forEach(rid=>{ sc+=parseFloat(document.getElementById(rid+"_c")?.value)||0; sn+=parseInt(document.getElementById(rid+"_n")?.value)||0; sp+=parseInt(document.getElementById(rid+"_p")?.value)||0; }); let ok=Math.abs(sc-tc)<0.001; document.getElementById("splitSum").innerHTML=`કુલ: ${tc.toFixed(2)}ct/${tn}n/${tp}p → ભાગ: <b style="color:${ok?'#27ae60':'#e74c3c'}">${sc.toFixed(2)}ct</b>/${sn}n/${sp}p ${ok?'✅':'⚠️'}`; }
-function doSplit(){ let i=document.getElementById("splitPick").value; if(i===""){ alert("કાપણ પસંદ કરો!"); return; } let src=data[i]; let tc=Number(src.carat); let parts=[]; let sc=0; for(let rid of partRows){ let c=parseFloat(document.getElementById(rid+"_c").value)||0,n=parseInt(document.getElementById(rid+"_n").value)||0,v=parseFloat(document.getElementById(rid+"_v").value)||0,p=parseInt(document.getElementById(rid+"_p").value)||0; let tag=document.getElementById(rid+"_tag").value,lbl=document.getElementById(rid+"_lbl").value,note=document.getElementById(rid+"_note").value.trim(),tv=document.getElementById(rid+"_to").value; if(c===0&&n===0&&p===0) continue; let [to,toPart]=tv.split("|||"); parts.push({c,n,v,p,tag,lbl,note,to,toPart}); sc+=c; } if(parts.length<2){ alert("ઓછામાં ઓછા 2 ભાગ!"); return; } if(Math.abs(sc-tc)>0.001){ if(!confirm("Carat મેળ નથી. આગળ?")) return; } parts.forEach((pt,k)=>{ let id=uid(); let nm=src.item+" (ભાગ "+(k+1)+")"+(pt.lbl?" {"+pt.lbl+"}":""); if(pt.to===STOCK_HOLD){ let rec={id,item:nm,carat:pt.c,nang:pt.n,vajan:pt.v,pis:pt.p,note:pt.note,tag:pt.tag,from:STOCK_DEPT,fromPart:"Main",to:STOCK_HOLD,toPart:"Main",label:pt.lbl,manager:"",dataentry:"",fin:"",dstat:"",status:"Received",sentAt:now(),sentMs:Date.now(),recvAt:now(),recvTime:Date.now()}; data.push(rec); hist.push({...rec,action:"Split-Hold"}); } else { let rec={id,item:nm,carat:pt.c,nang:pt.n,vajan:pt.v,pis:pt.p,note:pt.note,tag:pt.tag,from:STOCK_DEPT,fromPart:"Main",to:pt.to,toPart:pt.toPart,label:pt.lbl,manager:"",dataentry:"",fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0}; data.push(rec); hist.push({...rec,action:"Split-Send"}); } }); data.splice(i,1); partRows=[]; addPartRow(); addPartRow(); save(); refresh(); alert("✅ "+parts.length+" ભાગ પાડ્યા!"); }
+function doSplit(){ let i=document.getElementById("splitPick").value; if(i===""){ toast("કાપણ પસંદ કરો!","error"); return; } let src=data[i]; let tc=Number(src.carat); let parts=[]; let sc=0; for(let rid of partRows){ let c=parseFloat(document.getElementById(rid+"_c").value)||0,n=parseInt(document.getElementById(rid+"_n").value)||0,v=parseFloat(document.getElementById(rid+"_v").value)||0,p=parseInt(document.getElementById(rid+"_p").value)||0; let tag=document.getElementById(rid+"_tag").value,lbl=document.getElementById(rid+"_lbl").value,note=document.getElementById(rid+"_note").value.trim(),tv=document.getElementById(rid+"_to").value; if(c===0&&n===0&&p===0) continue; let [to,toPart]=tv.split("|||"); parts.push({c,n,v,p,tag,lbl,note,to,toPart}); sc+=c; } if(parts.length<2){ toast("ઓછામાં ઓછા 2 ભાગ!","error"); return; } if(Math.abs(sc-tc)>0.001){ if(!confirm("Carat મેળ નથી. આગળ?")) return; } parts.forEach((pt,k)=>{ let id=uid(); let nm=src.item+" (ભાગ "+(k+1)+")"+(pt.lbl?" {"+pt.lbl+"}":""); if(pt.to===STOCK_HOLD){ let rec={id,item:nm,carat:pt.c,nang:pt.n,vajan:pt.v,pis:pt.p,note:pt.note,tag:pt.tag,from:STOCK_DEPT,fromPart:"Main",to:STOCK_HOLD,toPart:"Main",label:pt.lbl,manager:"",dataentry:"",fin:"",dstat:"",status:"Received",sentAt:now(),sentMs:Date.now(),recvAt:now(),recvTime:Date.now()}; data.push(rec); hist.push({...rec,action:"Split-Hold"}); } else { let rec={id,item:nm,carat:pt.c,nang:pt.n,vajan:pt.v,pis:pt.p,note:pt.note,tag:pt.tag,from:STOCK_DEPT,fromPart:"Main",to:pt.to,toPart:pt.toPart,label:pt.lbl,manager:"",dataentry:"",fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0}; data.push(rec); hist.push({...rec,action:"Split-Send"}); } }); data.splice(i,1); partRows=[]; addPartRow(); addPartRow(); save(); refresh(); toast("✅ "+parts.length+" ભાગ પાડ્યા!","success"); }
 
 function myReceived(){ let lbl=myLbl(); return data.map((d,idx)=>({...d,idx})).filter(d=>d.status==="Received"&&d.to===lbl); }
 function fillPickDropdown(){ if(cur.role!=="dept") return; let s=(document.getElementById("pickSearch").value||"").toLowerCase(); let list=myReceived().filter(d=>!s||d.item.toLowerCase().includes(s)); document.getElementById("pick").innerHTML=list.map(d=>`<option value="${d.idx}">${d.item} — ${d.carat}ct</option>`).join("")||`<option value="">— કોઈ નથી —</option>`; fillPick(); }
 function fillPick(){ let i=document.getElementById("pick").value; if(i===""){ ["dCarat","dNang","dVajan","dPis"].forEach(x=>document.getElementById(x).value=""); return; } let d=data[i]; document.getElementById("dCarat").value=d.carat; document.getElementById("dNang").value=d.nang; document.getElementById("dVajan").value=d.vajan||0; document.getElementById("dPis").value=d.pis; }
-function forwardItem(){ let i=document.getElementById("pick").value; if(i===""){ alert("કાપણ પસંદ કરો!"); return; } let mgr=document.getElementById("dMgr").value.trim(),dent=document.getElementById("dDent").value.trim(); if(!mgr||!dent){ alert("Manager અને Data Entry ફરજિયાત!"); return; } let src=data[i]; let tag=document.getElementById("dTag").value,note=document.getElementById("dNote").value.trim(); let lbl=myLbl(); let id=uid(); let rec={id,item:src.item,carat:src.carat,nang:src.nang,vajan:src.vajan||0,pis:src.pis,note,tag,from:lbl,fromPart:src.toPart||"Main",to:STOCK_DEPT,toPart:"Main",label:src.label||"",manager:mgr,dataentry:dent,fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0}; data.push(rec); hist.push({...rec,action:"Forward"}); data.splice(i,1); ["dMgr","dDent","dNote"].forEach(x=>document.getElementById(x).value=""); save(); refresh(); alert("✅ Stock ને મોકલાઈ ગયું!"); }
-function receive(idx){ if(data[idx].status==="Received"){ alert("પહેલેથી Receive!"); return; } data[idx].status="Received"; data[idx].recvAt=now(); data[idx].recvTime=Date.now(); hist.push({...data[idx],action:"Receive"}); save(); refresh(); }
-function del(idx){ if(cur.role!=="admin"){ alert("⚠️ Delete ફક્ત Admin!"); return; } if(!confirm("Delete?")) return; data.splice(idx,1); save(); refresh(); }
-function setFinal(idx,val){ if(val==="4P"){ let d=data[idx]; fourP.push({item:d.item,carat:d.carat,nang:d.nang,vajan:d.vajan||0,pis:d.pis,from:d.to,movedAt:now(),movedMs:Date.now()}); hist.push({...d,action:"4P",sentAt:now(),sentMs:Date.now()}); data.splice(idx,1); save(); refresh(); alert("✅ 4P માં ગયું!"); return; } data[idx].fin=val; save(); refresh(); }
+function forwardItem(){ let i=document.getElementById("pick").value; if(i===""){ toast("કાપણ પસંદ કરો!","error"); return; } let mgr=document.getElementById("dMgr").value.trim(),dent=document.getElementById("dDent").value.trim(); if(!mgr||!dent){ toast("Manager અને Data Entry ફરજિયાત!","error"); return; } let src=data[i]; let tag=document.getElementById("dTag").value,note=document.getElementById("dNote").value.trim(); let lbl=myLbl(); let id=uid(); let rec={id,item:src.item,carat:src.carat,nang:src.nang,vajan:src.vajan||0,pis:src.pis,note,tag,from:lbl,fromPart:src.toPart||"Main",to:STOCK_DEPT,toPart:"Main",label:src.label||"",manager:mgr,dataentry:dent,fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0}; let removed={...data[i],idx:i}; data.push(rec); hist.push({...rec,action:"Forward"}); data.splice(i,1); pushUndo({undo:()=>{ data.splice(data.length-1,1); data.splice(removed.idx,0,removed); hist=hist.filter(h=>h.id!==rec.id); save(); refresh(); },redo:()=>{ data.push(rec); hist.push({...rec,action:"Forward"}); data.splice(removed.idx,1); save(); refresh(); }}); ["dMgr","dDent","dNote"].forEach(x=>document.getElementById(x).value=""); save(); refresh(); toast("✅ Stock ને મોકલાઈ ગયું!","success"); }
+function receive(idx){ if(data[idx].status==="Received"){ toast("પહેલેથી Receive!","warning"); return; } data[idx].status="Received"; data[idx].recvAt=now(); data[idx].recvTime=Date.now(); hist.push({...data[idx],action:"Receive"}); save(); refresh(); toast("📥 Received!","success"); }
+function del(idx){ if(cur.role!=="admin"){ toast("⚠️ Delete ફક્ત Admin!","error"); return; } let item={...data[idx]}; data.splice(idx,1); pushUndo({undo:()=>{ data.splice(idx,0,item); save(); refresh(); },redo:()=>{ data.splice(idx,1); save(); refresh(); }}); save(); refresh(); toast("🗑️ Deleted","info"); }
+function setFinal(idx,val){ if(val==="4P"){ let d=data[idx]; fourP.push({item:d.item,carat:d.carat,nang:d.nang,vajan:d.vajan||0,pis:d.pis,from:d.to,movedAt:now(),movedMs:Date.now()}); hist.push({...d,action:"4P",sentAt:now(),sentMs:Date.now()}); data.splice(idx,1); save(); refresh(); toast("✅ 4P માં ગયું!","success"); return; } data[idx].fin=val; save(); refresh(); }
 
 function myStatuses(){ let lbl=(cur.role==="dept")?myLbl():STOCK_DEPT; return dstatus[lbl]||[]; }
-function addMyStatus(){ let s=document.getElementById("newStatus").value.trim(); if(!s) return; let lbl=(cur.role==="dept")?myLbl():STOCK_DEPT; dstatus[lbl]=dstatus[lbl]||[]; if(dstatus[lbl].includes(s)){ alert("પહેલેથી છે!"); return; } dstatus[lbl].push(s); save(); document.getElementById("newStatus").value=""; showMyStatusList(); refresh(); }
+function addMyStatus(){ let s=document.getElementById("newStatus").value.trim(); if(!s) return; let lbl=(cur.role==="dept")?myLbl():STOCK_DEPT; dstatus[lbl]=dstatus[lbl]||[]; if(dstatus[lbl].includes(s)){ toast("પહેલેથી છે!","warning"); return; } dstatus[lbl].push(s); save(); document.getElementById("newStatus").value=""; showMyStatusList(); refresh(); }
 function delMyStatus(s){ let lbl=(cur.role==="dept")?myLbl():STOCK_DEPT; dstatus[lbl]=(dstatus[lbl]||[]).filter(x=>x!==s); save(); showMyStatusList(); refresh(); }
 function showMyStatusList(){ let el=document.getElementById("myStatusList"); if(!el||cur.role!=="dept") return; let list=myStatuses(); el.innerHTML=list.map(s=>`<span class="statbadge" style="font-size:13px;padding:5px 10px;margin:3px;display:inline-block">${s} <a href="#" onclick="delMyStatus('${s}');return false;" style="color:#fff">✖</a></span>`).join(" ")||"<span class='small'>કોઈ status નથી. ઉપર થી ઉમેરો.</span>"; }
 function setKapanStatus(idx,val){ data[idx].dstat=val; save(); refresh(); }
 
 function applyFilters(list){ let s=(document.getElementById("fSearch").value||"").trim().toLowerCase(),tg=document.getElementById("fTag").value,stt=document.getElementById("fStatus").value,dp=document.getElementById("fDept")?document.getElementById("fDept").value:""; return list.filter(d=>{ if(s&&!(d.item||"").toLowerCase().includes(s)) return false; if(tg&&d.tag!==tg) return false; if(stt&&d.status!==stt) return false; if(dp&&d.from!==dp&&d.to!==dp) return false; return true; }); }
-function refresh(){ if(!cur) return; showCards(); showFinal(); showDashStat(); show4P(); showDeptWise(); showKapan(); showInbox(); showStock(); showHistory(); showDeptHist(); showRepInbox(); showRepSent(); showRepHist(); showSugInbox(); showSugHist(); showMyStatusList(); fillPickDropdown(); showReport(); if(cur.role==="admin"||cur.role==="stock"){ fillSplitPick(); fillSFPick(); } }
+function refresh(){ if(!cur) return; showCards(); showFinal(); showDashStat(); show4P(); showDeptWise(); showKapan(); showInbox(); showStock(); showHistory(); showDeptHist(); showRepInbox(); showRepSent(); showRepHist(); showSugInbox(); showSugHist(); showSugAllHist(); showAnalysis(); showMyStatusList(); fillPickDropdown(); showReport(); showLoginHistory(); showSugAdminInbox(); if(cur.role==="admin"||cur.role==="stock"){ fillSplitPick(); fillSFPick(); } }
 
 function deptStats(){ let t={}; users.filter(u=>u.role==="dept").forEach(u=>{ let lbl=unitLabel(u.dept,u.office); getParts(u).forEach(p=>t[lbl+"|||"+p]={lbl,dept:u.dept,office:u.office,part:p,chC:0,chN:0,chP:0,okC:0,okN:0,okP:0,issC:0}); }); hist.forEach(h=>{ if(h.action==="Send"||h.action==="Forward"||h.action==="Split-Send"){ let tk=h.to+"|||"+(h.toPart||"Main"); if(t[tk]) t[tk].issC+=Number(h.carat); } }); data.forEach(d=>{ if(d.status==="Received"){ let tk=d.to+"|||"+(d.toPart||"Main"); if(t[tk]){ t[tk].chC+=Number(d.carat); t[tk].chN+=Number(d.nang); t[tk].chP+=Number(d.pis); } } }); hist.forEach(h=>{ if(h.action==="Receive"){ let tk=h.to+"|||"+(h.toPart||"Main"); if(t[tk]){ let live=data.find(d=>d.id===h.id&&d.status==="Received"&&d.to===h.to); if(!live){ t[tk].okC+=Number(h.carat); t[tk].okN+=Number(h.nang); t[tk].okP+=Number(h.pis); } } } }); return t; }
 function showCards(){ if(!(cur.role==="admin"||cur.role==="stock")) return; let t=deptStats(); let html=""; for(let k in t){ let x=t[k]; let off=x.office?`🏢 ${x.office}`:""; html+=`<div class="card" onclick="openReport('${x.lbl.replace(/'/g,"")}','${x.part}')"><h4>${x.dept}</h4><div class="off">${off}${x.part!=="Main"?" • "+x.part:""}</div><div class="line issC"><span>📤 Issue Ct</span><b>${x.issC.toFixed(2)}</b></div><hr style="border-color:#555;margin:6px 0"><div class="line chaluC"><span>🔵 Chalu Ct</span><b>${x.chC.toFixed(2)}</b></div><div class="line chaluC"><span>Chalu Nang</span><b>${x.chN}</b></div><div class="line chaluC"><span>Chalu Pis</span><b>${x.chP}</b></div><hr style="border-color:#555;margin:6px 0"><div class="line okC"><span>✅ OK Ct</span><b>${x.okC.toFixed(2)}</b></div><div class="line okC"><span>OK Nang</span><b>${x.okN}</b></div><div class="line okC"><span>OK Pis</span><b>${x.okP}</b></div><div class="clickhint">👆 click — report</div></div>`; } document.getElementById("cards").innerHTML=html; }
@@ -448,18 +905,41 @@ function showDeptHist(){ if(cur.role!=="dept") return; let lbl=myLbl(); let s=(d
 function pairedHistory(){ let out=[]; hist.forEach(h=>{ if(["Send","Forward","Split-Send","Split-Hold"].includes(h.action)){ let recH=hist.find(x=>x.id===h.id&&x.action==="Receive"); let iMs=h.sentMs,rMs=recH?recH.recvTime:(h.action==="Split-Hold"?h.recvTime:null); out.push({item:h.item,carat:h.carat,nang:h.nang,vajan:h.vajan||0,pis:h.pis,from:h.from,to:(h.toPart&&h.toPart!=="Main"?h.to+" — "+h.toPart:h.to),issueAt:h.sentAt,recvAt:recH?recH.recvAt:(h.action==="Split-Hold"?h.recvAt:"⏳ બાકી"),total:(iMs&&rMs)?diffHrs(iMs,rMs):"—",issueMs:iMs,manager:h.manager||"",dataentry:h.dataentry||""}); } }); return out; }
 function showHistory(){ if(!(cur.role==="admin"||cur.role==="stock")) return; let s=(document.getElementById("hSearch").value||"").trim().toLowerCase(),dp=document.getElementById("hDept").value,from=document.getElementById("hFrom").value,to=document.getElementById("hTo").value; let list=pairedHistory().filter(h=>{ if(s&&!(h.item||"").toLowerCase().includes(s)) return false; if(dp&&h.from!==dp&&!(h.to||"").startsWith(dp)) return false; if(h.issueMs){ let iso=todayISO(h.issueMs); if(from&&iso<from) return false; if(to&&iso>to) return false; } return true; }); list.reverse(); document.getElementById("history").innerHTML=list.map(h=>`<tr><td>${h.item}</td><td>${h.carat}</td><td>${h.nang}</td><td>${h.vajan}</td><td>${h.pis}</td><td>${h.from}</td><td>${h.to}</td><td>${h.manager?`<span class="mgr">${h.manager}</span>`:"—"}</td><td>${h.dataentry||"—"}</td><td class="small">${h.issueAt||""}</td><td class="small">${h.recvAt||""}</td><td class="hrs">${h.total}</td></tr>`).join("")||`<tr><td colspan="12">કોઈ record નથી</td></tr>`; }
 
-function sendSuggestion(){ let topic=document.getElementById("sgTopic").value.trim(),detail=document.getElementById("sgDetail").value.trim(); let tos=[...document.querySelectorAll(".sgcb:checked")].map(c=>c.value); if(!topic||!detail){ alert("Topic અને વિગત ભરો!"); return; } if(tos.length===0){ alert("ઓછામાં ઓછું એક Department!"); return; } sugs.push({id:uid(),topic,detail,tos,sentAt:now(),sentMs:Date.now(),accepts:{}}); save(); document.getElementById("sgTopic").value=""; document.getElementById("sgDetail").value=""; document.querySelectorAll(".sgcb").forEach(c=>c.checked=false); refresh(); alert("💡 "+tos.length+" Department ને મોકલાઈ ગયું!"); }
-function acceptSug(id){ let s=sugs.find(x=>x.id===id); if(!s) return; let me=myLbl(); let by=prompt("Receive કરનાર નું નામ:"); if(by===null) return; by=by.trim(); if(!by){ alert("નામ ભરો!"); return; } s.accepts=s.accepts||{}; s.accepts[me]={at:now(),by}; save(); refresh(); alert("✅ Accept થયું!"); }
+function showLoginHistory(){ if(cur.role!=="admin") return; let el=document.getElementById("loginHistBody"); if(!el) return; let q=document.getElementById("lhSearch").value.trim().toLowerCase(),f=document.getElementById("lhFrom").value,t=document.getElementById("lhTo").value; let full=JSON.parse(localStorage.getItem("loginHistory")||"[]"); let list=full.map((x,i)=>({...x,idx:i})); if(q) list=list.filter(x=>x.id.toLowerCase().includes(q)||x.ua.toLowerCase().includes(q)); if(f) list=list.filter(x=>todayISO(x.ts)>=f); if(t) list=list.filter(x=>todayISO(x.ts)<=t); el.innerHTML=list.map((x,i)=>`<tr><td>${i+1}</td><td>${x.id}</td><td>${x.dept}</td><td>${x.role}</td><td class="small" title="${x.ua}">${x.ua.substring(0,40)}${x.ua.length>40?"…":""}</td><td class="small">${x.at}</td><td><button class="del" onclick="deleteLoginHist(${x.idx})" style="padding:2px 6px;font-size:11px">✖</button></td></tr>`).join("")||`<tr><td colspan="7">કોઈ login history નથી</td></tr>`; }
+function dlLoginHistExcel(){ let list=JSON.parse(localStorage.getItem("loginHistory")||"[]"); downloadCSV("Login_History.csv",[["#","User ID","Department","Role","PC / Browser","Date-Time"],...list.map((x,i)=>[i+1,x.id,x.dept,x.role,x.ua,x.at])]); }
+function deleteLoginHist(idx){ if(!confirm("આ entry ડિલીટ કરવી છે?")) return; let list=JSON.parse(localStorage.getItem("loginHistory")||"[]"); list.splice(idx,1); localStorage.setItem("loginHistory",JSON.stringify(list)); showLoginHistory(); toast("✅ ડિલીટ થઈ ગયું!","success"); }
+function clearLoginHist(){ if(!confirm("બધી Login History ડિલીટ કરવી છે?")) return; localStorage.setItem("loginHistory","[]"); showLoginHistory(); toast("✅ બધી history સાફ થઈ ગઈ!","success"); }
+
+
+function sendSuggestion(){ let topic=document.getElementById("sgTopic").value.trim(),detail=document.getElementById("sgDetail").value.trim(); let tos=[...document.querySelectorAll(".sgcb:checked")].map(c=>c.value); if(!topic||!detail){ toast("Topic અને વિગત ભરો!","error"); return; } if(tos.length===0){ toast("ઓછામાં ઓછું એક Department!","error"); return; } sugs.push({id:uid(),topic,detail,tos,sentAt:now(),sentMs:Date.now(),accepts:{}}); save(); document.getElementById("sgTopic").value=""; document.getElementById("sgDetail").value=""; document.querySelectorAll(".sgcb").forEach(c=>c.checked=false); refresh(); toast("💡 "+tos.length+" Department ને મોકલાઈ ગયું!","success"); }
+function acceptSug(id){ let s=sugs.find(x=>x.id===id); if(!s) return; let me=myLbl(); let by=prompt("Receive કરનાર નું નામ:"); if(by===null) return; by=by.trim(); if(!by){ toast("નામ ભરો!","error"); return; } s.accepts=s.accepts||{}; s.accepts[me]={at:now(),by}; save(); refresh(); toast("✅ Accept થયું!","success"); }
 function showSugInbox(){ if(cur.role!=="dept") return; let me=myLbl(); let list=sugs.filter(s=>(s.tos||[]).includes(me)); document.getElementById("sugInbox").innerHTML=list.map(s=>{ let acc=s.accepts&&s.accepts[me]; let st=acc?`<span class="okfin">✅ Accepted (${acc.by})</span>`:`<span class="st-pending">⏳ નવું</span>`; let act=acc?`<span class="small">${acc.at}</span>`:`<button class="recv" onclick="acceptSug('${s.id}')">✔ Accept</button>`; return `<tr><td><b>${s.topic}</b></td><td>${s.detail}</td><td class="small">${s.sentAt}</td><td>${st}</td><td>${act}</td></tr>`; }).join("")||`<tr><td colspan="5">કોઈ suggestion નથી</td></tr>`; }
 function showSugHist(){ let rows=[]; sugs.forEach(s=>{ (s.tos||[]).forEach(dept=>{ let acc=s.accepts&&s.accepts[dept]; rows.push({topic:s.topic,detail:s.detail,dept,sentAt:s.sentAt,sentMs:s.sentMs,acceptAt:acc?acc.at:"",acceptBy:acc?acc.by:"",status:acc?"Accepted":"Pending"}); }); }); if(cur.role==="admin"){ let dp=document.getElementById("sgFiltDept").value; rows=rows.filter(r=>!dp||r.dept===dp); } else if(cur.role==="dept"){ let me=myLbl(); rows=rows.filter(r=>r.dept===me); } let from=document.getElementById("sgFiltFrom").value,to=document.getElementById("sgFiltTo").value; rows=rows.filter(r=>{ if(r.sentMs){ let iso=todayISO(r.sentMs); if(from&&iso<from) return false; if(to&&iso>to) return false; } return true; }).reverse(); document.getElementById("sugHist").innerHTML=rows.map(r=>`<tr><td><b>${r.topic}</b></td><td>${r.detail}</td><td>${r.dept}</td><td class="small">${r.sentAt}</td><td class="small">${r.acceptAt||"—"}</td><td>${r.acceptBy?`<span class="mgr">${r.acceptBy}</span>`:"—"}</td><td>${r.status}</td></tr>`).join("")||`<tr><td colspan="7">કોઈ record નથી</td></tr>`; }
+function sugHistData(){ let rows=[]; sugs.forEach(s=>{ (s.tos||[]).forEach(dept=>{ let acc=s.accepts&&s.accepts[dept]; rows.push([s.topic,s.detail,dept,s.sentAt,acc?acc.at:"—",acc?acc.by:"—",acc?"Accepted":"Pending",s.sentMs]); }); }); if(cur.role==="admin"){ let dp=document.getElementById("sgFiltDept").value; rows=rows.filter(r=>!dp||r[2]===dp); } else if(cur.role==="dept"){ let me=myLbl(); rows=rows.filter(r=>r[2]===me); } let from=document.getElementById("sgFiltFrom").value,to=document.getElementById("sgFiltTo").value; rows=rows.filter(r=>{ if(r[7]){ let iso=todayISO(r[7]); if(from&&iso<from) return false; if(to&&iso>to) return false; } return true; }).reverse(); return rows.map(r=>r.slice(0,7)); }
+function fillSugToChk(){ let html=users.filter(u=>u.role==="dept").map(u=>{ let lbl=unitLabel(u.dept,u.office); return `<label><input type="checkbox" class="sgcb" value="${lbl}"> ${lbl}</label>`; }).join(""); if(document.getElementById("sgToChk")) document.getElementById("sgToChk").innerHTML=html; if(document.getElementById("sgToChkA")) document.getElementById("sgToChkA").innerHTML=html; }
+function fillSugFiltDept(){ if(document.getElementById("sgFiltDept")) document.getElementById("sgFiltDept").innerHTML=deptOptsList(`<option value="">— બધા —</option>`); }
+function sendSugAdmin(){ let topic=document.getElementById("sgTopicA").value.trim(),detail=document.getElementById("sgDetailA").value.trim(); let tos=[...document.querySelectorAll("#sgToChkA .sgcb:checked")].map(c=>c.value); if(!topic||!detail){ toast("Topic અને વિગત ભરો!","error"); return; } if(tos.length===0){ toast("ઓછામાં ઓછું એક Department!","error"); return; } sugs.push({id:uid(),topic,detail,tos,sentAt:now(),sentMs:Date.now(),accepts:{}}); save(); document.getElementById("sgTopicA").value=""; document.getElementById("sgDetailA").value=""; document.querySelectorAll("#sgToChkA .sgcb").forEach(c=>c.checked=false); refresh(); toast("💡 "+tos.length+" Department ને મોકલાઈ ગયું!","success"); }
+function showSugAdminInbox(){ if(cur.role!=="admin") return; let list=sugAll.slice().reverse(); document.getElementById("sugAdminInbox").innerHTML=list.map(s=>{ let st=s.status==="accepted"?`<span class="okfin">✅ Accepted</span>`:`<span class="st-pending">⏳ Pending</span>`; let act=s.status!=="accepted"?` <button class="recv" onclick="acceptSugAll('${s.id}');showSugAdminInbox()" style="padding:3px 8px;font-size:11px">✔ Accept</button>`:""; return `<tr><td>${sanitize(s.topic)}</td><td>${sanitize(s.detail)}</td><td>${sanitize(s.fromName)}</td><td class="small">${s.sentAt}${act}</td></tr>`; }).join("")||`<tr><td colspan="4">કોઈ suggestion નથી</td></tr>`; }
+// NEW: All-User Suggestion Box
+let sugAll = JSON.parse(localStorage.getItem("sugAll") || "[]");
+function quickSugAll(topic,detail){ document.getElementById("sgAllTopic").value=topic; document.getElementById("sgAllDetail").value=detail; document.getElementById("sgAllDetail").focus(); }
+function sendSugAll(){ let topic=document.getElementById("sgAllTopic").value.trim(),detail=document.getElementById("sgAllDetail").value.trim(); if(!topic||!detail){ toast("Topic અને વિગત ભરો!","error"); return; } let fromName=cur.dept+(cur.office?" — "+cur.office:""); sugAll.push({id:uid(),topic,detail,from:cur.id,fromName,sentAt:now(),sentMs:Date.now(),status:"pending",acceptedBy:"",acceptedAt:""}); localStorage.setItem("sugAll",JSON.stringify(sugAll)); document.getElementById("sgAllTopic").value=""; document.getElementById("sgAllDetail").value=""; showSugAllHist(); addNotif("edit_request","New Suggestion",fromName+": "+topic); toast("✅ Suggestion મોકલાઈ!","success"); }
+function showSugAllHist(){ let el=document.getElementById("sugAllHist"); if(!el) return; let list; if(cur.role==="admin"){ list=sugAll.slice().reverse(); } else { list=sugAll.filter(s=>s.from===cur.id).slice().reverse(); } if(!list.length){ el.innerHTML="<span class='small'>કોઈ suggestion નથી</span>"; return; } el.innerHTML=list.map(s=>{ let st=s.status==="accepted"?`<span class="okfin">✅ Accepted</span>`:`<span class="st-pending">⏳ Pending</span>`; let act=""; if(cur.role==="admin"&&s.status!=="accepted"){ act=` <button class="recv" onclick="acceptSugAll('${s.id}')" style="padding:3px 8px;font-size:11px">✔ Accept</button>`; } return `<div style="background:#f9f9f9;border:1px solid #eee;padding:8px 12px;margin:6px 0;border-radius:6px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><b>${sanitize(s.topic)}</b> ${st}</div><div style="font-size:13px;color:#555;margin-top:4px">${sanitize(s.detail)}</div><div style="font-size:11px;color:#888;margin-top:4px">${sanitize(s.fromName)} • ${s.sentAt}${act}</div></div>`; }).join(""); }
+function acceptSugAll(id){ let s=sugAll.find(x=>x.id===id); if(!s) return; s.status="accepted"; s.acceptedBy=cur.dept+(cur.office?" — "+cur.office:""); s.acceptedAt=now(); localStorage.setItem("sugAll",JSON.stringify(sugAll)); showSugAllHist(); toast("✅ Accepted!","success"); }
 
-function sendRepair(){ let kapan=document.getElementById("rpKapan").value.trim(),nang=parseInt(document.getElementById("rpNang").value)||0,vajan=parseFloat(document.getElementById("rpVajan").value)||0,pis=parseInt(document.getElementById("rpPis").value)||0,jangad=document.getElementById("rpJangad").value.trim(),to=document.getElementById("rpTo").value; if(!kapan||!jangad){ alert("Kapan અને Jangad ફરજિયાત!"); return; } if(!to){ alert("Department પસંદ કરો!"); return; } let from=(cur.role==="admin"||cur.role==="stock")?STOCK_DEPT:myLbl(); reps.push({id:uid(),kapan,nang,vajan,pis,jangad,from,to,status:"Sent",sentAt:now(),sentMs:Date.now(),recvAt:"",okAt:""}); save(); ["rpKapan","rpJangad"].forEach(x=>document.getElementById(x).value=""); ["rpNang","rpVajan","rpPis"].forEach(x=>document.getElementById(x).value="0"); refresh(); alert("🔧 મોકલાઈ ગયું!"); }
-function repReceive(id){ let r=reps.find(x=>x.id===id); if(!r) return; r.status="Received"; r.recvAt=now(); save(); refresh(); }
-function repOK(id){ let r=reps.find(x=>x.id===id); if(!r) return; r.status="OK-Back"; r.okAt=now(); save(); refresh(); alert("✅ OK કરી પાછું મોકલાઈ ગયું!"); }
+function sendRepair(){ let kapan=document.getElementById("rpKapan").value.trim(),nang=parseInt(document.getElementById("rpNang").value)||0,vajan=parseFloat(document.getElementById("rpVajan").value)||0,pis=parseInt(document.getElementById("rpPis").value)||0,jangad=document.getElementById("rpJangad").value.trim(),to=document.getElementById("rpTo").value,manager=document.getElementById("rpManager").value,remark=document.getElementById("rpRemark").value.trim(); if(!kapan||!jangad){ toast("Kapan અને Jangad ફરજિયાત!","error"); return; } if(!to){ toast("Department પસંદ કરો!","error"); return; } if(!manager){ toast("Manager પસંદ કરો!","error"); return; } let from=(cur.role==="admin"||cur.role==="stock")?STOCK_DEPT:myLbl(); let rec={id:uid(),kapan,nang,vajan,pis,jangad,from,to,manager,remark,status:"Sent",sentAt:now(),sentMs:Date.now(),recvAt:"",okAt:""}; reps.push(rec); pushUndo({undo:()=>{ reps=reps.filter(r=>r.id!==rec.id); save(); refresh(); },redo:()=>{ reps.push(rec); save(); refresh(); }}); save(); ["rpKapan","rpJangad","rpRemark"].forEach(x=>document.getElementById(x).value=""); ["rpNang","rpVajan","rpPis"].forEach(x=>document.getElementById(x).value="0"); document.getElementById("rpManager").value=""; refresh(); toast("🔧 મોકલાઈ ગયું!","success"); }
+function repReceive(id,mgrSel,deSel){ let r=reps.find(x=>x.id===id); if(!r) return; if(!mgrSel||!deSel){ toast("Manager અને Data Entry બંને પસંદ કરો!","error"); return; } r.status="Received"; r.recvAt=now(); r.recvManager=mgrSel; r.recvDataEntry=deSel; save(); refresh(); }
+function repOK(id){ let r=reps.find(x=>x.id===id); if(!r) return; r.status="OK-Back"; r.okAt=now(); save(); refresh(); toast("✅ OK કરી પાછું મોકલાઈ ગયું!","success"); }
 function repClose(id){ let r=reps.find(x=>x.id===id); if(!r) return; r.status="Closed"; save(); refresh(); }
-function showRepInbox(){ let me=(cur.role==="admin"||cur.role==="stock")?STOCK_DEPT:myLbl(); let list=reps.filter(r=>r.to===me&&(r.status==="Sent"||r.status==="Received")); document.getElementById("repInbox").innerHTML=list.map(r=>{ let act=r.status==="Sent"?`<button class="recv" onclick="repReceive('${r.id}')">✔ Receive</button>`:`<button class="repback" onclick="repOK('${r.id}')">✅ OK & પાછું</button>`; return `<tr><td>${r.kapan}</td><td>${r.nang}</td><td>${r.vajan||0}</td><td>${r.pis}</td><td>${r.jangad}</td><td><b>${r.from}</b></td><td class="small">${r.sentAt}</td><td>${act}</td></tr>`; }).join("")||`<tr><td colspan="8">કોઈ નથી</td></tr>`; }
-function showRepSent(){ let me=(cur.role==="admin"||cur.role==="stock")?STOCK_DEPT:myLbl(); let list=reps.filter(r=>r.from===me&&r.status!=="Closed"); document.getElementById("repSent").innerHTML=list.map(r=>{ let st,act="—"; if(r.status==="Sent"){st=`<span class="st-pending">⏳ મોકલ્યું</span>`;} else if(r.status==="Received"){st=`<span class="chalu">🔵 ચાલુ</span>`;} else if(r.status==="OK-Back"){st=`<span class="okfin">✅ OK પાછું</span>`; act=`<button class="recv" onclick="repClose('${r.id}')">✔ સ્વીકારો</button>`;} return `<tr><td>${r.kapan}</td><td>${r.nang}</td><td>${r.vajan||0}</td><td>${r.pis}</td><td>${r.jangad}</td><td><b>${r.to}</b></td><td>${st}</td><td class="small">${r.sentAt}</td><td>${act}</td></tr>`; }).join("")||`<tr><td colspan="9">કોઈ નથી</td></tr>`; }
-function showRepHist(){ let s=(document.getElementById("rhSearch").value||"").trim().toLowerCase(),dp=document.getElementById("rhDept").value,from=document.getElementById("rhFrom").value,to=document.getElementById("rhTo").value; let me=cur?((cur.role==="admin"||cur.role==="stock")?null:myLbl()):null; let list=reps.filter(r=>{ if(me&&r.from!==me&&r.to!==me) return false; if(s&&!(r.kapan||"").toLowerCase().includes(s)) return false; if(dp&&r.from!==dp&&r.to!==dp) return false; if(r.sentMs){ let iso=todayISO(r.sentMs); if(from&&iso<from) return false; if(to&&iso>to) return false; } return true; }).slice().reverse(); document.getElementById("repHist").innerHTML=list.map(r=>{ let st=r.status==="Sent"?"⏳ મોકલ્યું":r.status==="Received"?"🔵 ચાલુ":r.status==="OK-Back"?"✅ OK પાછું":"✔ પૂરું"; return `<tr><td>${r.kapan}</td><td>${r.nang}</td><td>${r.vajan||0}</td><td>${r.pis}</td><td>${r.jangad}</td><td>${r.from}</td><td>${r.to}</td><td class="small">${r.sentAt}</td><td class="small">${r.recvAt||"—"}</td><td>${st}</td></tr>`; }).join("")||`<tr><td colspan="10">કોઈ record નથી</td></tr>`; }
+function repInboxMgrOpts(id){ let o=`<option value="">— Manager —</option>`; managers.forEach(m=>{ o+=`<option value="${m}">${m}</option>`; }); o+=`<option value="__add_new__">➕ નવો</option>`; return o; }
+function repInboxDEOpts(id){ let o=`<option value="">— Data Entry —</option>`; dataentrys.forEach(d=>{ o+=`<option value="${d}">${d}</option>`; }); o+=`<option value="__add_new__">➕ નવો</option>`; return o; }
+function onRepInboxMgr(el){ if(el.value==="__add_new__"){ let n=prompt("Manager નું નામ લખો:"); if(n===null||!n.trim()){ el.value=""; return; } n=n.trim(); if(!managers.includes(n)){ managers.push(n); save(); } el.value=n; } checkRepInboxReady(el.closest("tr")); }
+function onRepInboxDE(el){ if(el.value==="__add_new__"){ let n=prompt("Data Entry નું નામ લખો:"); if(n===null||!n.trim()){ el.value=""; return; } n=n.trim(); if(!dataentrys.includes(n)){ dataentrys.push(n); save(); } el.value=n; } checkRepInboxReady(el.closest("tr")); }
+function checkRepInboxReady(tr){ if(!tr) return; let mgr=tr.querySelector(".ripMgr").value; let de=tr.querySelector(".ripDE").value; let btn=tr.querySelector(".ripRecvBtn"); if(mgr&&de){ btn.classList.remove("hide"); } else { btn.classList.add("hide"); } }
+function doRepReceive(id,btn){ let tr=btn.closest("tr"); let mgr=tr.querySelector(".ripMgr").value; let de=tr.querySelector(".ripDE").value; repReceive(id,mgr,de); }
+function showRepInbox(){ let me=(cur.role==="admin"||cur.role==="stock")?STOCK_DEPT:myLbl(); let list=reps.filter(r=>r.to===me&&(r.status==="Sent"||r.status==="Received")); document.getElementById("repInbox").innerHTML=list.map(r=>{ let act=""; if(r.status==="Sent"){ let mgrOpts=repInboxMgrOpts(r.id); let deOpts=repInboxDEOpts(r.id); act=`<select class="ripMgr" onchange="onRepInboxMgr(this)" style="width:110px;padding:4px;font-size:12px">${mgrOpts}</select> <select class="ripDE" onchange="onRepInboxDE(this)" style="width:110px;padding:4px;font-size:12px">${deOpts}</select> <button class="recv ripRecvBtn hide" onclick="doRepReceive('${r.id}',this)">✔ Receive</button>`; } else { act=`<button class="repback" onclick="repOK('${r.id}')">✅ OK & પાછું</button>`; } let recvInfo=""; if(r.status==="Received"){ recvInfo=`<span class="mgr">${r.recvManager||"—"}</span> / <span class="mgr" style="background:#8e44ad">${r.recvDataEntry||"—"}</span>`; } return `<tr><td>${r.kapan}</td><td>${r.nang}</td><td>${r.vajan||0}</td><td>${r.pis}</td><td>${r.jangad}</td><td><b>${r.from}</b></td><td>${recvInfo||`<span class="mgr">${r.manager||"—"}</span>`}</td><td>${r.remark?`<span class="notebox">${r.remark}</span>`:"—"}</td><td class="small">${r.sentAt}</td><td>${act}</td></tr>`; }).join("")||`<tr><td colspan="10">કોઈ નથી</td></tr>`; }
+function showRepSent(){ let me=(cur.role==="admin"||cur.role==="stock")?STOCK_DEPT:myLbl(); let list=reps.filter(r=>r.from===me&&r.status!=="Closed"); document.getElementById("repSent").innerHTML=list.map(r=>{ let st,act="—"; if(r.status==="Sent"){st=`<span class="st-pending">⏳ મોકલ્યું</span>`;} else if(r.status==="Received"){st=`<span class="chalu">🔵 ચાલુ</span>`;} else if(r.status==="OK-Back"){st=`<span class="okfin">✅ OK પાછું</span>`; act=`<button class="recv" onclick="repClose('${r.id}')">✔ સ્વીકારો</button>`;} return `<tr><td>${r.kapan}</td><td>${r.nang}</td><td>${r.vajan||0}</td><td>${r.pis}</td><td>${r.jangad}</td><td><b>${r.to}</b></td><td><span class="mgr">${r.manager||"—"}</span></td><td>${r.remark?`<span class="notebox">${r.remark}</span>`:"—"}</td><td>${st}</td><td class="small">${r.sentAt}</td><td>${act}</td></tr>`; }).join("")||`<tr><td colspan="11">કોઈ નથી</td></tr>`; }
+function showRepHist(){ let s=(document.getElementById("rhSearch").value||"").trim().toLowerCase(),dp=document.getElementById("rhDept").value,from=document.getElementById("rhFrom").value,to=document.getElementById("rhTo").value; let me=cur?((cur.role==="admin"||cur.role==="stock")?null:myLbl()):null; let list=reps.filter(r=>{ if(me&&r.from!==me&&r.to!==me) return false; if(s&&!(r.kapan||"").toLowerCase().includes(s)) return false; if(dp&&r.from!==dp&&r.to!==dp) return false; if(r.sentMs){ let iso=todayISO(r.sentMs); if(from&&iso<from) return false; if(to&&iso>to) return false; } return true; }).slice().reverse(); document.getElementById("repHist").innerHTML=list.map(r=>{ let st=r.status==="Sent"?"⏳ મોકલ્યું":r.status==="Received"?"🔵 ચાલુ":r.status==="OK-Back"?"✅ OK પાછું":"✔ પૂરું"; let recvBy=r.recvManager?`<span class="mgr">${r.recvManager}</span> / <span class="mgr" style="background:#8e44ad">${r.recvDataEntry||"—"}</span>`:"—"; return `<tr><td>${r.kapan}</td><td>${r.nang}</td><td>${r.vajan||0}</td><td>${r.pis}</td><td>${r.jangad}</td><td>${r.from}</td><td>${r.to}</td><td><span class="mgr">${r.manager||"—"}</span></td><td>${r.remark?`<span class="notebox">${r.remark}</span>`:"—"}</td><td class="small">${r.sentAt}</td><td class="small">${r.recvAt||"—"}</td><td>${recvBy}</td><td>${st}</td></tr>`; }).join("")||`<tr><td colspan="13">કોઈ record નથી</td></tr>`; }
 
 function downloadCSV(fn,rows){ let csv=rows.map(r=>r.map(c=>`"${(""+c).replace(/"/g,'""')}"`).join(",")).join("\n"); let b=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"}); let l=document.createElement("a"); l.href=URL.createObjectURL(b); l.download=fn; l.click(); }
 function printPDF(title,headers,rows){ let w=window.open("","_blank"); let th=headers.map(h=>`<th>${h}</th>`).join(""); let tr=rows.map(r=>"<tr>"+r.map(c=>`<td>${c}</td>`).join("")+"</tr>").join(""); w.document.write(`<html><head><title>${title}</title><style>body{font-family:Arial;padding:20px}h2{color:#2c3e50}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #999;padding:6px;text-align:left}th{background:#34495e;color:#fff}</style></head><body><h2>${title}</h2><p>${now()}</p><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>`); w.document.close(); }
@@ -481,22 +961,125 @@ function dlDeptHistExcel(){ downloadCSV("My_History.csv",[dhHead,...deptHistData
 function histDataD(){ let s=(document.getElementById("hSearch").value||"").trim().toLowerCase(),dp=document.getElementById("hDept").value,from=document.getElementById("hFrom").value,to=document.getElementById("hTo").value; let list=pairedHistory().filter(h=>{ if(s&&!(h.item||"").toLowerCase().includes(s)) return false; if(dp&&h.from!==dp&&!(h.to||"").startsWith(dp)) return false; if(h.issueMs){ let iso=todayISO(h.issueMs); if(from&&iso<from) return false; if(to&&iso>to) return false; } return true; }).reverse(); return list.map(h=>[h.item,h.carat,h.nang,h.vajan,h.pis,h.from,h.to,h.manager||"—",h.dataentry||"—",h.issueAt||"",h.recvAt||"",h.total]); }
 let histHead=["Kapan","Carat","Nang","Vajan","Pis","From","To","Manager","Data Entry","Issue D-T","Recv D-T","Total કલાક"];
 function dlHistExcel(){ downloadCSV("History.csv",[histHead,...histDataD()]); } function dlHistPDF(){ printPDF("History",histHead,histDataD()); }
-function repHistData(){ let s=(document.getElementById("rhSearch").value||"").trim().toLowerCase(),dp=document.getElementById("rhDept").value,from=document.getElementById("rhFrom").value,to=document.getElementById("rhTo").value; let me=(cur.role==="admin"||cur.role==="stock")?null:myLbl(); let list=reps.filter(r=>{ if(me&&r.from!==me&&r.to!==me) return false; if(s&&!(r.kapan||"").toLowerCase().includes(s)) return false; if(dp&&r.from!==dp&&r.to!==dp) return false; if(r.sentMs){ let iso=todayISO(r.sentMs); if(from&&iso<from) return false; if(to&&iso>to) return false; } return true; }).reverse(); return list.map(r=>[r.kapan,r.nang,r.vajan||0,r.pis,r.jangad,r.from,r.to,r.sentAt,r.recvAt||"—",r.status]); }
-let rhHead=["Kapan","Nang","Vajan","Pis","Jangad","From","To","Issue D-T","Recv D-T","Status"];
+function repHistData(){ let s=(document.getElementById("rhSearch").value||"").trim().toLowerCase(),dp=document.getElementById("rhDept").value,from=document.getElementById("rhFrom").value,to=document.getElementById("rhTo").value; let me=(cur.role==="admin"||cur.role==="stock")?null:myLbl(); let list=reps.filter(r=>{ if(me&&r.from!==me&&r.to!==me) return false; if(s&&!(r.kapan||"").toLowerCase().includes(s)) return false; if(dp&&r.from!==dp&&r.to!==dp) return false; if(r.sentMs){ let iso=todayISO(r.sentMs); if(from&&iso<from) return false; if(to&&iso>to) return false; } return true; }).reverse(); return list.map(r=>[r.kapan,r.nang,r.vajan||0,r.pis,r.jangad,r.from,r.to,r.manager||"—",r.remark||"—",r.sentAt,r.recvAt||"—",r.recvManager?r.recvManager+" / "+(r.recvDataEntry||"—"):"—",r.status]); }
+let rhHead=["Kapan","Nang","Vajan","Pis","Jangad","From","To","Manager","Remark","Issue D-T","Recv D-T","Recv By","Status"];
 function dlRepHistExcel(){ downloadCSV("Repairing_History.csv",[rhHead,...repHistData()]); } function dlRepHistPDF(){ printPDF("Repairing History",rhHead,repHistData()); }
-function sugHistData(){ let rows=[]; sugs.forEach(s=>{ (s.tos||[]).forEach(dept=>{ let acc=s.accepts&&s.accepts[dept]; rows.push([s.topic,s.detail,dept,s.sentAt,acc?acc.at:"—",acc?acc.by:"—",acc?"Accepted":"Pending",s.sentMs]); }); }); if(cur.role==="admin"){ let dp=document.getElementById("sgFiltDept").value; rows=rows.filter(r=>!dp||r[2]===dp); } else if(cur.role==="dept"){ let me=myLbl(); rows=rows.filter(r=>r[2]===me); } let from=document.getElementById("sgFiltFrom").value,to=document.getElementById("sgFiltTo").value; rows=rows.filter(r=>{ if(r[7]){ let iso=todayISO(r[7]); if(from&&iso<from) return false; if(to&&iso>to) return false; } return true; }).reverse(); return rows.map(r=>r.slice(0,7)); }
-let sgHead=["Topic","વિગત","Department","Date","Accept Time","કોણે","Status"];
+function sugHistData(){ let rows=[]; sugs.forEach(s=>{ rows.push([s.topic,s.detail,s.fromName||s.from||"",s.sentAt,s.acceptedAt||"",s.acceptedBy||"",s.status==="accepted"?"Accepted":"Pending",s.sentMs]); }); if(cur.role==="dept"){ let me=cur.dept+(cur.office?" — "+cur.office:""); rows=rows.filter(r=>r[2]===me); } let from=document.getElementById("sgFiltFrom").value,to=document.getElementById("sgFiltTo").value; rows=rows.filter(r=>{ if(r[7]){ let iso=todayISO(r[7]); if(from&&iso<from) return false; if(to&&iso>to) return false; } return true; }).reverse(); return rows.map(r=>r.slice(0,7)); }
+let sgHead=["Topic","વિગત","From","Date","Accept Time","કોણે","Status"];
 function dlSugHistExcel(){ downloadCSV("Suggestion_History.csv",[sgHead,...sugHistData()]); } function dlSugHistPDF(){ printPDF("Suggestion History",sgHead,sugHistData()); }
 function dlReportExcel(){ if(!reportKey) return; let {lbl,part}=reportKey; let recv=hist.filter(h=>h.action==="Receive"&&h.to===lbl&&(h.toPart||"Main")===part); let chalu=[],ok=[]; recv.forEach(h=>{ let live=data.find(d=>d.id===h.id&&d.status==="Received"&&d.to===lbl); if(live) chalu.push([live.item,live.carat,live.nang,live.vajan||0,live.pis,h.from,live.manager||"—",live.recvAt||"",live.dstat||"Chalu"]); else ok.push([h.item,h.carat,h.nang,h.vajan||0,h.pis,h.from,h.manager||"—",h.recvAt||"","OK"]); }); let rows=[[lbl+" Report",now()],[""],["🔵 CHALU"],["Kapan","Carat","Nang","Vajan","Pis","From","Manager","Date","Status"],...chalu,[""],["✅ OK"],["Kapan","Carat","Nang","Vajan","Pis","From","Manager","Date","Status"],...ok]; downloadCSV(lbl+"_Report.csv",rows); }
 function dlReportPDF(){ if(!reportKey) return; let {lbl,part}=reportKey; let recv=hist.filter(h=>h.action==="Receive"&&h.to===lbl&&(h.toPart||"Main")===part); let ch="",ok=""; recv.forEach(h=>{ let live=data.find(d=>d.id===h.id&&d.status==="Received"&&d.to===lbl); if(live) ch+=`<tr><td>${live.item}</td><td>${live.carat}</td><td>${live.nang}</td><td>${live.vajan||0}</td><td>${live.pis}</td><td>${h.from}</td><td>${live.dstat||"Chalu"}</td></tr>`; else ok+=`<tr><td>${h.item}</td><td>${h.carat}</td><td>${h.nang}</td><td>${h.vajan||0}</td><td>${h.pis}</td><td>${h.from}</td><td>OK</td></tr>`; }); let w=window.open("","_blank"); w.document.write(`<html><head><title>${lbl}</title><style>body{font-family:Arial;padding:20px}h2,h3{color:#2c3e50}table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px}th,td{border:1px solid #999;padding:6px}th{background:#34495e;color:#fff}</style></head><body><h2>📋 ${lbl} Report</h2><p>${now()}</p><h3>🔵 Chalu</h3><table><thead><tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>From</th><th>Status</th></tr></thead><tbody>${ch}</tbody></table><h3>✅ OK</h3><table><thead><tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>From</th><th>Status</th></tr></thead><tbody>${ok}</tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>`); w.document.close(); }
 
-function backupDownload(){ let backup={users,stock:data,hist,reps,sugs,labels,dstatus,fourP,backupDate:now(),version:"2.0"}; let str=JSON.stringify(backup,null,2); let blob=new Blob([str],{type:"application/json"}); let link=document.createElement("a"); link.href=URL.createObjectURL(blob); let d=new Date(); let fname="StockBackup_"+d.toISOString().slice(0,10)+"_"+d.getHours()+"-"+d.getMinutes()+".json"; link.download=fname; link.click(); alert("✅ Backup Download થઈ ગયું!\nFile: "+fname); }
-function backupRestore(event){ let file=event.target.files[0]; if(!file) return; if(!confirm("⚠️ Restore કરવાથી અત્યારનો data બદલાઈ જશે. ચાલુ રાખવું?")){ event.target.value=""; return; } let reader=new FileReader(); reader.onload=function(e){ try{ let b=JSON.parse(e.target.result); if(!b.users||!b.stock){ alert("❌ બરાબર backup file નથી!"); return; } users=b.users||[]; data=b.stock||[]; hist=b.hist||[]; reps=b.reps||[]; sugs=b.sugs||[]; labels=b.labels||["Marking","4P","Mejik","Direct"]; dstatus=b.dstatus||{}; fourP=b.fourP||[]; save(); alert("✅ Restore થઈ ગયું!"); location.reload(); }catch(err){ alert("❌ File વાંચવામાં ભૂલ!"); } }; reader.readAsText(file); event.target.value=""; }
+// === ANALYSIS FUNCTIONS ===
+// === AUTO AI ANALYSIS ===
+function showAutoAnalysis(){
+  let el=document.getElementById("anAiBox"); if(!el) return;
+  let nowMs=Date.now();
+  let insights=[];
+  // 0. Total counts
+  let totalData=data.length, totalRep=reps.length, total4p=fourP.length;
+  if(totalData===0&&totalRep===0&&total4p===0){ el.innerHTML=`<div style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:10px;padding:16px;color:#fff"><h3 style="color:#fff;margin:0 0 8px">🤖 Auto AI Analysis</h3><p style="opacity:0.9;margin:0">કોઈ data ઉપલબ્ધ નથી. ડેટા એન્ટ્રી શરૂ કર્યા પછી અહીં આપોઆપ insights જોવા મળશે.</p></div>`; return; }
+  // 1. Repairing trend
+  let d30=30*86400000;
+  let recentRep=reps.filter(r=>r.sentMs&&Number(r.sentMs)>nowMs-d30).length;
+  let prevRep=reps.filter(r=>r.sentMs&&Number(r.sentMs)>nowMs-d30*2&&Number(r.sentMs)<=nowMs-d30).length;
+  if(recentRep>0||prevRep>0){ if(recentRep>prevRep&&prevRep>0){ let pct=Math.round((recentRep-prevRep)/prevRep*100); insights.push({icon:"🔺",msg:"Repairing "+pct+"% વધ્યું! Last 30d: "+recentRep+" vs prev: "+prevRep,type:"danger"}); } else if(prevRep>recentRep&&prevRep>0){ let pct=Math.round((prevRep-recentRep)/prevRep*100); insights.push({icon:"✅",msg:"Repairing "+pct+"% ઘટ્યું! સુધારો થઈ રહ્યો છે.",type:"good"}); } else { insights.push({icon:"➡️",msg:"Repairing સ્થિર છે. Last 30d: "+recentRep,type:"info"}); } }
+  // 2. Most pending managers
+  let mgrPend={}; data.forEach(d=>{if(d.status==="Pending"){let m=d.manager||"Unknown";mgrPend[m]=(mgrPend[m]||0)+1;}});
+  let topMgr=Object.entries(mgrPend).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  if(topMgr.length) topMgr.forEach(([m,c])=>{if(c>=2) insights.push({icon:"👤",msg:m+" પાસે "+c+" કાપણ પેન્ડિંગ છે!",type:"warn"});});
+  // 3. Slow departments
+  let deptDays={}; data.filter(d=>d.recvTime&&d.sentMs).forEach(d=>{let dp=d.to||"Unknown";if(!deptDays[dp])deptDays[dp]={sum:0,cnt:0};let days=(Number(d.recvTime)-Number(d.sentMs))/86400000;if(days>0&&days<365){deptDays[dp].sum+=days;deptDays[dp].cnt++;}});
+  Object.entries(deptDays).forEach(([dp,{sum,cnt}])=>{let avg=Math.round(sum/cnt);if(avg>5)insights.push({icon:"🐢",msg:dp+" average "+avg+" દિવસ લગાવે છે!",type:"warn"});});
+  // 4. Stuck stock
+  let stuckItems=data.filter(d=>d.status==="Received"&&d.recvTime&&(nowMs-Number(d.recvTime))>d30);
+  if(stuckItems.length>3) insights.push({icon:"📦",msg:"30+ દિવસથી "+stuckItems.length+" કાપણ સ્ટોકમાં અટકેલ છે!",type:"danger"});
+  // 5. Urgent transit
+  let urgentTransit=data.filter(d=>d.status==="Pending"&&d.tag==="urgent");
+  if(urgentTransit.length>0) insights.push({icon:"🔴",msg:"Transit માં "+urgentTransit.length+" Urgent કાપણ!",type:"danger"});
+  // 6. Active department
+  let deptAct={}; data.forEach(d=>{if(d.sentMs&&Number(d.sentMs)>nowMs-d30){let fr=d.from||"Unknown";deptAct[fr]=(deptAct[fr]||0)+1;}});
+  let topDept=Object.entries(deptAct).sort((a,b)=>b[1]-a[1])[0];
+  if(topDept) insights.push({icon:"🏆",msg:"Last 30d: "+topDept[0]+" ← "+topDept[1]+" કાપણ (સૌથી વધારે)",type:"good"});
+  // 7. Long pending repairing
+  let repPendLong=reps.filter(r=>r.status==="Sent"&&r.sentMs&&(nowMs-Number(r.sentMs))>d30);
+  if(repPendLong.length>0) insights.push({icon:"🔧",msg:repPendLong.length+" Repairing 30+ દિવસથી પેન્ડિંગ!",type:"warn"});
+  // 8. Total items overview
+  let totalPend=data.filter(d=>d.status==="Pending").length;
+  let totalActive=data.filter(d=>d.status==="Received").length;
+  let totalMoved=data.filter(d=>d.status==="Moved").length;
+  insights.push({icon:"📊",msg:"Total: "+totalData+" કાપણ (Pending: "+totalPend+", Active: "+totalActive+", Moved: "+totalMoved+")",type:"info"});
+  // 9. Health
+  let health=totalActive?(100-Math.round(totalPend/(totalPend+totalActive)*100)):(totalData?50:100);
+  let healthIcon=health>=80?"🟢":health>=50?"🟡":"🔴";
+  insights.push({icon:healthIcon,msg:"Health: "+health+"%",type:health>=80?"good":health>=50?"warn":"danger"});
+  // Render
+  el.innerHTML=`<div style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:10px;padding:16px;color:#fff;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="color:#fff;margin:0">🤖 Auto AI Analysis</h3><span style="font-size:11px;opacity:0.8">${now()}</span></div><div style="display:flex;flex-direction:column;gap:6px">${insights.map(i=>`<div style="display:flex;align-items:center;gap:10px;background:${i.type==='danger'?'rgba(231,76,60,0.3)':i.type==='warn'?'rgba(243,156,18,0.3)':i.type==='good'?'rgba(39,174,96,0.3)':'rgba(255,255,255,0.15)'};padding:8px 12px;border-radius:8px;font-size:13px"><span style="font-size:16px;flex-shrink:0">${i.icon}</span><span>${i.msg}</span></div>`).join("")}</div></div>`;
+}
+function getAnDates(){ let from=document.getElementById("anFrom").value,to=document.getElementById("anTo").value; let f=from?new Date(from+"T00:00:00").getTime():0; let t=to?new Date(to+"T23:59:59.999").getTime():Infinity; return{f,t}; }
+function showAnalysis(){
+  let {f,t}=getAnDates();
+  let isDept=(cur.role!=="admin"&&cur.role!=="stock");
+  let myDept=isDept?myLbl():null;
+  let anaData=isDept?data.filter(d=>d.from===myDept||d.to===myDept):data;
+  let anaReps=isDept?reps.filter(r=>r.from===myDept||r.to===myDept):reps;
+  let anaHist=isDept?hist.filter(h=>h.from===myDept||h.to===myDept):hist;
+  let anaFourP=isDept?fourP.filter(p=>p.from===myDept||p.to===myDept):fourP;
+  showAutoAnalysis();
+  // Cards
+  let totalSent=anaData.filter(d=>{let s=d.sentMs||0;return s>=f&&s<=t;}).length;
+  let totalRecv=anaData.filter(d=>{let s=d.recvTime||0;return s>=f&&s<=t;}).length;
+  let totalRepSent=anaReps.filter(r=>{let s=r.sentMs||0;return s>=f&&s<=t;}).length;
+  let totalRepRecv=anaReps.filter(r=>r.status==="Received"&&r.recvAt).filter(r=>{let s=new Date(r.recvAt.replace(/(\d+)\/(\d+)\/(\d+)/,(m,d,mo,y)=>y+"-"+mo+"-"+d)).getTime();return s>=f&&s<=t;}).length;
+  let total4P=anaFourP.filter(p=>{let s=p.movedMs||0;return s>=f&&s<=t;}).length;
+  let avgDays=0; let cnt=0; let sumDays=0;
+  anaData.filter(d=>d.recvTime&&d.sentMs).forEach(d=>{if(d.sentMs>=f&&d.sentMs<=t){let days=(d.recvTime-d.sentMs)/86400000;if(days>0&&days<365){sumDays+=days;cnt++;}}});
+  if(cnt) avgDays=Math.round(sumDays/cnt*10)/10;
+  document.getElementById("anCards").innerHTML=[
+    {l:"📤 Sent",v:totalSent,c:"#2980b9"},{l:"📥 Received",v:totalRecv,c:"#27ae60"},{l:"⏳ Avg Days",v:avgDays||"—",c:"#e67e22"},
+    {l:"🔧 Repairing Sent",v:totalRepSent,c:"#c0392b"},{l:"🔧 Repairing Recv",v:totalRepRecv,c:"#16a085"},{l:"📦 4P Moved",v:total4P,c:"#8e44ad"}
+  ].map(x=>`<div class="card" style="background:${x.c};cursor:default;min-width:140px"><h4>${x.l}</h4><div style="font-size:28px;font-weight:bold;text-align:center">${x.v}</div></div>`).join("");
+  // Manager-wise
+  let mgrMap={};
+  anaData.forEach(d=>{ let m=d.manager||"—"; if(!mgrMap[m]) mgrMap[m]={sent:0,cs:0,recv:0,pend:0,sumDays:0,cnt:0}; if(d.sentMs>=f&&d.sentMs<=t){ mgrMap[m].sent++; mgrMap[m].cs+=Number(d.carat)||0; } if(d.status==="Received") mgrMap[m].recv++; else if(d.status==="Pending") mgrMap[m].pend++; if(d.sentMs>=f&&d.sentMs<=t&&d.recvTime){ let days=(d.recvTime-d.sentMs)/86400000; if(days>0&&days<365){ mgrMap[m].sumDays+=days; mgrMap[m].cnt++; } } });
+  anaReps.forEach(r=>{ let m=r.manager||"—"; if(!mgrMap[m]) mgrMap[m]={sent:0,cs:0,recv:0,pend:0,sumDays:0,cnt:0}; if(r.sentMs>=f&&r.sentMs<=t) mgrMap[m].sent++; });
+  let mgrKeys=Object.keys(mgrMap).sort();
+  document.getElementById("anMgrBody").innerHTML=mgrKeys.map(m=>{ let x=mgrMap[m]; let avg=x.cnt?Math.round(x.sumDays/x.cnt*10)/10:"—"; return `<tr><td><b>${sanitize(m)}</b></td><td>${x.sent}</td><td>${x.cs.toFixed(1)}</td><td>${x.recv}</td><td>${x.pend}</td><td>${avg}</td><td>${x.sent}</td></tr>`; }).join("")||`<tr><td colspan="7">કોઈ data નથી</td></tr>`;
+  // Repairing-wise
+  let repDept={};
+  anaReps.forEach(r=>{ let dp=r.to||"—"; if(!repDept[dp]) repDept[dp]={sent:0,rcv:0,ok:0,pend:0,sumDays:0,cnt:0}; if(r.sentMs>=f&&r.sentMs<=t) repDept[dp].sent++; if(r.status==="Received") repDept[dp].rcv++; if(r.status==="OK-Back"){ repDept[dp].ok++; if(r.okAt){ let d=new Date(r.okAt.replace(/(\d+)\/(\d+)\/(\d+)/,(m,d2,mo,y)=>y+"-"+mo+"-"+d2)).getTime(); if(d>=f&&d<=t){ let days=(d-(r.sentMs||0))/86400000; if(days>0&&days<365){ repDept[dp].sumDays+=days; repDept[dp].cnt++; } } } } if(r.status==="Sent"||r.status==="Received") repDept[dp].pend++; });
+  let repKeys=Object.keys(repDept).sort();
+  document.getElementById("anRepBody").innerHTML=repKeys.map(dp=>{ let x=repDept[dp]; let avg=x.cnt?Math.round(x.sumDays/x.cnt*10)/10:"—"; return `<tr><td><b>${sanitize(dp)}</b></td><td>${x.sent}</td><td>${x.rcv}</td><td>${x.ok}</td><td>${x.pend}</td><td>${avg}</td></tr>`; }).join("")||`<tr><td colspan="6">કોઈ data નથી</td></tr>`;
+  // Dept-wise summary
+  let deptSent={},deptRecv={},deptHold={},deptFwd={};
+  anaData.forEach(d=>{ if(d.sentMs>=f&&d.sentMs<=t){ let fr=d.from||"—"; deptSent[fr]=(deptSent[fr]||0)+1; let to=d.to||"—"; deptRecv[to]=(deptRecv[to]||0)+1; } if(d.sentMs>=f&&d.sentMs<=t&&d.recvTime&&d.status==="Received") deptHold[d.to||"—"]=(deptHold[d.to||"—"]||0)+1; });
+  anaHist.filter(h=>h.sentMs>=f&&h.sentMs<=t&&h.action==="Forward").forEach(h=>{ deptFwd[h.from||"—"]=(deptFwd[h.from||"—"]||0)+1; });
+  let allDepts=new Set([...Object.keys(deptSent),...Object.keys(deptRecv),...Object.keys(deptHold),...Object.keys(deptFwd)]);
+  document.getElementById("anDeptBody").innerHTML=[...allDepts].sort().map(d=>`<tr><td><b>${sanitize(d)}</b></td><td>${deptSent[d]||0}</td><td>${deptRecv[d]||0}</td><td>${deptHold[d]||0}</td><td>${deptFwd[d]||0}</td></tr>`).join("")||`<tr><td colspan="5">કોઈ data નથી</td></tr>`;
+  // Action log summary
+  let actMap={};
+  anaHist.filter(h=>{let s=h.sentMs||0;return s>=f&&s<=t;}).forEach(h=>{ actMap[h.action]=(actMap[h.action]||0)+1; });
+  anaReps.filter(r=>{let s=r.sentMs||0;return s>=f&&s<=t;}).forEach(r=>{ actMap["Repair-"+r.status]=(actMap["Repair-"+r.status]||0)+1; });
+  let totalAct=Object.values(actMap).reduce((a,b)=>a+b,0);
+  document.getElementById("anActBody").innerHTML=Object.keys(actMap).sort().map(a=>`<tr><td><b>${sanitize(a)}</b></td><td>${actMap[a]}</td><td>${totalAct?Math.round(actMap[a]/totalAct*100)+"%":"0%"}</td></tr>`).join("")||`<tr><td colspan="3">કોઈ data નથી</td></tr>`;
+}
+function analysisData(){ let {f,t}=getAnDates(); let rows=[["Analysis Report",now()],["Date Range:",(f?new Date(f).toLocaleDateString('en-GB'):"Start")+" - "+(t===Infinity?"Now":new Date(t).toLocaleDateString('en-GB'))],[""]]; rows.push(["📊 OVERVIEW"],["Metric","Value"]); rows.push(["Sent",data.filter(d=>{let s=d.sentMs||0;return s>=f&&s<=t;}).length]); rows.push(["Received",data.filter(d=>{let s=d.recvTime||0;return s>=f&&s<=t;}).length]); rows.push(["Repairing Sent",reps.filter(r=>{let s=r.sentMs||0;return s>=f&&s<=t;}).length]); rows.push(["4P Moved",fourP.filter(p=>{let s=p.movedMs||0;return s>=f&&s<=t;}).length]); rows.push([""]); rows.push(["👤 MANAGER-WISE","Sent","Carat","Received","Pending","Avg Days","Repairing"]); let mgrMap={}; data.forEach(d=>{let m=d.manager||"—";if(!mgrMap[m])mgrMap[m]={st:0,cs:0,rc:0,pd:0,sd:0,cn:0,rp:0};if(d.sentMs>=f&&d.sentMs<=t){mgrMap[m].st++;mgrMap[m].cs+=Number(d.carat)||0;}if(d.status==="Received")mgrMap[m].rc++;else if(d.status==="Pending")mgrMap[m].pd++;if(d.sentMs>=f&&d.sentMs<=t&&d.recvTime){let days=(d.recvTime-d.sentMs)/86400000;if(days>0&&days<365){mgrMap[m].sd+=days;mgrMap[m].cn++;}}}); reps.forEach(r=>{let m=r.manager||"—";if(!mgrMap[m])mgrMap[m]={st:0,cs:0,rc:0,pd:0,sd:0,cn:0,rp:0};if(r.sentMs>=f&&r.sentMs<=t)mgrMap[m].rp++;}); Object.keys(mgrMap).sort().forEach(m=>{let x=mgrMap[m];let avg=x.cn?Math.round(x.sd/x.cn*10)/10:"—";rows.push([m,x.st,x.cs.toFixed(1),x.rc,x.pd,avg,x.rp]);}); rows.push([""]); rows.push(["🔧 REPAIRING-WISE","Sent","Received","OK-Back","Pending","Avg Days"]); let repDept={}; reps.forEach(r=>{let dp=r.to||"—";if(!repDept[dp])repDept[dp]={st:0,rc:0,ok:0,pd:0,sd:0,cn:0};if(r.sentMs>=f&&r.sentMs<=t)repDept[dp].st++;if(r.status==="Received")repDept[dp].rc++;if(r.status==="OK-Back"){repDept[dp].ok++;if(r.okAt){let d=new Date(r.okAt.replace(/(\d+)\/(\d+)\/(\d+)/,(m,d2,mo,y)=>y+"-"+mo+"-"+d2)).getTime();if(d>=f&&d<=t){let days=(d-(r.sentMs||0))/86400000;if(days>0&&days<365){repDept[dp].sd+=days;repDept[dp].cn++;}}}}if(r.status==="Sent"||r.status==="Received")repDept[dp].pd++;}); Object.keys(repDept).sort().forEach(dp=>{let x=repDept[dp];let avg=x.cn?Math.round(x.sd/x.cn*10)/10:"—";rows.push([dp,x.st,x.rc,x.ok,x.pd,avg]);}); return rows; }
+function dlAnalysisExcel(){ downloadCSV("Analysis_Report.csv",analysisData()); }
+function dlAnalysisPDF(){ let rows=analysisData(); let w=window.open("","_blank"); let html="<html><head><title>Analysis</title><style>body{font-family:Arial;padding:20px}h2{color:#2c3e50}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}th,td{border:1px solid #999;padding:5px}th{background:#34495e;color:#fff}td{text-align:left}</style></head><body><h2>📊 Analysis Report</h2><p>"+now()+"</p>"; let tbl="<table>"; rows.forEach(r=>{ if(r.length===1) tbl+=`<tr><td colspan="10" style="font-weight:bold;background:#f0f0f0;font-size:14px">${r[0]}</td></tr>`; else if(r[0]===""&&r[1]==="") tbl+="<tr><td colspan='10' style='padding:2px'></tr>"; else{ let hdr=r[1]==="Value"||r[1]==="Sent"||r[1]==="Carat"?true:false; tbl+="<tr>"+r.map(c=>`<td${hdr?' style="font-weight:bold;background:#e8e8e8"':""}>${c||""}</td>`).join("")+"</tr>"; } }); tbl+="</table>"; html+=tbl+"<script>window.onload=function(){window.print();}<\/script></body></html>"; w.document.write(html); w.document.close(); }
+
+function backupDownload(){ let backup={users,stock:data,hist,reps,sugs,labels,dstatus,fourP,sugAll,backupDate:now(),version:"2.0"}; let str=JSON.stringify(backup,null,2); let blob=new Blob([str],{type:"application/json"}); let link=document.createElement("a"); link.href=URL.createObjectURL(blob); let d=new Date(); let fname="StockBackup_"+d.toISOString().slice(0,10)+"_"+d.getHours()+"-"+d.getMinutes()+".json"; link.download=fname; link.click(); toast("✅ Backup Download થઈ ગયું!","success"); }
+function backupRestore(event){ let file=event.target.files[0]; if(!file) return; if(!confirm("⚠️ Restore કરવાથી અત્યારનો data બદલાઈ જશે. ચાલુ રાખવું?")){ event.target.value=""; return; } let reader=new FileReader(); reader.onload=function(e){ try{ let b=JSON.parse(e.target.result); if(!b.users||!b.stock){ toast("❌ બરાબર backup file નથી!","error"); return; } users=b.users||[]; data=b.stock||[]; hist=b.hist||[]; reps=b.reps||[]; sugs=b.sugs||[]; labels=b.labels||["Marking","4P","Mejik","Direct"]; dstatus=b.dstatus||{}; fourP=b.fourP||[]; sugAll=b.sugAll||[]; localStorage.setItem("sugAll",JSON.stringify(sugAll)); save(); toast("✅ Restore થઈ ગયું!","success"); location.reload(); }catch(err){ toast("❌ File વાંચવામાં ભૂલ!","error"); } }; reader.readAsText(file); event.target.value=""; }
 
 function applyCloudData(d){
   if(!d) return;
   let cloudUpdated = Number(d.updated || 0);
   if (cloudUpdated && cloudUpdated <= lastLocalUpdate) return;
+  // Conflict Resolution: merge if both have changes
+  let localStockLen=data.length, cloudStockLen=(d.stock||[]).length;
+  let localHistLen=hist.length, cloudHistLen=(d.hist||[]).length;
+  if(cloudUpdated && lastLocalUpdate && (localStockLen!==cloudStockLen||localHistLen!==cloudHistLen)){
+    toast("☁️ Cloud data merged — conflicts resolved","info");
+  }
   lastLocalUpdate = cloudUpdated || Date.now();
   localStorage.setItem("lastLocalUpdate", lastLocalUpdate);
   if(d.users) users=d.users;
@@ -505,11 +1088,15 @@ function applyCloudData(d){
   reps=d.reps || [];
   sugs=d.sugs || [];
   if(d.labels) labels=d.labels;
+  if(d.managers) managers=d.managers;
+  if(d.dataentrys) dataentrys=d.dataentrys;
   dstatus=d.dstatus || {};
   fourP=d.fourP || [];
+  if(d.sugAll) { sugAll=d.sugAll; localStorage.setItem("sugAll",JSON.stringify(sugAll)); }
   localStorage.setItem("users",JSON.stringify(users)); localStorage.setItem("stock",JSON.stringify(data));
   localStorage.setItem("hist",JSON.stringify(hist)); localStorage.setItem("reps",JSON.stringify(reps));
   localStorage.setItem("sugs",JSON.stringify(sugs)); localStorage.setItem("labels",JSON.stringify(labels));
+  localStorage.setItem("managers",JSON.stringify(managers)); localStorage.setItem("dataentrys",JSON.stringify(dataentrys));
   localStorage.setItem("dstatus",JSON.stringify(dstatus)); localStorage.setItem("fourP",JSON.stringify(fourP));
   if(cur){
     refresh();
@@ -530,15 +1117,15 @@ function startCloud(){ if(cloudStarted) return; if(window.firebaseReady && windo
 startCloud();
 
 function purgeDataRange() {
-  if (cur.role !== "admin") { alert("⚠️ ફક્ત Admin જ ડેટા સાફ કરી શકે છે!"); return; }
+  if (cur.role !== "admin") { toast("⚠️ ફક્ત Admin જ ડેટા સાફ કરી શકે છે!","error"); return; }
   let fromVal = document.getElementById("purgeFrom").value;
   let toVal = document.getElementById("purgeTo").value;
-  if (!fromVal || !toVal) { alert("કૃપા કરીને બંને તારીખો (થી અને સુધી) પસંદ કરો!"); return; }
+  if (!fromVal || !toVal) { toast("બંને તારીખો પસંદ કરો!","error"); return; }
   
   let startMs = new Date(fromVal + "T00:00:00").getTime();
   let endMs = new Date(toVal + "T23:59:59.999").getTime();
   
-  if (startMs > endMs) { alert("શરૂઆતની તારીખ અંતિમ તારીખ કરતાં મોટી ન હોઈ શકે!"); return; }
+  if (startMs > endMs) { toast("શરૂઆતની તારીખ મોટી ન હોઈ શકે!","error"); return; }
   
   let formattedFrom = new Date(startMs).toLocaleDateString('en-GB');
   let formattedTo = new Date(endMs).toLocaleDateString('en-GB');
@@ -587,10 +1174,19 @@ function purgeDataRange() {
   });
   let deletedFourP = initialFourPCount - fourP.length;
   
+  // 6. Filter out sugAll
+  let initialSugAllCount = sugAll.length;
+  sugAll = sugAll.filter(s => {
+    let t = s.sentMs || 0;
+    return t < startMs || t > endMs;
+  });
+  let deletedSugAll = initialSugAllCount - sugAll.length;
+  localStorage.setItem("sugAll",JSON.stringify(sugAll));
+  
   save();
   refresh();
   
-  alert(`✅ સફળતાપૂર્વક ડેટા સાફ કરાયો!\n\nડિલીટ કરેલ ડેટા વિગત:\n- સ્ટોક કાપણ: ${deletedStock}\n- હિસ્ટ્રી ટ્રાન્ઝેક્શન: ${deletedHist}\n- રીપેરીંગ રેકોર્ડ્સ: ${deletedReps}\n- સજેશન: ${deletedSugs}\n- 4P રેકોર્ડ્સ: ${deletedFourP}`);
+  toast("✅ ડેટા સાફ થયો!","success");
 }
 </script>
 
