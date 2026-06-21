@@ -333,6 +333,12 @@
     </div>
     <!-- OVERLAY -->
     <div class="hide" id="editOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:199" onclick="closeEdit()"></div>
+    <!-- NOTIFICATION MODAL -->
+    <div class="box hide" id="notifModal" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:200;width:90%;max-width:500px;max-height:80vh;overflow-y:auto;background:#fff;box-shadow:0 4px 20px rgba(0,0,0,0.3);border:2px solid #2980b9">
+      <div style="display:flex;justify-content:space-between;align-items:center"><h2>🔔 Notifications</h2><button onclick="closeNotifModal()" style="background:#7f8c8d;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer">✖</button></div>
+      <div id="notifModalList"></div>
+    </div>
+    <div class="hide" id="notifOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:199" onclick="closeNotifModal()"></div>
     <!-- MY MASTER -->
     <div class="box masterbox" id="myMasterBox">
       <h2 style="cursor:pointer" onclick="toggleMaster()">👤 મારા Master <span id="masterToggle">▼</span></h2>
@@ -434,6 +440,72 @@
     <div class="box repbox" id="mgrReportBox"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2>📋 Kapan Manager Report</h2><div class="dlbar"><button class="xls" onclick="dlMgrReportExcel()">📊 Excel</button><button class="pdf" onclick="dlMgrReportPDF()">📄 PDF</button></div></div><div class="row datebar"><div><label>🔍 Kapan</label><input id="mgrSearch" placeholder="Kapan"></div><div><label>Office</label><select id="mgrDept"></select></div><div><label>📅 થી</label><input id="mgrFrom" type="date"></div><div><label>📅 સુધી</label><input id="mgrTo" type="date"></div><div style="display:flex;align-items:flex-end"><button onclick="showMgrReport()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div><div style="display:flex;align-items:flex-end"><button onclick="clearMgrReport()" style="background:#7f8c8d;width:100%">🔄</button></div></div><table><thead><tr><th>Kapan</th><th>Department</th><th>Manager</th><th>Data Entry</th><th>Status</th><th>History</th></tr></thead><tbody id="mgrReportBody"><tr><td colspan="6" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr></tbody></table></div>
   </div>
 
+  <!-- PAGE: UCHAK (Department Workflow) -->
+  <div class="page" id="pg_uchak">
+
+    <!-- 🏭 Uchak Entry -->
+    <div class="box" style="border:2px solid #2980b9;background:#f0f8ff">
+      <h2 id="uchakJangadTitle">🏭 નવી Uchak કાપણ બનાવો</h2>
+      <div class="row">
+        <div style="flex:2"><label>📋 Kapan Number</label><input id="jgKapan" placeholder="Kapan Number"></div>
+        <div style="flex:3"><label>📝 વિગત</label><input id="jgVigat" placeholder="વિગત (વૈકલ્પિક)" style="width:100%"></div>
+        <div><label>Tag</label><select id="jgTag" style="width:100%"><option value="Regular">🟢 Regular</option><option value="Urgent">🔴 Urgent</option><option value="High">🟡 High</option></select></div>
+      </div>
+      <div style="margin:10px 0"><label>📦 Jangad ઉમેરો</label>
+      <table><thead><tr><th>Jangad #</th><th>નાંગ</th><th>વજન</th><th>પીસ</th><th>Del</th></tr></thead><tbody id="jgRowsBody"></tbody></table>
+      <div class="sumline" id="jgTotal">કુલ: 0 | 0 | 0</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">
+        <button class="addp" onclick="addJangadRow()">➕ Jangad ઉમેરો</button>
+      </div>
+      <div style="margin:10px 0;padding:10px;background:#eaf2f8;border-radius:8px">
+        <label><b>🛣 Route — ક્રમ પ્રમાણે Department</b></label>
+        <div class="row" style="margin-top:6px">
+          <div style="flex:1"><select id="jgDeptSel"><option value="">— Department પસંદ કરો —</option></select></div>
+          <div style="display:flex;align-items:flex-end"><button class="addp" onclick="addDeptToSeq()" style="margin:0">➕ Route માં ઉમેરો</button></div>
+        </div>
+        <div id="jgDeptSeq" style="margin-top:6px"></div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+        <button onclick="createJangads()" style="background:#2980b9;color:#fff;padding:10px 24px;border:none;border-radius:6px;font-weight:600;cursor:pointer">🏭 Uchak Entry Save કરો</button>
+      </div>
+    </div>
+    <!-- ⚙️ Uchak Master — Process & Rate (collapsible) -->
+    <div class="box" style="border:1px solid #ddd">
+      <h2 onclick="toggleUchakMaster()" style="cursor:pointer;user-select:none">⚙️ Uchak Master — Process & Rate <span id="uchakMasterToggle">▼</span></h2>
+      <div id="uchakMasterBody" class="hide">
+        <div class="row"><div><b>🏢 Department</b> <select id="uchakMasterDept" onchange="onUchakMasterDeptChange()" style="width:auto;min-width:120px"></select></div></div>
+        <hr style="margin:8px 0">
+        <div class="row"><div style="flex:2"><b>📋 Process Master</b></div></div>
+        <div class="row"><div style="flex:2"><input id="nUProc" placeholder="નવું Process નામ"></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addUchakProcess()" style="width:100%">➕ ઉમેરો</button></div></div><div id="uchakProcList" style="margin-top:6px"></div>
+        <hr style="margin:12px 0">
+        <div class="row"><div><b>💰 Rate Master</b></div></div>
+        <div class="row"><div><label>Process</label><select id="uRateProc"></select></div><div><label>Operator</label><input id="uRateOp" placeholder="Operator"></div><div><label>Rate</label><input id="uRateVal" type="number" step="0.01" placeholder="ભાવ"></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addUchakRate()" style="width:100%">➕ ઉમેરો</button></div></div>
+        <table><thead><tr><th>Process</th><th>Operator</th><th>Rate</th><th>Action</th></tr></thead><tbody id="uchakRateList"></tbody></table>
+      </div>
+    </div>
+    <!-- 🏭 Active Uchak Entries -->
+    <div class="box" style="border:2px solid #27ae60">
+      <h2>🏭 Active Uchak Entries — Kapanwise</h2>
+      <div style="margin-bottom:8px;font-size:12px;color:#555">કુલ: <span id="activeKapanCount">0</span> Kapan, <span id="activeJangadCount">0</span> Jangad</div>
+      <table><thead><tr><th>Kapan</th><th>વિગત/Jangad</th><th>નાંગ</th><th>વજન</th><th>પીસ</th><th>Process Status</th><th>Current Dept</th></tr></thead><tbody id="uchakActiveEntries"><tr><td colspan="7">Uchak Entry નથી</td></tr></tbody></table>
+    </div>
+    <!-- 📥 Process Flow -->
+    <div class="box"><h2 id="uchakInboxTitle">📥 Process Flow</h2><div id="batchBar" class="hide" style="margin-bottom:8px;display:flex;gap:8px;align-items:center;padding:8px;background:#eaf2f8;border-radius:6px"><span id="batchCount" style="font-weight:bold">0 selected</span><button class="set" onclick="batchSendNextDept()" style="padding:6px 12px;font-size:12px;margin:0">📤 Send Selected to Next Dept</button></div><table><thead><tr><th style="width:30px"><input type="checkbox" onchange="toggleAllJangadCheck(this)"></th><th>જંગડ</th><th>Kapan</th><th>Process</th><th>Operator</th><th>Rate</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>Status</th><th>Action</th></tr></thead><tbody id="jangadInbox"></tbody></table></div>
+    <!-- Next Department Panel -->
+    <div class="box hide" id="uchakNextPanel" style="border:2px solid #8e44ad;background:#f5eef8">
+      <h2>📤 Send to Next Department</h2>
+      <p id="uchakNextInfo" class="small"></p>
+      <div class="row">
+        <div><label>Department</label><select id="uchakNextDept"><option value="Stock">📦 Back to Stock</option></select></div>
+        <div style="display:flex;align-items:flex-end"><button onclick="jangadSendToDept()" style="background:#16a085;width:100%">📤 Send</button></div>
+        <div style="display:flex;align-items:flex-end"><button onclick="closeUchakNextPanel()" style="background:#7f8c8d;width:100%">✖ Cancel</button></div>
+      </div>
+    </div>
+
+    <!-- Report -->
+    <div class="box"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 id="uchakReportTitle">📋 Report</h2><div class="dlbar"><button class="xls" onclick="dlUchakExcel()">📊 Excel</button><button class="pdf" onclick="dlUchakPDF()">📄 PDF</button></div></div><div class="row datebar"><div><label>🔍 Kapan</label><input id="urSearch" placeholder="Kapan"></div><div><label>🏢 Department</label><select id="urDept" onchange="onUrDeptChange()"></select></div><div><label>🔧 Process</label><select id="urProcess"><option value="">— All —</option></select></div><div><label>📅 થી</label><input id="urFrom" type="date"></div><div><label>📅 સુધી</label><input id="urTo" type="date"></div><div style="display:flex;align-items:flex-end"><button onclick="showUchakReport()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div><div style="display:flex;align-items:flex-end"><button onclick="clearUchakReport()" style="background:#7f8c8d;width:100%">🔄</button></div></div><table><thead><tr><th>જંગડ નં.</th><th>Kapan</th><th>વિગત</th><th>Department</th><th>Process</th><th>Operator</th><th>Rate</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>In D-T</th><th>Out D-T</th><th>Status</th></tr></thead><tbody id="uchakReportBody"><tr><td colspan="13" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr></tbody></table></div>
+  </div>
+
   <!-- PAGE: ADMIN -->
   <div class="page" id="pg_admin">
 
@@ -509,6 +581,14 @@
       <div class="box masterbox" style="margin:12px 0;"><h2>📝 Data Entry Manager Master</h2><div class="row"><div><label>Office</label><select id="deOfficeSel" onchange="showDEAdminList()"></select></div><div><label>Data Entry નું નામ</label><input id="nDEAdmin" placeholder="Data Entry Name"></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addDEAdmin()" style="width:100%">➕ ઉમેરો</button></div></div><div id="deAdminList" style="margin-top:10px"></div></div>
       <hr style="margin:14px 0;border-color:#ddd">
 
+      <!-- Department Process Master (Admin) -->
+      <div class="box" style="margin:12px 0;border:2px solid #16a085"><h2>🔀 Department Process Master</h2><div class="row"><div><label>Department</label><select id="uProcDeptAdmin" onchange="onAdminProcDeptChange()"></select></div><div style="flex:2"><input id="nUProcAdmin" placeholder="નવું Process નામ"></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addUchakProcessAdmin()" style="width:100%">➕ ઉમેરો</button></div></div><div id="uchakProcListAdmin" style="margin-top:6px"></div></div>
+      <hr style="margin:14px 0;border-color:#ddd">
+
+      <!-- Department Rate Master (Admin) -->
+      <div class="box" style="margin:12px 0;border:2px solid #8e44ad"><h2>💰 Department Rate Master</h2><div class="row"><div><label>Department</label><select id="uRateDeptAdmin" onchange="onAdminRateDeptChange()"></select></div><div><label>Process</label><select id="uRateProcAdmin"></select></div><div><label>Operator</label><input id="uRateOpAdmin" placeholder="Operator"></div><div><label>Rate</label><input id="uRateValAdmin" type="number" step="0.01" placeholder="ભાવ"></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addUchakRateAdmin()" style="width:100%">➕ ઉમેરો</button></div></div><table><thead><tr><th>Process</th><th>Operator</th><th>Rate</th><th>Action</th></tr></thead><tbody id="uchakRateListAdmin"></tbody></table></div>
+      <hr style="margin:14px 0;border-color:#ddd">
+
       <!-- Users -->
       <div class="row"><div><label>Department</label><input id="nDept" placeholder="Galaxy"></div><div><label>Office 🏢</label><input id="nOffice" placeholder="Office-1"></div><div><label>User ID</label><input id="nId" placeholder="galaxy1"></div><div><label>Password</label><input id="nPass" placeholder="Password"></div></div><label>🔀 Process (comma)</label><input id="nParts" placeholder="Process A, Process B"><button onclick="addUser()">User બનાવો</button>
       <table><thead><tr><th>Dept</th><th>Office</th><th>Process</th><th>ID</th><th>Pass</th><th>Action</th></tr></thead><tbody id="userList"></tbody></table>
@@ -568,9 +648,27 @@ let dstatus = JSON.parse(localStorage.getItem("dstatus") || "{}");
 let fourP = JSON.parse(localStorage.getItem("fourP") || "[]");
 let cur=null, reportKey=null;
 const STOCK_DEPT="Stock", STOCK_HOLD="🏢 Stock (રાખો)";
+let uchak = JSON.parse(localStorage.getItem("uchak") || "[]");
+let uchakProcesses = JSON.parse(localStorage.getItem("uchakProcesses") || "[]");
+let uchakRates = JSON.parse(localStorage.getItem("uchakRates") || "[]");
+let deptProcesses = JSON.parse(localStorage.getItem("deptProcesses") || "{}");
+let deptRates = JSON.parse(localStorage.getItem("deptRates") || "{}");
+// Migration from global to per-dept
+if(uchakProcesses.length&&(!deptProcesses["ઉચક"]||!deptProcesses["ઉચક"].length)){ deptProcesses["ઉચક"]=uchakProcesses; uchakProcesses=[]; save(); }
+if(uchakRates.length&&(!deptRates["ઉચક"]||!deptRates["ઉચક"].length)){ deptRates["ઉચક"]=uchakRates; uchakRates=[]; save(); }
+// Ensure all uchak items have dept field
+uchak.forEach(u=>{ if(!u.dept) u.dept="ઉચક"; if(!u.nextOpts) u.nextOpts=[]; });
+let jangads = JSON.parse(localStorage.getItem("jangads") || "[]");
+let jangadCounter = parseInt(localStorage.getItem("jangadCounter") || "0");
+// Migration: ensure all jangads have depts, deptIndex, and tag
+jangads.forEach(j=>{
+  if(!j.depts){ j.depts=[j.dept||"ઉચક"]; j.deptIndex=0; }
+  if(!j.tag) j.tag="Regular";
+});
 
 function now(){ let d=new Date(); return d.toLocaleDateString('en-GB')+" "+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); }
 function todayISO(ms){ let d=ms?new Date(ms):new Date(); return d.toISOString().slice(0,10); }
+function shortDate(d){ try{ return new Date(d).toLocaleDateString('en-GB'); }catch(e){ return d; } }
 function getParts(u){ return (u.parts&&u.parts.length)?u.parts:["Main"]; }
 function diffHrs(a,b){ if(!a) return "—"; let e=b||Date.now(); let df=e-a; let h=Math.floor(df/3600000); let m=Math.floor((df%3600000)/60000); return h+" ક "+m+" મિ"; }
 function hoursSince(ms){ return diffHrs(ms,null); }
@@ -592,12 +690,13 @@ function save(){
   localStorage.setItem("sugs",JSON.stringify(sugs)); localStorage.setItem("labels",JSON.stringify(labels));
   localStorage.setItem("managers",JSON.stringify(managers)); localStorage.setItem("dataentrys",JSON.stringify(dataentrys));
   localStorage.setItem("dstatus",JSON.stringify(dstatus)); localStorage.setItem("fourP",JSON.stringify(fourP));
-  if(window.cloudSave){ window.cloudSave({users,stock:data,hist,reps,sugs,labels,managers,dataentrys,dstatus,fourP,updated:nowMs,sugAll,loginHistory:JSON.parse(localStorage.getItem("loginHistory")||"[]")}); }
+  localStorage.setItem("uchak",JSON.stringify(uchak)); localStorage.setItem("uchakProcesses",JSON.stringify(uchakProcesses)); localStorage.setItem("uchakRates",JSON.stringify(uchakRates)); localStorage.setItem("deptProcesses",JSON.stringify(deptProcesses)); localStorage.setItem("deptRates",JSON.stringify(deptRates)); localStorage.setItem("jangads",JSON.stringify(jangads)); localStorage.setItem("jangadCounter",String(jangadCounter));
+  if(window.cloudSave){ window.cloudSave({users,stock:data,hist,reps,sugs,labels,managers,dataentrys,dstatus,fourP,uchak,uchakProcesses,uchakRates,deptProcesses,deptRates,jangads,jangadCounter,updated:nowMs,sugAll,loginHistory:JSON.parse(localStorage.getItem("loginHistory")||"[]")}); }
 }
 
 let curPage="";
 function showPage(pg){ curPage=pg; document.querySelectorAll(".page").forEach(p=>p.classList.remove("show")); let el=document.getElementById("pg_"+pg); if(el) el.classList.add("show"); document.querySelectorAll(".navbar button").forEach(b=>b.classList.toggle("active", b.dataset.pg===pg)); let sb=document.querySelector(".schbox"); if(sb) sb.style.display=pg==="admin"?"none":""; refresh(); }
-function buildNav(){ let isFull=(cur.role==="admin"||cur.role==="stock"); let items=[]; if(isFull) items.push(["dash","📊 Dashboard"]); if(isFull) items.push(["send","📤 કાપણ મોકલો"]); items.push(["stock","📥 Stock & Inbox"]); items.push(["rep","🔧 Repairing"]); items.push(["sug","💡 Suggestion"]); items.push(["anal","📊 Analysis"]); items.push(["hist","🕒 History"]); if(cur.role==="admin") items.push(["admin","👑 Admin"]); if(cur.role==="admin") items.push(["lhist","🔐 Login History"]); document.getElementById("navbar").innerHTML=items.map(it=>`<button data-pg="${it[0]}" onclick="showPage('${it[0]}')">${it[1]}</button>`).join(""); showPage(isFull?"dash":"stock"); }
+function buildNav(){ let isFull=(cur.role==="admin"||cur.role==="stock"); let items=[]; if(isFull) items.push(["dash","📊 Dashboard"]); if(isFull) items.push(["send","📤 કાપણ મોકલો"]); items.push(["stock","📥 Stock & Inbox"]); items.push(["rep","🔧 Repairing"]); items.push(["sug","💡 Suggestion"]); items.push(["anal","📊 Analysis"]); items.push(["hist","🕒 History"]); items.push(["uchak","🔀 ઉચક"]); if(cur.role==="admin") items.push(["admin","👑 Admin"]); if(cur.role==="admin") items.push(["lhist","🔐 Login History"]); document.getElementById("navbar").innerHTML=items.map(it=>`<button data-pg="${it[0]}" onclick="showPage('${it[0]}')">${it[1]}</button>`).join(""); showPage(isFull?"dash":"stock"); }
 
 function startSession(u){ sessionStorage.setItem("curId",u.id); }
 function endSession(){ sessionStorage.removeItem("curId"); }
@@ -626,6 +725,9 @@ function openApp(){
   document.getElementById("fStatusDiv").classList.toggle("hide",!isFull);
   document.getElementById("fDeptDiv").classList.toggle("hide",!isFull);
   fillDeptDropdown(); fillFilterDept(); fillHistDept(); fillRepDeptFilter(); fillRepairDropdown(); fillManagerDropdown(); fillMgrDropdownStock(); fillDataEntryDropdown(); fillSugToChk(); fillSugFiltDept(); fillDashStatDept(); showUsers(); showLabels(); showManagers(); showDEAdminList(); showMyMgrList(); showMyDEList(); showGoogleReqs(); showAllowedEmails(); populateAdminReqDept(); populateAdminOfficeSels(); loadAdminSettings(); applyDarkMode(); updateNotifCount(); showNotifications(); addInputValidation(); injectDateQuick(); resetActivityTimer();
+  populateUchakDeptSel(); populateUchakAdminDeptSels();
+  showUchakProcesses(); showUchakProcessesAdmin(); showUchakRates(); showUchakRatesAdmin(); fillUchakProcSels();
+  initJangadEntry(); showJangadInbox();
   if(isFull){ partRows=[]; addPartRow(); addPartRow(); }
   buildNav();
 }
@@ -688,7 +790,27 @@ function addNotif(type,title,msg){ notifications.unshift({id:Date.now(),type,tit
 function markNotifRead(id){ let n=notifications.find(x=>x.id===id); if(n) n.read=true; localStorage.setItem("notifications",JSON.stringify(notifications)); updateNotifCount(); showNotifications(); }
 function markAllRead(){ notifications.forEach(n=>n.read=true); localStorage.setItem("notifications",JSON.stringify(notifications)); updateNotifCount(); showNotifications(); }
 function updateNotifCount(){ let unread=notifications.filter(n=>!n.read).length; let el=document.getElementById("notifCount"); if(el){ if(unread>0){ el.textContent=unread; el.classList.remove("hide"); } else { el.classList.add("hide"); } } }
-function showNotifications(){ let el=document.getElementById("notifList"); if(!el) return; let html=`<div style="margin-bottom:8px"><button onclick="markAllRead()" style="font-size:12px;padding:4px 8px;margin:0">✓ Mark all read</button></div>`; if(!notifications.length){ html+=`<p style="color:#888">No notifications</p>`; } else { notifications.slice(0,50).forEach(n=>{ let icon=n.type==="edit_request"?"✏️":n.type==="edit_approved"?"✅":n.type==="edit_rejected"?"❌":n.type==="warning"?"⚠️":"ℹ️"; html+=`<div class="req-pending ${n.read?"":"req-approved"}" style="cursor:pointer" onclick="markNotifRead(${n.id})"><div>${icon} <b>${sanitize(n.title)}</b><br><span class="small">${sanitize(n.msg)} | ${n.time}</span></div></div>`; }); } el.innerHTML=html; }
+function closeNotifModal(){
+  ["notifModal","notifOverlay"].forEach(id=>{ let e=document.getElementById(id); if(e) e.classList.add("hide"); });
+}
+function showNotifications(){
+  // Try admin panel first, fallback to modal
+  let el=document.getElementById("notifList")||document.getElementById("notifModalList");
+  if(!el) return;
+  let html=`<div style="margin-bottom:8px"><button onclick="markAllRead()" style="font-size:12px;padding:4px 8px;margin:0">✓ Mark all read</button><button onclick="closeNotifModal()" style="font-size:12px;padding:4px 8px;margin:0;margin-left:6px;background:#7f8c8d">✖ Close</button></div>`;
+  if(!notifications.length){ html+=`<p style="color:#888">No notifications</p>`; } else {
+    notifications.slice(0,50).forEach(n=>{
+      let icon=n.type==="edit_request"?"✏️":n.type==="edit_approved"?"✅":n.type==="edit_rejected"?"❌":n.type==="send"?"📤":"ℹ️";
+      html+=`<div class="req-pending ${n.read?"":"req-approved"}" style="cursor:pointer" onclick="markNotifRead(${n.id})"><div>${icon} <b>${sanitize(n.title)}</b><br><span class="small">${sanitize(n.msg)} | ${n.time}</span></div></div>`;
+    });
+  }
+  el.innerHTML=html;
+  // Show modal if not using admin panel
+  if(!document.getElementById("notifList")){
+    let m=document.getElementById("notifModal"); if(m) m.classList.remove("hide");
+    let o=document.getElementById("notifOverlay"); if(o) o.classList.remove("hide");
+  }
+}
 
 // === EDIT REQUEST SYSTEM ===
 let editRequests=JSON.parse(localStorage.getItem("editRequests")||"[]");
@@ -705,7 +827,7 @@ function toggleMobileViewSetting(){ let cb=document.getElementById("setMobileVie
 // === ADD INPUT VALIDATION TO NUMERIC FIELDS ===
 function addInputValidation(){ document.querySelectorAll('input[type="number"]').forEach(el=>{ if(!el.hasAttribute("min")) return; let min=parseFloat(el.getAttribute("min")); let max=parseFloat(el.getAttribute("max")); if(!isNaN(min)||!isNaN(max)){ addValidation(el,isNaN(min)?undefined:min,isNaN(max)?undefined:max); } }); }
 // === INJECT DATE QUICK SELECTORS ===
-function injectDateQuick(){ document.querySelectorAll(".datebar").forEach(bar=>{ if(bar.querySelector(".datequick")) return; let fromEl=bar.querySelector('input[type="date"]'); let toEl=bar.querySelectorAll('input[type="date"]')[1]; if(!fromEl||!toEl) return; let fnName=""; if(fromEl.id==="rhFrom") fnName="showRepHist"; else if(fromEl.id==="hFrom") fnName="showHistory"; else if(fromEl.id==="dhFrom") fnName="showDeptHist"; else if(fromEl.id==="sgFiltFrom") fnName="showSugHist"; else if(fromEl.id==="mgrFrom") fnName="showMgrReport"; if(!fnName) return; let qd=document.createElement("div"); qd.className="datequick"; qd.style.cssText="width:100%;margin-top:6px"; qd.innerHTML=`<button onclick="dateQuick('today','${fromEl.id},${toEl.id}',${fnName})">Today</button><button onclick="dateQuick('week','${fromEl.id},${toEl.id}',${fnName})">This Week</button><button onclick="dateQuick('month','${fromEl.id},${toEl.id}',${fnName})">This Month</button><button onclick="dateQuick('30days','${fromEl.id},${toEl.id}',${fnName})">30 Days</button><button onclick="dateQuick('all','${fromEl.id},${toEl.id}',${fnName})">All</button>`; bar.appendChild(qd); }); }
+function injectDateQuick(){ document.querySelectorAll(".datebar").forEach(bar=>{ if(bar.querySelector(".datequick")) return; let fromEl=bar.querySelector('input[type="date"]'); let toEl=bar.querySelectorAll('input[type="date"]')[1]; if(!fromEl||!toEl) return; let fnName="";     if(fromEl.id==="rhFrom") fnName="showRepHist"; else if(fromEl.id==="hFrom") fnName="showHistory"; else if(fromEl.id==="dhFrom") fnName="showDeptHist"; else if(fromEl.id==="sgFiltFrom") fnName="showSugHist"; else if(fromEl.id==="mgrFrom") fnName="showMgrReport"; else if(fromEl.id==="urFrom") fnName="showUchakReport"; if(!fnName) return; let qd=document.createElement("div"); qd.className="datequick"; qd.style.cssText="width:100%;margin-top:6px"; qd.innerHTML=`<button onclick="dateQuick('today','${fromEl.id},${toEl.id}',${fnName})">Today</button><button onclick="dateQuick('week','${fromEl.id},${toEl.id}',${fnName})">This Week</button><button onclick="dateQuick('month','${fromEl.id},${toEl.id}',${fnName})">This Month</button><button onclick="dateQuick('30days','${fromEl.id},${toEl.id}',${fnName})">30 Days</button><button onclick="dateQuick('all','${fromEl.id},${toEl.id}',${fnName})">All</button>`; bar.appendChild(qd); }); }
 
 // View Mode (Desktop/Mobile)
 function setView(mode){ localStorage.setItem("viewMode",mode); applyView(mode); document.querySelectorAll('input[name="viewMode"]').forEach(r=>{ r.checked=(r.value===mode); }); }
@@ -844,12 +966,17 @@ function clearRepHist(){ ["rhSearch","rhFrom","rhTo"].forEach(x=>document.getEle
 function clearSugHist(){ ["sgFiltFrom","sgFiltTo"].forEach(x=>document.getElementById(x).value=""); if(document.getElementById("sgFiltDept")) document.getElementById("sgFiltDept").value=""; showSugHist(); }
 
 function nameExists(item){ let b=normKapan(item); return data.some(d=>normKapan(d.item)===b)||hist.some(h=>normKapan(h.item)===b); }
-function addItemFree(){ let item=document.getElementById("item").value.trim(),carat=parseFloat(document.getElementById("carat").value)||0,nang=parseInt(document.getElementById("nang").value)||0,vajan=parseFloat(document.getElementById("vajan").value)||0,pis=parseInt(document.getElementById("pis").value)||0,note=document.getElementById("note").value.trim(),tag=document.getElementById("tag").value,toVal=document.getElementById("to").value; if(!item||(carat===0&&nang===0&&pis===0)){ toast("Item અને Carat/Nang/Pis ભરો!","error"); return; } if(carat<0||nang<0||vajan<0||pis<0){ toast("Negative values not allowed!","error"); return; } if(nameExists(item)){ toast("⚠️ આ Kapan નંબર પહેલેથી છે, પરંતુ ઉમેરી શકાય છે!","warning"); } let [to,toPart]=toVal.split("|||"); let from=cur.role==="admin"?"Admin":STOCK_DEPT; let id=uid(); let rec={id,item,carat,nang,vajan,pis,note,tag,from,fromPart:"Main",to,toPart,label:"",manager:"",dataentry:"",fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0}; data.push(rec); hist.push({...rec,action:"Send"}); pushUndo({undo:()=>{ data=data.filter(d=>d.id!==id); hist=hist.filter(h=>h.id!==id); save(); refresh(); },redo:()=>{ data.push(rec); hist.push({...rec,action:"Send"}); save(); refresh(); }}); save(); ["item","note"].forEach(x=>document.getElementById(x).value=""); ["carat","nang","vajan","pis"].forEach(x=>document.getElementById(x).value="0"); refresh(); toast("📤 મોકલાઈ ગયું!","success"); }
+function addItemFree(){ let item=document.getElementById("item").value.trim(),carat=parseFloat(document.getElementById("carat").value)||0,nang=parseInt(document.getElementById("nang").value)||0,vajan=parseFloat(document.getElementById("vajan").value)||0,pis=parseInt(document.getElementById("pis").value)||0,note=document.getElementById("note").value.trim(),tag=document.getElementById("tag").value,toVal=document.getElementById("to").value; if(!item||(carat===0&&nang===0&&pis===0)){ toast("Item અને Carat/Nang/Pis ભરો!","error"); return; } if(carat<0||nang<0||vajan<0||pis<0){ toast("Negative values not allowed!","error"); return; } if(nameExists(item)){ toast("⚠️ આ Kapan નંબર પહેલેથી છે, પરંતુ ઉમેરી શકાય છે!","warning"); } let [to,toPart]=toVal.split("|||"); let from=cur.role==="admin"?"Admin":STOCK_DEPT; let id=uid(); let rec={id,item,carat,nang,vajan,pis,note,tag,from,fromPart:"Main",to,toPart,label:"",manager:"",dataentry:"",fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0};   data.push(rec); hist.push({...rec,action:"Send"}); pushUndo({undo:()=>{ 
+  data=data.filter(d=>d.id!==id); hist=hist.filter(h=>h.id!==id); save(); refresh(); },redo:()=>{ data.push(rec); 
+  hist.push({...rec,action:"Send"}); save(); refresh(); }}); save(); 
+  ["item","note"].forEach(x=>document.getElementById(x).value=""); 
+  ["carat","nang","vajan","pis"].forEach(x=>document.getElementById(x).value="0"); refresh(); 
+  addNotif("send","Kapan Sent",from+" → "+to+": "+item+" ("+carat+"ct)"); toast("📤 મોકલાઈ ગયું!","success"); }
 
 function stockHeld(){ return data.map((d,idx)=>({...d,idx})).filter(d=>d.status==="Received"&&(d.to===STOCK_DEPT||d.to===STOCK_HOLD)); }
 function fillSFPick(){ let s=normKapan(document.getElementById("sfSearch").value); let list=stockHeld().filter(d=>!s||normKapan(d.item).includes(s)); document.getElementById("sfPick").innerHTML=list.map(d=>`<option value="${d.idx}">${d.item} — ${d.carat}ct</option>`).join("")||`<option value="">— કોઈ નથી —</option>`; fillSF(); }
 function fillSF(){ let i=document.getElementById("sfPick").value; if(i===""){ ["sfCarat","sfNang","sfVajan","sfPis","sfTag"].forEach(x=>document.getElementById(x).value=""); return; } let d=data[i]; document.getElementById("sfCarat").value=d.carat; document.getElementById("sfNang").value=d.nang; document.getElementById("sfVajan").value=d.vajan||0; document.getElementById("sfPis").value=d.pis; document.getElementById("sfTag").value=d.tag||"regular"; }
-function stockForward(){ let i=document.getElementById("sfPick").value; if(i===""){ toast("કાપણ પસંદ કરો!","error"); return; } let src=data[i]; let tag=document.getElementById("sfTag").value,note=document.getElementById("sfNote").value.trim(); let [to,toPart]=document.getElementById("sfTo").value.split("|||"); let id=uid(); let rec={id,item:src.item,carat:src.carat,nang:src.nang,vajan:src.vajan||0,pis:src.pis,note,tag,from:STOCK_DEPT,fromPart:"Main",to,toPart,label:src.label||"",manager:"",dataentry:"",fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0}; data.push(rec); hist.push({...rec,action:"Send"}); data.splice(i,1); document.getElementById("sfNote").value=""; save(); refresh(); toast("✅ આગળ મોકલાઈ ગયું!","success"); }
+function stockForward(){ let i=document.getElementById("sfPick").value; if(i===""){ toast("કાપણ પસંદ કરો!","error"); return; } let src=data[i]; let tag=document.getElementById("sfTag").value,note=document.getElementById("sfNote").value.trim(); let [to,toPart]=document.getElementById("sfTo").value.split("|||"); let id=uid(); let rec={id,item:src.item,carat:src.carat,nang:src.nang,vajan:src.vajan||0,pis:src.pis,note,tag,from:STOCK_DEPT,fromPart:"Main",to,toPart,label:src.label||"",manager:"",dataentry:"",fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0}; data.push(rec); hist.push({...rec,action:"Send"}); data.splice(i,1); document.getElementById("sfNote").value=""; save(); refresh(); addNotif("send","Stock Forward",STOCK_DEPT+" → "+to+": "+src.item); toast("✅ આગળ મોકલાઈ ગયું!","success"); }
 
 let partRows=[];
 function fillSplitPick(){ let s=normKapan(document.getElementById("spSearch").value); let list=data.map((d,idx)=>({...d,idx})).filter(d=>d.status==="Received"&&(d.to===STOCK_DEPT||d.to===STOCK_HOLD)&&(!s||normKapan(d.item).includes(s))); document.getElementById("splitPick").innerHTML=list.map(d=>`<option value="${d.idx}">${d.item} — ${d.carat}ct</option>`).join("")||`<option value="">— કોઈ નથી —</option>`; fillSplit(); }
@@ -858,12 +985,12 @@ function addPartRow(){ partRows.push("p"+Math.random().toString(36).slice(2,7));
 function delPartRow(rid){ if(partRows.length<=1) return; partRows=partRows.filter(x=>x!==rid); renderPartRows(); }
 function renderPartRows(){ let opts=destOptions(true); let lo=`<option value="">— Label —</option>`+labels.map(l=>`<option value="${l}">${l}</option>`).join(""); document.getElementById("partsBody").innerHTML=partRows.map(rid=>`<tr class="partrow"><td><input id="${rid}_c" type="number" step="0.01" value="0" oninput="updateSplitSum()" style="width:70px"></td><td><input id="${rid}_n" type="number" value="0" oninput="updateSplitSum()" style="width:55px"></td><td><input id="${rid}_v" type="number" step="0.01" value="0" style="width:60px"></td><td><input id="${rid}_p" type="number" value="0" oninput="updateSplitSum()" style="width:55px"></td><td><select id="${rid}_tag"><option value="urgent">🔴</option><option value="agal">🟡</option><option value="regular" selected>🟢</option></select></td><td><select id="${rid}_lbl">${lo}</select></td><td><input id="${rid}_note" placeholder="વિગત" style="width:100px"></td><td><select id="${rid}_to">${opts}</select></td><td><button class="del" onclick="delPartRow('${rid}')">✖</button></td></tr>`).join(""); updateSplitSum(); }
 function updateSplitSum(){ let tc=parseFloat(document.getElementById("spCarat").value)||0,tn=parseInt(document.getElementById("spNang").value)||0,tp=parseInt(document.getElementById("spPis").value)||0; let sc=0,sn=0,sp=0; partRows.forEach(rid=>{ sc+=parseFloat(document.getElementById(rid+"_c")?.value)||0; sn+=parseInt(document.getElementById(rid+"_n")?.value)||0; sp+=parseInt(document.getElementById(rid+"_p")?.value)||0; }); let ok=Math.abs(sc-tc)<0.001; document.getElementById("splitSum").innerHTML=`કુલ: ${tc.toFixed(2)}ct/${tn}n/${tp}p → ભાગ: <b style="color:${ok?'#27ae60':'#e74c3c'}">${sc.toFixed(2)}ct</b>/${sn}n/${sp}p ${ok?'✅':'⚠️'}`; }
-function doSplit(){ let i=document.getElementById("splitPick").value; if(i===""){ toast("કાપણ પસંદ કરો!","error"); return; } let src=data[i]; let tc=Number(src.carat); let parts=[]; let sc=0; for(let rid of partRows){ let c=parseFloat(document.getElementById(rid+"_c").value)||0,n=parseInt(document.getElementById(rid+"_n").value)||0,v=parseFloat(document.getElementById(rid+"_v").value)||0,p=parseInt(document.getElementById(rid+"_p").value)||0; let tag=document.getElementById(rid+"_tag").value,lbl=document.getElementById(rid+"_lbl").value,note=document.getElementById(rid+"_note").value.trim(),tv=document.getElementById(rid+"_to").value; if(c===0&&n===0&&p===0) continue; let [to,toPart]=tv.split("|||"); parts.push({c,n,v,p,tag,lbl,note,to,toPart}); sc+=c; } if(parts.length<2){ toast("ઓછામાં ઓછા 2 ભાગ!","error"); return; } if(Math.abs(sc-tc)>0.001){ if(!confirm("Carat મેળ નથી. આગળ?")) return; } parts.forEach((pt,k)=>{ let id=uid(); let nm=src.item+" (ભાગ "+(k+1)+")"+(pt.lbl?" {"+pt.lbl+"}":""); if(pt.to===STOCK_HOLD){ let rec={id,item:nm,carat:pt.c,nang:pt.n,vajan:pt.v,pis:pt.p,note:pt.note,tag:pt.tag,from:STOCK_DEPT,fromPart:"Main",to:STOCK_HOLD,toPart:"Main",label:pt.lbl,manager:"",dataentry:"",fin:"",dstat:"",status:"Received",sentAt:now(),sentMs:Date.now(),recvAt:now(),recvTime:Date.now()}; data.push(rec); hist.push({...rec,action:"Split-Hold"}); } else { let rec={id,item:nm,carat:pt.c,nang:pt.n,vajan:pt.v,pis:pt.p,note:pt.note,tag:pt.tag,from:STOCK_DEPT,fromPart:"Main",to:pt.to,toPart:pt.toPart,label:pt.lbl,manager:"",dataentry:"",fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0}; data.push(rec); hist.push({...rec,action:"Split-Send"}); } }); data.splice(i,1); partRows=[]; addPartRow(); addPartRow(); save(); refresh(); toast("✅ "+parts.length+" ભાગ પાડ્યા!","success"); }
+function doSplit(){ let i=document.getElementById("splitPick").value; if(i===""){ toast("કાપણ પસંદ કરો!","error"); return; } let src=data[i]; let tc=Number(src.carat); let parts=[]; let sc=0; for(let rid of partRows){ let c=parseFloat(document.getElementById(rid+"_c").value)||0,n=parseInt(document.getElementById(rid+"_n").value)||0,v=parseFloat(document.getElementById(rid+"_v").value)||0,p=parseInt(document.getElementById(rid+"_p").value)||0; let tag=document.getElementById(rid+"_tag").value,lbl=document.getElementById(rid+"_lbl").value,note=document.getElementById(rid+"_note").value.trim(),tv=document.getElementById(rid+"_to").value; if(c===0&&n===0&&p===0) continue; let [to,toPart]=tv.split("|||"); parts.push({c,n,v,p,tag,lbl,note,to,toPart}); sc+=c; } if(parts.length<2){ toast("ઓછામાં ઓછા 2 ભાગ!","error"); return; } if(Math.abs(sc-tc)>0.001){ if(!confirm("Carat મેળ નથી. આગળ?")) return; } parts.forEach((pt,k)=>{ let id=uid(); let nm=src.item+" (ભાગ "+(k+1)+")"+(pt.lbl?" {"+pt.lbl+"}":""); if(pt.to===STOCK_HOLD){ let rec={id,item:nm,carat:pt.c,nang:pt.n,vajan:pt.v,pis:pt.p,note:pt.note,tag:pt.tag,from:STOCK_DEPT,fromPart:"Main",to:STOCK_HOLD,toPart:"Main",label:pt.lbl,manager:"",dataentry:"",fin:"",dstat:"",status:"Received",sentAt:now(),sentMs:Date.now(),recvAt:now(),recvTime:Date.now()}; data.push(rec); hist.push({...rec,action:"Split-Hold"}); } else { let rec={id,item:nm,carat:pt.c,nang:pt.n,vajan:pt.v,pis:pt.p,note:pt.note,tag:pt.tag,from:STOCK_DEPT,fromPart:"Main",to:pt.to,toPart:pt.toPart,label:pt.lbl,manager:"",dataentry:"",fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0}; data.push(rec); hist.push({...rec,action:"Split-Send"}); } }); data.splice(i,1); partRows=[]; addPartRow(); addPartRow(); save(); refresh(); addNotif("send","Kapan Split",src.item+" → "+parts.length+" parts"); toast("✅ "+parts.length+" ભાગ પાડ્યા!","success"); }
 
 function myReceived(){ let lbl=myLbl(); return data.map((d,idx)=>({...d,idx})).filter(d=>d.status==="Received"&&d.to===lbl); }
 function fillPickDropdown(){ if(cur.role!=="dept") return; let s=normKapan(document.getElementById("pickSearch").value); let list=myReceived().filter(d=>!s||normKapan(d.item).includes(s)); document.getElementById("pick").innerHTML=list.map(d=>`<option value="${d.idx}">${d.item} — ${d.carat}ct</option>`).join("")||`<option value="">— કોઈ નથી —</option>`; fillPick(); }
 function fillPick(){ let i=document.getElementById("pick").value; if(i===""){ ["dCarat","dNang","dVajan","dPis","dTag"].forEach(x=>document.getElementById(x).value=""); return; } let d=data[i]; document.getElementById("dCarat").value=d.carat; document.getElementById("dNang").value=d.nang; document.getElementById("dVajan").value=d.vajan||0; document.getElementById("dPis").value=d.pis; document.getElementById("dTag").value=d.tag||"regular"; }
-function forwardItem(){ let i=document.getElementById("pick").value; if(i===""){ toast("કાપણ પસંદ કરો!","error"); return; } let mgr=document.getElementById("dMgr").value.trim(),dent=document.getElementById("dDent").value.trim(); if(!mgr||!dent){ toast("Manager અને Data Entry ફરજિયાત!","error"); return; } let src=data[i]; let tag=document.getElementById("dTag").value,note=document.getElementById("dNote").value.trim(); let lbl=myLbl(); let id=uid(); let rec={id,item:src.item,carat:src.carat,nang:src.nang,vajan:src.vajan||0,pis:src.pis,note,tag,from:lbl,fromPart:src.toPart||"Main",to:STOCK_DEPT,toPart:"Main",label:src.label||"",manager:mgr,dataentry:dent,fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0}; let removed={...data[i],idx:i}; data.push(rec); hist.push({...rec,action:"Forward"}); data.splice(i,1); pushUndo({undo:()=>{ data.splice(data.length-1,1); data.splice(removed.idx,0,removed); hist=hist.filter(h=>h.id!==rec.id); save(); refresh(); },redo:()=>{ data.push(rec); hist.push({...rec,action:"Forward"}); data.splice(removed.idx,1); save(); refresh(); }}); ["dMgr","dDent","dNote"].forEach(x=>document.getElementById(x).value=""); save(); refresh(); toast("✅ Stock ને મોકલાઈ ગયું!","success"); }
+function forwardItem(){ let i=document.getElementById("pick").value; if(i===""){ toast("કાપણ પસંદ કરો!","error"); return; } let mgr=document.getElementById("dMgr").value.trim(),dent=document.getElementById("dDent").value.trim(); if(!mgr||!dent){ toast("Manager અને Data Entry ફરજિયાત!","error"); return; } let src=data[i]; let tag=document.getElementById("dTag").value,note=document.getElementById("dNote").value.trim(); let lbl=myLbl(); let id=uid(); let rec={id,item:src.item,carat:src.carat,nang:src.nang,vajan:src.vajan||0,pis:src.pis,note,tag,from:lbl,fromPart:src.toPart||"Main",to:STOCK_DEPT,toPart:"Main",label:src.label||"",manager:mgr,dataentry:dent,fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0}; let removed={...data[i],idx:i}; data.push(rec); hist.push({...rec,action:"Forward"}); data.splice(i,1); pushUndo({undo:()=>{ data.splice(data.length-1,1); data.splice(removed.idx,0,removed); hist=hist.filter(h=>h.id!==rec.id); save(); refresh(); },redo:()=>{ data.push(rec); hist.push({...rec,action:"Forward"}); data.splice(removed.idx,1); save(); refresh(); }}); ["dMgr","dDent","dNote"].forEach(x=>document.getElementById(x).value=""); save(); refresh(); addNotif("send","Kapan Forwarded",lbl+" → Stock: "+src.item); toast("✅ Stock ને મોકલાઈ ગયું!","success"); }
 function receive(idx){ if(data[idx].status==="Received"){ toast("પહેલેથી Receive!","warning"); return; } data[idx].status="Received"; data[idx].recvAt=now(); data[idx].recvTime=Date.now(); hist.push({...data[idx],action:"Receive"}); save(); refresh(); toast("📥 Received!","success"); }
 function del(idx){ if(cur.role!=="admin"){ toast("⚠️ Delete ફક્ત Admin!","error"); return; } let pwd=prompt("🔑 Delete કરવા માટે Admin Password નાખો:"); if(pwd===null) return; let a=users.find(u=>u.role==="admin"); if(!a||pwd.trim()!==a.pass){ toast("❌ ખોટો Password!","error"); return; } let item={...data[idx]}; data.splice(idx,1); pushUndo({undo:()=>{ data.splice(idx,0,item); save(); refresh(); },redo:()=>{ data.splice(idx,1); save(); refresh(); }}); save(); refresh(); toast("🗑️ Deleted","info"); }
 function setFinal(idx,val){ if(val==="4P"){ let d=data[idx]; fourP.push({item:d.item,carat:d.carat,nang:d.nang,vajan:d.vajan||0,pis:d.pis,from:d.to,movedAt:now(),movedMs:Date.now()}); hist.push({...d,action:"4P",sentAt:now(),sentMs:Date.now()}); data.splice(idx,1); save(); refresh(); toast("✅ 4P માં ગયું!","success"); return; } data[idx].fin=val; save(); refresh(); }
@@ -916,7 +1043,7 @@ function saveEdit(){
 function closeEdit(){ document.getElementById("editModal").classList.add("hide"); document.getElementById("editOverlay").classList.add("hide"); }
 
 function applyFilters(list){ let s=normKapan(document.getElementById("fSearch").value),tg=document.getElementById("fTag").value,stt=document.getElementById("fStatus").value,dp=document.getElementById("fDept")?document.getElementById("fDept").value:""; return list.filter(d=>{ if(s&&!normKapan(d.item).includes(s)) return false; if(tg&&d.tag!==tg) return false; if(stt&&d.status!==stt) return false; if(dp&&d.from!==dp&&d.to!==dp) return false; return true; }); }
-function refresh(){ if(!cur) return; showCards(); showFinal(); showDashStat(); show4P(); showKapan(); showInbox(); showStock(); showRepInbox(); showRepSent(); showRepHist(); showSugInbox(); showSugHist(); showSugAllHist(); showAnalysis(); showMyStatusList(); fillPickDropdown(); showReport(); showLoginHistory(); showSugAdminInbox(); if(cur.role==="admin"||cur.role==="stock"){ fillSplitPick(); fillSFPick(); } }
+function refresh(){ if(!cur) return; showCards(); showFinal(); showDashStat(); show4P(); showKapan(); showInbox(); showStock(); showRepInbox(); showRepSent(); showRepHist(); showSugInbox(); showSugHist(); showSugAllHist(); showAnalysis(); showMyStatusList(); fillPickDropdown(); showReport(); showLoginHistory(); showSugAdminInbox(); showUchakInbox(); showActiveUchakEntries(); initJangadEntry(); if(cur.role==="admin"||cur.role==="stock"){ fillSplitPick(); fillSFPick(); } }
 
 function deptStats(){ let t={}; users.filter(u=>u.role==="dept").forEach(u=>{ let lbl=unitLabel(u.dept,u.office); getParts(u).forEach(p=>t[lbl+"|||"+p]={lbl,dept:u.dept,office:u.office,part:p,chC:0,chN:0,chP:0,okC:0,okN:0,okP:0,issC:0}); }); hist.forEach(h=>{ if(h.action==="Send"||h.action==="Forward"||h.action==="Split-Send"){ let tk=h.to+"|||"+(h.toPart||"Main"); if(t[tk]) t[tk].issC+=Number(h.carat); } }); data.forEach(d=>{ if(d.status==="Received"){ let tk=d.to+"|||"+(d.toPart||"Main"); if(t[tk]){ t[tk].chC+=Number(d.carat); t[tk].chN+=Number(d.nang); t[tk].chP+=Number(d.pis); } } }); hist.forEach(h=>{ if(h.action==="Receive"){ let tk=h.to+"|||"+(h.toPart||"Main"); if(t[tk]){ let live=data.find(d=>d.id===h.id&&d.status==="Received"&&d.to===h.to); if(!live){ t[tk].okC+=Number(h.carat); t[tk].okN+=Number(h.nang); t[tk].okP+=Number(h.pis); } } } }); return t; }
 function showCards(){ if(!(cur.role==="admin"||cur.role==="stock")) return; let t=deptStats(); let html=""; for(let k in t){ let x=t[k]; let off=x.office?`🏢 ${x.office}`:""; html+=`<div class="card" onclick="openReport('${x.lbl.replace(/'/g,"")}','${x.part}')"><h4>${x.dept}</h4><div class="off">${off}${x.part!=="Main"?" • "+x.part:""}</div><div class="line issC"><span>📤 Issue Ct</span><b>${x.issC.toFixed(2)}</b></div><hr style="border-color:#555;margin:6px 0"><div class="line chaluC"><span>🔵 Chalu Ct</span><b>${x.chC.toFixed(2)}</b></div><div class="line chaluC"><span>Chalu Nang</span><b>${x.chN}</b></div><div class="line chaluC"><span>Chalu Pis</span><b>${x.chP}</b></div><hr style="border-color:#555;margin:6px 0"><div class="line okC"><span>✅ OK Ct</span><b>${x.okC.toFixed(2)}</b></div><div class="line okC"><span>OK Nang</span><b>${x.okN}</b></div><div class="line okC"><span>OK Pis</span><b>${x.okP}</b></div><div class="clickhint">👆 click — report</div></div>`; } document.getElementById("cards").innerHTML=html; }
@@ -1015,7 +1142,7 @@ function sendSugAll(){ let topic=document.getElementById("sgAllTopic").value.tri
 function showSugAllHist(){ let el=document.getElementById("sugAllHist"); if(!el) return; let list; if(cur.role==="admin"){ list=sugAll.slice().reverse(); } else { list=sugAll.filter(s=>s.from===cur.id).slice().reverse(); } if(!list.length){ el.innerHTML="<span class='small'>કોઈ suggestion નથી</span>"; return; } el.innerHTML=list.map(s=>{ let st=s.status==="accepted"?`<span class="okfin">✅ Accepted</span>`:`<span class="st-pending">⏳ Pending</span>`; let act=""; if(cur.role==="admin"&&s.status!=="accepted"){ act=` <button class="recv" onclick="acceptSugAll('${s.id}')" style="padding:3px 8px;font-size:11px">✔ Accept</button>`; } return `<div style="background:#f9f9f9;border:1px solid #eee;padding:8px 12px;margin:6px 0;border-radius:6px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><b>${sanitize(s.topic)}</b> ${st}</div><div style="font-size:13px;color:#555;margin-top:4px">${sanitize(s.detail)}</div><div style="font-size:11px;color:#888;margin-top:4px">${sanitize(s.fromName)} • ${s.sentAt}${act}</div></div>`; }).join(""); }
 function acceptSugAll(id){ let s=sugAll.find(x=>x.id===id); if(!s) return; s.status="accepted"; s.acceptedBy=cur.dept+(cur.office?" — "+cur.office:""); s.acceptedAt=now(); localStorage.setItem("sugAll",JSON.stringify(sugAll)); showSugAllHist(); toast("✅ Accepted!","success"); }
 
-function sendRepair(){ let kapan=document.getElementById("rpKapan").value.trim(),nang=parseInt(document.getElementById("rpNang").value)||0,vajan=parseFloat(document.getElementById("rpVajan").value)||0,pis=parseInt(document.getElementById("rpPis").value)||0,jangad=document.getElementById("rpJangad").value.trim(),to=document.getElementById("rpTo").value,manager=document.getElementById("rpManager").value,remark=document.getElementById("rpRemark").value.trim(); if(!kapan||!jangad){ toast("Kapan અને Jangad ફરજિયાત!","error"); return; } if(!to){ toast("Department પસંદ કરો!","error"); return; } if(!manager){ toast("Manager પસંદ કરો!","error"); return; } let from=(cur.role==="admin"||cur.role==="stock")?STOCK_DEPT:myLbl(); let rec={id:uid(),kapan,nang,vajan,pis,jangad,from,to,manager,remark,status:"Sent",sentAt:now(),sentMs:Date.now(),recvAt:"",okAt:""}; reps.push(rec); pushUndo({undo:()=>{ reps=reps.filter(r=>r.id!==rec.id); save(); refresh(); },redo:()=>{ reps.push(rec); save(); refresh(); }}); save(); ["rpKapan","rpJangad","rpRemark"].forEach(x=>document.getElementById(x).value=""); ["rpNang","rpVajan","rpPis"].forEach(x=>document.getElementById(x).value="0"); document.getElementById("rpManager").value=""; refresh(); toast("🔧 મોકલાઈ ગયું!","success"); }
+function sendRepair(){ let kapan=document.getElementById("rpKapan").value.trim(),nang=parseInt(document.getElementById("rpNang").value)||0,vajan=parseFloat(document.getElementById("rpVajan").value)||0,pis=parseInt(document.getElementById("rpPis").value)||0,jangad=document.getElementById("rpJangad").value.trim(),to=document.getElementById("rpTo").value,manager=document.getElementById("rpManager").value,remark=document.getElementById("rpRemark").value.trim(); if(!kapan||!jangad){ toast("Kapan અને Jangad ફરજિયાત!","error"); return; } if(!to){ toast("Department પસંદ કરો!","error"); return; } if(!manager){ toast("Manager પસંદ કરો!","error"); return; } let from=(cur.role==="admin"||cur.role==="stock")?STOCK_DEPT:myLbl(); let rec={id:uid(),kapan,nang,vajan,pis,jangad,from,to,manager,remark,status:"Sent",sentAt:now(),sentMs:Date.now(),recvAt:"",okAt:""}; reps.push(rec); pushUndo({undo:()=>{ reps=reps.filter(r=>r.id!==rec.id); save(); refresh(); },redo:()=>{ reps.push(rec); save(); refresh(); }}); save(); ["rpKapan","rpJangad","rpRemark"].forEach(x=>document.getElementById(x).value=""); ["rpNang","rpVajan","rpPis"].forEach(x=>document.getElementById(x).value="0"); document.getElementById("rpManager").value=""; refresh(); addNotif("send","Repairing Sent",from+" → "+to+": "+kapan+" ("+jangad+")"); toast("🔧 મોકલાઈ ગયું!","success"); }
 function repReceive(id,mgrSel,deSel){ let r=reps.find(x=>x.id===id); if(!r) return; if(!mgrSel||!deSel){ toast("Manager અને Data Entry બંને પસંદ કરો!","error"); return; } r.status="Received"; r.recvAt=now(); r.recvManager=mgrSel; r.recvDataEntry=deSel; save(); refresh(); }
 function repOK(id){ let r=reps.find(x=>x.id===id); if(!r) return; r.status="OK-Back"; r.okAt=now(); save(); refresh(); toast("✅ OK કરી પાછું મોકલાઈ ગયું!","success"); }
 function repClose(id){ let r=reps.find(x=>x.id===id); if(!r) return; r.status="Closed"; save(); refresh(); }
@@ -1231,7 +1358,7 @@ function dlAnalysisExcel(){ downloadCSV("Analysis_Report.csv",analysisData()); }
 function dlAnalysisPDF(){ let rows=analysisData(); let w=window.open("","_blank"); let html="<html><head><title>Analysis</title><style>body{font-family:Arial;padding:20px}h2{color:#2c3e50}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}th,td{border:1px solid #999;padding:5px}th{background:#34495e;color:#fff}td{text-align:left}</style></head><body><h2>📊 Analysis Report</h2><p>"+now()+"</p>"; let tbl="<table>"; rows.forEach(r=>{ if(r.length===1) tbl+=`<tr><td colspan="10" style="font-weight:bold;background:#f0f0f0;font-size:14px">${r[0]}</td></tr>`; else if(r[0]===""&&r[1]==="") tbl+="<tr><td colspan='10' style='padding:2px'></tr>"; else{ let hdr=r[1]==="Value"||r[1]==="Sent"||r[1]==="Carat"?true:false; tbl+="<tr>"+r.map(c=>`<td${hdr?' style="font-weight:bold;background:#e8e8e8"':""}>${c||""}</td>`).join("")+"</tr>"; } }); tbl+="</table>"; html+=tbl+"<script>window.onload=function(){window.print();}<\/script></body></html>"; w.document.write(html); w.document.close(); }
 
 function backupDownload(){ let backup={users,stock:data,hist,reps,sugs,labels,dstatus,fourP,sugAll,backupDate:now(),version:"2.0"}; let str=JSON.stringify(backup,null,2); let blob=new Blob([str],{type:"application/json"}); let link=document.createElement("a"); link.href=URL.createObjectURL(blob); let d=new Date(); let fname="StockBackup_"+d.toISOString().slice(0,10)+"_"+d.getHours()+"-"+d.getMinutes()+".json"; link.download=fname; link.click(); toast("✅ Backup Download થઈ ગયું!","success"); }
-function backupRestore(event){ let file=event.target.files[0]; if(!file) return; if(!confirm("⚠️ Restore કરવાથી અત્યારનો data બદલાઈ જશે. ચાલુ રાખવું?")){ event.target.value=""; return; } let reader=new FileReader(); reader.onload=function(e){ try{ let b=JSON.parse(e.target.result); if(!b.users||!b.stock){ toast("❌ બરાબર backup file નથી!","error"); return; } users=b.users||[]; data=b.stock||[]; hist=b.hist||[]; reps=b.reps||[]; sugs=b.sugs||[]; labels=b.labels||["Marking","4P","Mejik","Direct"]; dstatus=b.dstatus||{}; fourP=b.fourP||[]; sugAll=b.sugAll||[]; localStorage.setItem("sugAll",JSON.stringify(sugAll)); save(); toast("✅ Restore થઈ ગયું!","success"); location.reload(); }catch(err){ toast("❌ File વાંચવામાં ભૂલ!","error"); } }; reader.readAsText(file); event.target.value=""; }
+function backupRestore(event){ let file=event.target.files[0]; if(!file) return;   if(!confirm("⚠️ Restore કરવાથી અત્યારનો data બદલાઈ જશે. ચાલુ રાખવું?")){ event.target.value=""; return; } let reader=new FileReader(); reader.onload=function(e){ try{ let b=JSON.parse(e.target.result); if(!b.users||!b.stock){ toast("❌ બરાબર backup file નથી!","error"); return; } users=b.users||[]; data=b.stock||[]; hist=b.hist||[]; reps=b.reps||[]; sugs=b.sugs||[]; labels=b.labels||["Marking","4P","Mejik","Direct"]; dstatus=b.dstatus||{}; fourP=b.fourP||[]; sugAll=b.sugAll||[]; uchak=b.uchak||[]; uchakProcesses=b.uchakProcesses||[]; uchakRates=b.uchakRates||[]; deptProcesses=b.deptProcesses||{}; deptRates=b.deptRates||{}; jangads=b.jangads||[]; jangadCounter=b.jangadCounter||0; if(!deptProcesses["ઉચક"]||!deptProcesses["ઉચક"].length) deptProcesses["ઉચક"]=uchakProcesses.length?uchakProcesses:["Setup","Doping","Galaxy","Marking"]; localStorage.setItem("sugAll",JSON.stringify(sugAll)); save(); toast("✅ Restore થઈ ગયું!","success"); location.reload(); }catch(err){ toast("❌ File વાંચવામાં ભૂલ!","error"); } }; reader.readAsText(file); event.target.value=""; }
 
 function applyCloudData(d){
   if(!d) return;
@@ -1257,6 +1384,22 @@ function applyCloudData(d){
   fourP=d.fourP || [];
   if(d.sugAll) { sugAll=d.sugAll; localStorage.setItem("sugAll",JSON.stringify(sugAll)); }
   if(d.loginHistory) { localStorage.setItem("loginHistory",JSON.stringify(d.loginHistory)); }
+  if(d.uchak) { uchak=d.uchak; localStorage.setItem("uchak",JSON.stringify(uchak)); }
+  if(d.uchakProcesses) { uchakProcesses=d.uchakProcesses; localStorage.setItem("uchakProcesses",JSON.stringify(uchakProcesses)); }
+  if(d.uchakRates) { uchakRates=d.uchakRates; localStorage.setItem("uchakRates",JSON.stringify(uchakRates)); }
+  if(d.deptProcesses) { deptProcesses=d.deptProcesses; localStorage.setItem("deptProcesses",JSON.stringify(deptProcesses)); }
+  if(d.deptRates) { deptRates=d.deptRates; localStorage.setItem("deptRates",JSON.stringify(deptRates)); }
+  // Migration in cloud data
+  if(!d.deptProcesses||!d.deptProcesses["ઉચક"]||!d.deptProcesses["ઉચક"].length){
+    if(uchakProcesses.length){ deptProcesses["ઉચક"]=uchakProcesses; uchakProcesses=[]; localStorage.setItem("deptProcesses",JSON.stringify(deptProcesses)); localStorage.setItem("uchakProcesses",JSON.stringify(uchakProcesses)); }
+    else if(!deptProcesses["ઉચક"]) deptProcesses["ઉચક"]=["Setup","Doping","Galaxy","Marking"];
+  }
+  if(!d.deptRates||!d.deptRates["ઉચક"]||!d.deptRates["ઉચક"].length){
+    if(uchakRates.length){ deptRates["ઉચક"]=uchakRates; uchakRates=[]; localStorage.setItem("deptRates",JSON.stringify(deptRates)); localStorage.setItem("uchakRates",JSON.stringify(uchakRates)); }
+  }
+  uchak.forEach(u=>{ if(!u.dept) u.dept="ઉચક"; if(!u.nextOpts) u.nextOpts=[]; });
+  if(d.jangads) { jangads=d.jangads; jangads.forEach(j=>{ if(!j.depts){ j.depts=[j.dept||"ઉચક"]; j.deptIndex=0; } if(!j.tag) j.tag="Regular"; }); localStorage.setItem("jangads",JSON.stringify(jangads)); }
+  jangadCounter=d.jangadCounter||parseInt(localStorage.getItem("jangadCounter")||"0"); localStorage.setItem("jangadCounter",String(jangadCounter));
   localStorage.setItem("users",JSON.stringify(users)); localStorage.setItem("stock",JSON.stringify(data));
   localStorage.setItem("hist",JSON.stringify(hist)); localStorage.setItem("reps",JSON.stringify(reps));
   localStorage.setItem("sugs",JSON.stringify(sugs)); localStorage.setItem("labels",JSON.stringify(labels));
@@ -1274,6 +1417,9 @@ function applyCloudData(d){
     fillDashStatDept();
     showUsers();
     showLabels();
+    populateUchakDeptSel(); populateUchakAdminDeptSels();
+    showUchakProcesses(); showUchakProcessesAdmin(); showUchakRates(); showUchakRatesAdmin(); fillUchakProcSels();
+    showUchakInbox();
   }
 }
 let cloudStarted=false;
@@ -1352,6 +1498,525 @@ function purgeDataRange() {
   
   toast("✅ ડેટા સાફ થયો!","success");
 }
+
+// === ઉચક DEPARTMENT WORKFLOW FUNCTIONS ===
+// === JANGAD FUNCTIONS ===
+let jgRows=[]; let jgDeptSeq=[];
+function addJangadRow(){
+  let rid="jg"+Math.random().toString(36).slice(2,7);
+  jgRows.push(rid);
+  let body=document.getElementById("jgRowsBody"); if(!body) return;
+  let tr=document.createElement("tr");
+  tr.id="row_"+rid;
+  tr.innerHTML=`<td><b>${jgRows.length}</b></td><td><input id="${rid}_n" type="number" step="0.01" style="width:80px" oninput="updateJangadTotal()"></td><td><input id="${rid}_v" type="number" step="0.01" style="width:80px" oninput="updateJangadTotal()"></td><td><input id="${rid}_p" type="number" style="width:60px" oninput="updateJangadTotal()"></td><td><button class="del" onclick="delJangadRow('${rid}')">✖</button></td>`;
+  body.appendChild(tr);
+  updateJangadTotal();
+}
+function delJangadRow(rid){
+  jgRows=jgRows.filter(x=>x!==rid);
+  let row=document.getElementById("row_"+rid); if(row) row.remove();
+  // renumber
+  let body=document.getElementById("jgRowsBody"); if(body) body.querySelectorAll("tr").forEach((tr,i)=>{ let td=tr.querySelector("td"); if(td) td.textContent=i+1; });
+  updateJangadTotal();
+}
+function renderJangadRows(){
+  let body=document.getElementById("jgRowsBody"); if(!body) return;
+  body.innerHTML=jgRows.map((rid,i)=>`<tr><td><b>${i+1}</b></td><td><input id="${rid}_n" type="number" step="0.01" style="width:80px" oninput="updateJangadTotal()"></td><td><input id="${rid}_v" type="number" step="0.01" style="width:80px" oninput="updateJangadTotal()"></td><td><input id="${rid}_p" type="number" style="width:60px" oninput="updateJangadTotal()"></td><td><button class="del" onclick="delJangadRow('${rid}')">✖</button></td></tr>`).join("");
+  updateJangadTotal();
+}
+function updateJangadTotal(){
+  let tn=0,tv=0,tp=0;
+  jgRows.forEach(rid=>{
+    tn+=parseFloat(document.getElementById(rid+"_n")?.value)||0;
+    tv+=parseFloat(document.getElementById(rid+"_v")?.value)||0;
+    tp+=parseFloat(document.getElementById(rid+"_p")?.value)||0;
+  });
+  let el=document.getElementById("jgTotal"); if(el) el.textContent="કુલ: Nang="+tn.toFixed(2)+" | Vajan="+tv.toFixed(2)+" | Pis="+tp;
+}
+function populateUchakMasterDept(){
+  let el=document.getElementById("uchakMasterDept"); if(!el) return;
+  let depts=[...new Set(users.filter(u=>u.dept!=="Admin"&&u.dept!=="Stock").map(u=>u.dept))].sort();
+  if(!depts.includes("ઉચક")) depts.unshift("ઉચક");
+  el.innerHTML=depts.map(d=>`<option value="${d}">${d}</option>`).join("");
+}
+function onUchakMasterDeptChange(){
+  let d=document.getElementById("uchakMasterDept")?.value; if(!d) return;
+  fillUchakProcSels(d); showUchakProcesses(d); showUchakRates(d);
+}
+function toggleUchakMaster(){
+  let b=document.getElementById("uchakMasterBody"); let t=document.getElementById("uchakMasterToggle");
+  if(!b) return;
+  let wasHidden=b.classList.contains("hide");
+  b.classList.toggle("hide");
+  if(t) t.textContent=wasHidden?"▲":"▼";
+  if(wasHidden){ populateUchakMasterDept(); onUchakMasterDeptChange(); }
+}
+function showActiveUchakEntries(){
+  let el=document.getElementById("uchakActiveEntries"); if(!el) return;
+  let list=jangads.filter(j=>j.status==="chalu");
+  let groups={};
+  list.forEach(j=>{ if(!groups[j.kapan]) groups[j.kapan]={kapan:j.kapan,vigat:j.vigat||"",items:[],tn:0,tv:0,tp:0}; groups[j.kapan].items.push(j); groups[j.kapan].tn+=Number(j.nang); groups[j.kapan].tv+=Number(j.vajan); groups[j.kapan].tp+=Number(j.pis); });
+  let kapanKeys=Object.keys(groups).sort();
+  document.getElementById("activeKapanCount").textContent=kapanKeys.length;
+  document.getElementById("activeJangadCount").textContent=list.length;
+  if(!kapanKeys.length){ el.innerHTML=`<tr><td colspan="7">Uchak Entry નથી</td></tr>`; return; }
+  el.innerHTML=kapanKeys.map(k=>{
+    let g=groups[k];
+    let procs={}; g.items.forEach(j=>{ let cs=j.steps[j.currentStep]; let p=cs.process; let st=cs.status==="done"?"✅":"⏳"; if(!procs[p]) procs[p]={done:0,pend:0}; if(cs.status==="done") procs[p].done++; else procs[p].pend++; });
+    let procStr=Object.entries(procs).map(([p,c])=>`<span class="small">${p}: ${c.done}✅ ${c.pend}⏳</span>`).join(" ");
+    let deptStr=[...new Set(g.items.map(j=>j.dept))].join(", ");
+    let detailRows=g.items.map(j=>{
+      let cs=j.steps[j.currentStep];
+      let st=cs.status==="done"?"✅ Done":"⏳ "+cs.process;
+      let prog=j.steps.length>1?" ("+(j.currentStep+1)+"/"+j.steps.length+")":"";
+      let vig=j.vigat?` <span class='small'>(${j.vigat})</span>`:"";
+      return `<tr class="kapanChild_${k.replace(/\s/g,"_")}" style="display:none;background:#f9f9f9"><td></td><td>#${j.no}${vig}</td><td>${j.nang}</td><td>${j.vajan}</td><td>${j.pis}</td><td>${st}${prog}</td><td>${j.dept} ${j.tag==="Urgent"?"🔴":j.tag==="High"?"🟡":"🟢"}</td></tr>`;
+    }).join("");
+    return `<tr onclick="toggleKapanRows('${k.replace(/\s/g,"_")}')" style="cursor:pointer;background:#e8f8f5"><td><b>${k}</b></td><td>${g.vigat||g.items.length+" jangad"}</td><td>${g.tn}</td><td>${g.tv}</td><td>${g.tp}</td><td>${procStr}</td><td>${deptStr}</td></tr>${detailRows}`;
+  }).join("");
+}
+function toggleKapanRows(cls){
+  document.querySelectorAll(".kapanChild_"+cls).forEach(r=>{ r.style.display=r.style.display==="none"?"":"none"; });
+}
+function initJangadEntry(){
+  if(!jgRows.length) addJangadRow();
+  let sel=document.getElementById("jgDeptSel"); if(!sel) return;
+  let depts=[...new Set(users.filter(u=>u.dept!=="Admin"&&u.dept!=="Stock").map(u=>u.dept))].sort();
+  let cur=getUchakDept();
+  sel.innerHTML=`<option value="">— Department —</option>`+depts.map(d=>`<option value="${d}">${d}</option>`).join("");
+  jgDeptSeq=[cur];
+  renderDeptSeq();
+}
+function renderDeptSeq(){
+  let el=document.getElementById("jgDeptSeq"); if(!el) return;
+  el.innerHTML=jgDeptSeq.map((d,i)=>`<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#f9f9f9;border:1px solid #ddd;border-radius:6px;margin-bottom:4px">
+    <span style="font-weight:600;min-width:20px">${i+1}.</span>
+    <span>${d}</span>
+    <span style="flex:1"></span>
+    ${i>0?`<button onclick="moveDeptUp(${i})" style="padding:2px 6px;font-size:11px;cursor:pointer">⬆</button>`:""}
+    ${i<jgDeptSeq.length-1?`<button onclick="moveDeptDown(${i})" style="padding:2px 6px;font-size:11px;cursor:pointer">⬇</button>`:""}
+    <button onclick="removeDeptFromSeq(${i})" style="padding:2px 6px;font-size:11px;cursor:pointer;color:red">✖</button>
+  </div>`).join("");
+  if(!el.innerHTML) el.innerHTML=`<span class="small" style="color:#999">હજી સુધી કોઈ Department ઉમેર્યું નથી</span>`;
+}
+function addDeptToSeq(){
+  let sel=document.getElementById("jgDeptSel"); if(!sel) return;
+  let d=sel.value; if(!d){ toast("Department પસંદ કરો!","error"); return; }
+  if(jgDeptSeq.includes(d)){ toast(d+" પહેલેથી ઉમેરેલ છે!","error"); return; }
+  jgDeptSeq.push(d); renderDeptSeq(); sel.value="";
+}
+function removeDeptFromSeq(i){
+  jgDeptSeq.splice(i,1); renderDeptSeq();
+}
+function moveDeptUp(i){
+  if(i<1) return; [jgDeptSeq[i-1],jgDeptSeq[i]]=[jgDeptSeq[i],jgDeptSeq[i-1]]; renderDeptSeq();
+}
+function moveDeptDown(i){
+  if(i>=jgDeptSeq.length-1) return; [jgDeptSeq[i+1],jgDeptSeq[i]]=[jgDeptSeq[i],jgDeptSeq[i+1]]; renderDeptSeq();
+}
+function getJangadDepts(){
+  return [...jgDeptSeq];
+}
+function createJangads(){
+  let kapan=document.getElementById("jgKapan")?.value.trim();
+  if(!kapan){ toast("Kapan નંબર લખો!","error"); return; }
+  let vigat=document.getElementById("jgVigat")?.value.trim()||"";
+  let tag=document.getElementById("jgTag")?.value||"Regular";
+  if(!jgRows.length){ toast("ઓછામાં ઓછું એક લોટ ઉમેરો!","error"); return; }
+  let depts=getJangadDepts();
+  if(!depts.length){ toast("ઓછામાં ઓછું એક Department પસંદ કરો!","error"); return; }
+  let allSteps=[];
+  depts.forEach(d=>{
+    let procs=getDeptProcs(d);
+    if(!procs.length){ toast(d+" માં કોઈ Process નથી! Process Master માં ઉમેરો.","error"); return; }
+    procs.forEach(p=>{ allSteps.push({process:p,dept:d,operator:"",rate:0,status:"pending",inAt:"",outAt:""}); });
+  });
+  if(!allSteps.length){ toast("કોઈ Process નથી!","error"); return; }
+  jgRows.forEach(rid=>{
+    let nang=parseFloat(document.getElementById(rid+"_n")?.value)||0;
+    let vajan=parseFloat(document.getElementById(rid+"_v")?.value)||0;
+    let pis=parseFloat(document.getElementById(rid+"_p")?.value)||0;
+    jangadCounter++;
+    let steps=JSON.parse(JSON.stringify(allSteps)); // deep copy
+    if(steps.length) steps[0].inAt=now();
+    jangads.push({
+      id:uid(), no:jangadCounter, kapan, vigat, tag, nang, vajan, pis,
+      depts, deptIndex:0, dept:depts[0],
+      steps, currentStep:0, status:"chalu",
+      createdBy:cur?cur.id:"", createdAt:now(), sentMs:Date.now(),
+      okBy:"", okAt:""
+    });
+  });
+  let createdCount=jgRows.length;
+  document.getElementById("jgKapan").value=""; document.getElementById("jgVigat").value=""; document.getElementById("jgTag").value="Regular"; jgRows=[]; addJangadRow();
+  let cur=getUchakDept(); jgDeptSeq=[cur]; renderDeptSeq();
+  save(); showJangadInbox(); showActiveUchakEntries(); addNotif("send","Uchak Jangad Created",createdCount+" jangad for "+kapan+" → "+depts.join(" → ")); toast("✅ "+kapan+" ના "+createdCount+" જંગડ બનાવ્યા!","success");
+}
+function showJangadInbox(){
+  let el=document.getElementById("jangadInbox"); if(!el) return;
+  let list=jangads.filter(j=>j.status==="chalu");
+  el.innerHTML=list.map(j=>{
+    let cs=j.steps[j.currentStep];
+    let st=cs.status==="done"?"✅ Done":"⏳ Pending";
+    let vigatLabel=j.vigat?" <span class='small' title='વિગત'>("+j.vigat+")</span>":"";
+    let deptLabel=j.depts&&j.depts.length>1?" <span class='mgr'>"+cs.dept+"</span>":"";
+    let stepProg=j.steps.length>1?" <span class='small'>("+(j.currentStep+1)+"/"+j.steps.length+")</span>":"";
+    let act="";
+    if(cs.status==="pending"){
+      let opVal=cs.operator||"";
+      let rateVal=cs.rate||0;
+      act=`<input id="jgOp_${j.id}" placeholder="Operator" value="${opVal}" style="width:90px;padding:4px;font-size:11px"> <input id="jgRate_${j.id}" type="number" step="0.01" placeholder="Rate" value="${rateVal||""}" style="width:70px;padding:4px;font-size:11px"> <button class="recv" onclick="jangadStepDone('${j.id}')" style="padding:4px 8px;font-size:11px">✔ OK</button>`;
+    } else if(j.currentStep>=j.steps.length-1&&j.dept!=="Stock"){
+      act=`<button class="set" onclick="openJangadNextPanel('${j.id}')" style="padding:4px 8px;font-size:11px">📤 Next Dept</button>`;
+    } else if(j.dept==="Stock"&&cs.status==="done"){
+      act=`<button class="okfin" onclick="jangadStockDone('${j.id}')" style="padding:4px 8px;font-size:11px">📦 Stock OK → History</button>`;
+    } else {
+      act=`<span class="small">✅ Done</span>`;
+    }
+    return `<tr><td><input type="checkbox" class="jgChk" data-id="${j.id}" onchange="updateBatchBar()"></td><td><b>${j.no}</b></td><td>${j.kapan}</td><td>${cs.process}${deptLabel}${stepProg}</td><td>${cs.operator||"—"}</td><td>${cs.rate||"—"}</td><td>${j.nang}</td><td>${j.vajan}</td><td>${j.pis}</td><td>${st}</td><td>${act}</td></tr>`;
+  }).join("")||`<tr><td colspan="11">કોઈ જંગડ નથી</td></tr>`;
+  updateBatchBar();
+}
+function toggleAllJangadCheck(el){
+  document.querySelectorAll(".jgChk").forEach(c=>c.checked=el.checked);
+  updateBatchBar();
+}
+function updateBatchBar(){
+  let checked=document.querySelectorAll(".jgChk:checked");
+  let bar=document.getElementById("batchBar"); if(!bar) return;
+  let count=document.getElementById("batchCount"); if(count) count.textContent=checked.length+" selected";
+  bar.classList.toggle("hide",checked.length===0);
+}
+function getCheckedJangadIds(){
+  return [...document.querySelectorAll(".jgChk:checked")].map(c=>c.dataset.id).filter(Boolean);
+}
+function batchSendNextDept(){
+  let ids=getCheckedJangadIds();
+  if(!ids.length){ toast("કોઈ જંગડ પસંદ કર્યું નથી!","error"); return; }
+  openJangadNextPanel(ids.join(","));
+}
+function jangadStockDone(id){
+  let j=jangads.find(x=>x.id===id); if(!j) return;
+  j.status="done"; j.okBy=cur?cur.id:""; j.okAt=now();
+  hist.push({item:j.kapan,action:"Jangad-Done",from:"Stock",to:"History",sentAt:now(),sentMs:Date.now()});
+  data.push({id:uid(),item:j.kapan,carat:0,nang:j.nang,vajan:j.vajan,pis:j.pis,status:"Pending",from:"Stock",to:STOCK_DEPT,sentAt:now(),sentMs:Date.now(),tag:"regular",note:"Jangad #"+j.no});
+  save(); refresh(); addNotif("send","Jangad Complete",j.kapan+" → History (via Stock)"); toast("✅ "+j.kapan+" Stock થી History માં ગયું!","success");
+}
+function jangadStepDone(id){
+  let j=jangads.find(x=>x.id===id); if(!j) return;
+  let cs=j.steps[j.currentStep];
+  let op=document.getElementById("jgOp_"+id)?.value.trim()||"";
+  let rate=parseFloat(document.getElementById("jgRate_"+id)?.value)||0;
+  if(!op){ toast("Operator નામ લખો!","error"); return; }
+  if(!rate){ toast("Rate ભરો!","error"); return; }
+  cs.operator=op; cs.rate=rate; cs.status="done"; if(!cs.inAt) cs.inAt=now(); cs.outAt=now();
+  if(j.currentStep<j.steps.length-1){
+    j.currentStep++;
+    let nextStep=j.steps[j.currentStep];
+    nextStep.inAt=now();
+    // Auto-transition to next department if different
+    if(nextStep.dept&&nextStep.dept!==j.dept){
+      j.dept=nextStep.dept;
+      if(j.depts){
+        let di=j.depts.indexOf(j.dept);
+        if(di>=0) j.deptIndex=di;
+      }
+    }
+  }
+  save(); showJangadInbox(); toast("✅ Step પૂરું!","success");
+}
+function openJangadNextPanel(id){
+  let ids=id.split(",");
+  let first=jangads.find(x=>x.id===ids[0]); if(!first) return;
+  let desc=ids.length===1?"જંગડ #"+first.no+" ("+first.kapan+")":ids.length+" જંગડ selected";
+  let panel=document.getElementById("uchakNextPanel"); if(panel){
+    let h=panel.querySelector("h2"); if(h) h.textContent=ids.length===1?"📤 Send to Next Department":"📤 Batch Send ("+ids.length+" જંગડ)";
+    panel.classList.remove("hide");
+  }
+  let info=document.getElementById("uchakNextInfo"); if(info) info.textContent=desc;
+  let opts;
+  // If pre-configured multi-dept path, only offer Stock
+  if(first.depts&&first.depts.length>1){
+    opts=`<option value="Stock">📦 Back to Stock</option>`;
+  } else {
+    let depts=[...new Set(users.filter(u=>u.dept!=="Admin"&&u.dept!=="Stock"&&u.dept!==first.dept).map(u=>u.dept))].sort();
+    opts=`<option value="Stock">📦 Back to Stock</option>`+depts.map(d=>`<option value="${d}">${d}</option>`).join("");
+  }
+  let sel=document.getElementById("uchakNextDept"); if(sel) sel.innerHTML=opts;
+  sel.dataset.targetIds=ids.join(",");
+}
+function closeUchakNextPanel(){
+  let panel=document.getElementById("uchakNextPanel"); if(panel) panel.classList.add("hide");
+}
+function jangadSendToDept(){
+  let sel=document.getElementById("uchakNextDept");
+  let idsStr=sel?.dataset?.targetIds; if(!idsStr){ toast("કોઈ target નથી!","error"); return; }
+  let ids=idsStr.split(",");
+  let nd=sel.value;
+  let successCount=0;
+  ids.forEach(id=>{
+    let j=jangads.find(x=>x.id===id); if(!j) return;
+    if(nd==="Stock"){
+      j.dept="Stock"; j.status="chalu"; j.currentStep=0; j.sentMs=Date.now();
+      j.steps=[{process:"Stock Receive",dept:"Stock",operator:"",rate:0,status:"pending",inAt:now(),outAt:""}];
+      if(!j.depts) j.depts=[];
+      if(!j.depts.includes("Stock")) j.depts.push("Stock");
+      j.deptIndex=j.depts.indexOf("Stock");
+      hist.push({item:j.kapan,action:"Jangad-to-Stock",from:nd,to:"Stock",sentAt:now(),sentMs:Date.now()});
+      successCount++;
+    } else {
+      let procs=getDeptProcs(nd);
+      if(!procs.length){ toast(nd+" માં કોઈ Process નથી!","error"); return; }
+      let oldDept=j.dept;
+      j.dept=nd; j.currentStep=0; j.status="chalu";
+      let steps=procs.map(p=>({process:p,operator:"",rate:0,status:"pending",inAt:"",outAt:""}));
+      if(steps.length) steps[0].inAt=now();
+      j.steps=steps;
+      hist.push({item:j.kapan,action:"Jangad-Forward",from:oldDept,to:nd,sentAt:now(),sentMs:Date.now()});
+      successCount++;
+    }
+  });
+  closeUchakNextPanel(); save(); refresh(); showJangadInbox();
+  addNotif("send","Jangad "+nd,successCount+" jangad sent to "+nd); toast("✅ "+successCount+" જંગડ "+nd+" ને મોકલાયા!","success");
+}
+// Update onUchakDeptChange to also refresh jangad inbox
+function onUchakDeptChange(){
+  let d=getUchakDept();
+  ["uchakJangadTitle","uchakInboxTitle","uchakProcTitle","uchakRateTitle","uchakReportTitle"].forEach(id=>{
+    let el=document.getElementById(id); if(el) el.textContent=id==="uchakJangadTitle"?"📋 નવું જંગડ — "+d:id==="uchakInboxTitle"?"📥 "+d+" Process Flow":id==="uchakProcTitle"?"📋 "+d+" Process Master":id==="uchakRateTitle"?"💰 "+d+" Rate Master":"📋 "+d+" Report";
+  });
+  fillUchakProcSels(d); showUchakProcesses(d); showUchakRates(d); showJangadInbox(); showActiveUchakEntries(); populateUrDeptSel(); showUchakReport(); initJangadEntry();
+  closeUchakNextPanel();
+}
+// Report filter helpers
+function onUrDeptChange(){
+  let d=document.getElementById("urDept")?.value;
+  let sel=document.getElementById("urProcess"); if(!sel) return;
+  if(!d){ sel.innerHTML=`<option value="">— All —</option>`; return; }
+  let procs=getDeptProcs(d);
+  sel.innerHTML=`<option value="">— All —</option>`+procs.map(p=>`<option value="${p}">${p}</option>`).join("");
+}
+function populateUrDeptSel(){
+  let el=document.getElementById("urDept"); if(!el) return;
+  let depts=[...new Set(users.filter(u=>u.dept!=="Admin"&&u.dept!=="Stock").map(u=>u.dept))].sort();
+  if(!depts.includes("ઉચક")) depts.unshift("ઉચક");
+  el.innerHTML=`<option value="">— All —</option>`+depts.map(d=>`<option value="${d}">${d}</option>`).join("");
+}
+// DL functions for jangad report
+function dlJangadExcel(){
+  let fd=document.getElementById("urDept")?.value||"";
+  let fp=document.getElementById("urProcess")?.value||"";
+  let rows=[["જંગડ નં.","Kapan","વિગત","Department","Process","Operator","Rate","Nang","Vajan","Pis","In D-T","Out D-T","Status"]];
+  (fd?jangads.filter(j=>j.dept===fd):jangads).forEach(j=>{
+    j.steps.forEach(st=>{
+      if(fp&&st.process!==fp) return;
+      rows.push([j.no,j.kapan,j.vigat||"",st.dept||j.dept,st.process,st.operator||"—",st.rate||"—",j.nang,j.vajan,j.pis,st.inAt||"—",st.outAt||"—",st.status==="done"?"Done":"Pending"]);
+    });
+    if(j.status==="done"&&(!fp||fp==="→ Done")) rows.push([j.no,j.kapan,j.vigat||"",j.dept,"→ Done",j.okBy,"",j.nang,j.vajan,j.pis,"",j.okAt,"Done"]);
+  });
+  downloadCSV("Jangad_Report.csv",rows);
+}
+function dlJangadPDF(){
+  let fd=document.getElementById("urDept")?.value||"";
+  let fp=document.getElementById("urProcess")?.value||"";
+  let w=window.open("","_blank");
+  let rows=""; (fd?jangads.filter(j=>j.dept===fd):jangads).forEach(j=>{
+    j.steps.forEach(st=>{
+      if(fp&&st.process!==fp) return;
+      rows+=`<tr><td>${j.no}</td><td>${j.kapan}</td><td>${j.vigat||""}</td><td>${st.dept||j.dept}</td><td>${st.process}</td><td>${st.operator||"—"}</td><td>${st.rate||"—"}</td><td>${j.nang}</td><td>${j.vajan}</td><td>${j.pis}</td><td>${st.inAt||"—"}</td><td>${st.outAt||"—"}</td><td>${st.status==="done"?"Done":"Pending"}</td></tr>`;
+    });
+    if(j.status==="done"&&(!fp||fp==="→ Done")) rows+=`<tr><td>${j.no}</td><td>${j.kapan}</td><td>${j.vigat||""}</td><td>${j.dept}</td><td>→ Done</td><td>${j.okBy}</td><td></td><td>${j.nang}</td><td>${j.vajan}</td><td>${j.pis}</td><td></td><td>${j.okAt}</td><td>Done</td></tr>`;
+  });
+  let title=fd?fd+" Report":"All Departments Report";
+  w.document.write(`<html><head><title>${title}</title><style>body{font-family:Arial;padding:20px}h2{color:#2c3e50}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #999;padding:6px}th{background:#34495e;color:#fff}</style></head><body><h2>📋 ${title}</h2><p>${now()}</p><table><thead><tr><th>જંગડ નં.</th><th>Kapan</th><th>વિગત</th><th>Department</th><th>Process</th><th>Operator</th><th>Rate</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>In D-T</th><th>Out D-T</th><th>Status</th></tr></thead><tbody>${rows||`<tr><td colspan="13">કોઈ record નથી</td></tr>`}</tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>`);
+  w.document.close();
+}
+// Keep old DL functions pointing to new ones for backward compat
+function dlUchakExcel(){ dlJangadExcel(); }
+function dlUchakPDF(){ dlJangadPDF(); }
+function showUchakReport(){
+  let el=document.getElementById("uchakReportBody"); if(!el) return;
+  let fd=document.getElementById("urDept")?.value||"";
+  let fp=document.getElementById("urProcess")?.value||"";
+  let s=normKapan(document.getElementById("urSearch").value),from=document.getElementById("urFrom").value,to=document.getElementById("urTo").value;
+  let rows=[];
+  (fd?jangads.filter(j=>j.dept===fd):jangads).forEach(j=>{
+    if(s&&!normKapan(j.kapan).includes(s)) return;
+    if(j.sentMs){ let iso=todayISO(j.sentMs); if(from&&iso<from) return; if(to&&iso>to) return; }
+    j.steps.forEach(st=>{
+      if(fp&&st.process!==fp) return;
+      rows.push({no:j.no,kapan:j.kapan,dept:st.dept||j.dept,vigat:j.vigat||"",process:st.process,operator:st.operator||"—",rate:st.rate||"—",nang:j.nang,vajan:j.vajan,pis:j.pis,inAt:st.inAt||"—",outAt:st.outAt||"—",status:st.status==="done"?"✅ Done":"⏳ Pending"});
+    });
+    if(j.status==="done"&&(!fp||fp==="→ Done")) rows.push({no:j.no,kapan:j.kapan,dept:j.dept,vigat:j.vigat||"",process:"→ Done",operator:j.okBy,rate:"",nang:j.nang,vajan:j.vajan,pis:j.pis,inAt:"",outAt:j.okAt,status:"✅ Done"});
+  });
+  el.innerHTML=rows.map(r=>`<tr><td>${r.no}</td><td>${r.kapan}</td><td>${r.vigat?`<span class='small'>${r.vigat}</span>`:""}</td><td><span class="mgr">${r.dept}</span></td><td>${r.process}</td><td>${r.operator}</td><td>${r.rate}</td><td>${r.nang}</td><td>${r.vajan}</td><td>${r.pis}</td><td class="small">${r.inAt}</td><td class="small">${r.outAt}</td><td>${r.status}</td></tr>`).join("")||`<tr><td colspan="13">કોઈ record નથી</td></tr>`;
+}
+function clearUchakReport(){ ["urSearch","urFrom","urTo"].forEach(x=>document.getElementById(x).value=""); document.getElementById("urDept").value=""; document.getElementById("urProcess").innerHTML=`<option value="">— All —</option>`; document.getElementById("uchakReportBody").innerHTML=`<tr><td colspan="13" style="text-align:center;color:#999">Filters clear — ▶ લોડ કરો બટન દબાવો</td></tr>`; }
+function getDeptProcs(d){ return deptProcesses[d]||[]; }
+function getDeptRatesList(d){ return deptRates[d]||[]; }
+function getUchakDept(){ return document.getElementById("uchakMasterDept")?.value||"ઉચક"; }
+function getUchakAdminProcDept(){ return document.getElementById("uProcDeptAdmin")?.value||"ઉચક"; }
+function getUchakAdminRateDept(){ return document.getElementById("uRateDeptAdmin")?.value||"ઉચક"; }
+function populateUchakDeptSel(){
+  let depts=[...new Set(users.filter(u=>u.dept!=="Admin"&&u.dept!=="Stock").map(u=>u.dept))].sort();
+  if(!depts.includes("ઉચક")) depts.unshift("ઉચક");
+  let opts=depts.map(d=>`<option value="${d}">${d}</option>`).join("");
+  let el=document.getElementById("uchakDeptSel"); if(el) el.innerHTML=opts;
+}
+function populateUchakAdminDeptSels(){
+  let depts=[...new Set(users.filter(u=>u.dept!=="Admin"&&u.dept!=="Stock").map(u=>u.dept))].sort();
+  if(!depts.includes("ઉચક")) depts.unshift("ઉચક");
+  let opts=depts.map(d=>`<option value="${d}">${d}</option>`).join("");
+  ["uProcDeptAdmin","uRateDeptAdmin"].forEach(id=>{ let el=document.getElementById(id); if(el) el.innerHTML=opts; });
+}
+
+function fillUchakProcSels(dept){
+  let d=dept||getUchakDept();
+  let procs=getDeptProcs(d);
+  let opts=`<option value="">— Process —</option>`+procs.map(p=>`<option value="${p}">${p}</option>`).join("");
+  ["uStepProc","uRateProc"].forEach(id=>{ let el=document.getElementById(id); if(el) el.innerHTML=opts; });
+}
+function showUchakProcesses(dept){
+  let d=dept||getUchakDept();
+  let el=document.getElementById("uchakProcList"); if(!el) return;
+  let procs=getDeptProcs(d);
+  el.innerHTML=procs.map(p=>`<span class="mgr" style="font-size:13px;padding:5px 10px;margin:3px;display:inline-block">${p} <a href="#" onclick="delUchakProcess('${p.replace(/'/g,"\\'")}');return false;" style="color:#fff">✖</a></span>`).join(" ")||"<span class='small'>કોઈ Process નથી</span>";
+}
+function showUchakProcessesAdmin(){
+  let d=getUchakAdminProcDept();
+  let el=document.getElementById("uchakProcListAdmin"); if(!el) return;
+  let procs=getDeptProcs(d);
+  el.innerHTML=procs.map(p=>`<span class="mgr" style="font-size:13px;padding:5px 10px;margin:3px;display:inline-block">${p} <a href="#" onclick="delUchakProcessAdmin('${p.replace(/'/g,"\\'")}');return false;" style="color:#fff">✖</a></span>`).join(" ")||"<span class='small'>કોઈ Process નથી</span>";
+}
+function addUchakProcess(){
+  let d=getUchakDept();
+  let n=document.getElementById("nUProc").value.trim(); if(!n){ toast("નામ લખો!","error"); return; }
+  if(!deptProcesses[d]) deptProcesses[d]=[];
+  if(deptProcesses[d].includes(n)){ toast("પહેલેથી છે!","warning"); return; }
+  deptProcesses[d].push(n); save(); document.getElementById("nUProc").value=""; showUchakProcesses(d); fillUchakProcSels(d);
+}
+function addUchakProcessAdmin(){
+  let d=getUchakAdminProcDept();
+  let n=document.getElementById("nUProcAdmin").value.trim(); if(!n){ toast("નામ લખો!","error"); return; }
+  if(!deptProcesses[d]) deptProcesses[d]=[];
+  if(deptProcesses[d].includes(n)){ toast("પહેલેથી છે!","warning"); return; }
+  deptProcesses[d].push(n); save(); document.getElementById("nUProcAdmin").value="";
+  showUchakProcessesAdmin(); populateUchakDeptSel(); fillUchakProcSels(d);
+}
+function delUchakProcess(p){
+  let d=getUchakDept();
+  if(!confirm("Delete "+p+"?")) return;
+  if(deptProcesses[d]) deptProcesses[d]=deptProcesses[d].filter(x=>x!==p);
+  save(); showUchakProcesses(d); fillUchakProcSels(d);
+}
+function onAdminProcDeptChange(){ showUchakProcessesAdmin(); }
+function onAdminRateDeptChange(){
+  let d=getUchakAdminRateDept();
+  let procs=getDeptProcs(d);
+  let el=document.getElementById("uRateProcAdmin"); if(el) el.innerHTML=`<option value="">— Process —</option>`+procs.map(p=>`<option value="${p}">${p}</option>`).join("");
+  showUchakRatesAdmin();
+}
+function delUchakProcessAdmin(p){
+  let d=getUchakAdminProcDept();
+  if(!confirm("Delete "+p+"?")) return;
+  if(deptProcesses[d]) deptProcesses[d]=deptProcesses[d].filter(x=>x!==p);
+  save(); showUchakProcessesAdmin();
+}
+function showUchakRates(dept){
+  let d=dept||getUchakDept();
+  let el=document.getElementById("uchakRateList"); if(!el) return;
+  let rates=getDeptRatesList(d);
+  el.innerHTML=rates.map((r,i)=>`<tr><td>${r.process}</td><td>${r.operator||"—"}</td><td>${r.rate}</td><td><button class="del" onclick="delUchakRate(${i})" style="padding:2px 6px;font-size:11px">✖</button></td></tr>`).join("")||`<tr><td colspan="4">કોઈ Rate નથી</td></tr>`;
+}
+function showUchakRatesAdmin(){
+  let d=getUchakAdminRateDept();
+  let el=document.getElementById("uchakRateListAdmin"); if(!el) return;
+  let rates=getDeptRatesList(d);
+  el.innerHTML=rates.map((r,i)=>`<tr><td>${r.process}</td><td>${r.operator||"—"}</td><td>${r.rate}</td><td><button class="del" onclick="delUchakRateAdmin(${i})" style="padding:2px 6px;font-size:11px">✖</button></td></tr>`).join("")||`<tr><td colspan="4">કોઈ Rate નથી</td></tr>`;
+}
+function addUchakRate(){
+  let d=getUchakDept();
+  let proc=document.getElementById("uRateProc").value,op=document.getElementById("uRateOp").value.trim(),rate=parseFloat(document.getElementById("uRateVal").value);
+  if(!proc||!rate){ toast("Process અને Rate ભરો!","error"); return; }
+  if(!deptRates[d]) deptRates[d]=[];
+  deptRates[d].push({process:proc,operator:op||"",rate}); save();
+  document.getElementById("uRateOp").value=""; document.getElementById("uRateVal").value=""; showUchakRates(d);
+}
+function addUchakRateAdmin(){
+  let d=getUchakAdminRateDept();
+  let proc=document.getElementById("uRateProcAdmin").value,op=document.getElementById("uRateOpAdmin").value.trim(),rate=parseFloat(document.getElementById("uRateValAdmin").value);
+  if(!proc||!rate){ toast("Process અને Rate ભરો!","error"); return; }
+  if(!deptRates[d]) deptRates[d]=[];
+  deptRates[d].push({process:proc,operator:op||"",rate}); save();
+  document.getElementById("uRateOpAdmin").value=""; document.getElementById("uRateValAdmin").value=""; showUchakRatesAdmin();
+}
+function delUchakRate(i){
+  let d=getUchakDept();
+  if(deptRates[d]) deptRates[d].splice(i,1);
+  save(); showUchakRates(d);
+}
+function delUchakRateAdmin(i){
+  let d=getUchakAdminRateDept();
+  if(deptRates[d]) deptRates[d].splice(i,1);
+  save(); showUchakRatesAdmin();
+}
+function fillUchakRateForProc(proc,elId,dept){
+  let d=dept||getUchakDept();
+  let rates=(getDeptRatesList(d)).filter(r=>r.process===proc);
+  let el=document.getElementById(elId); if(!el) return;
+  el.innerHTML=rates.map(r=>`<option value="${r.rate}">${r.rate}${r.operator?" ("+r.operator+")":""}</option>`).join("")||`<option value="">— Rate નથી —</option>`;
+}
+
+// Step rows for send form
+let uStepRows=[];
+function addUchakStep(){
+  uStepRows.push("u"+Math.random().toString(36).slice(2,7));
+  renderUchakSteps();
+}
+function delUchakStep(rid){ uStepRows=uStepRows.filter(x=>x!==rid); renderUchakSteps(); }
+function renderUchakSteps(){
+  let d=getUchakDept();
+  let procs=getDeptProcs(d);
+  let procOpts=`<option value="">— Process —</option>`+procs.map(p=>`<option value="${p}">${p}</option>`).join("");
+  document.getElementById("uStepsBody").innerHTML=uStepRows.map(rid=>`<tr><td>${uStepRows.indexOf(rid)+1}</td><td><select id="${rid}_p" onchange="fillUchakRateForProc(this.value,'${rid}_r')">${procOpts}</select></td><td><input id="${rid}_o" placeholder="Operator" style="width:120px"></td><td><select id="${rid}_r"><option value="">— Rate —</option></select></td><td><button class="del" onclick="delUchakStep('${rid}')">✖</button></td></tr>`).join("");
+}
+function fillUchakPick(){
+  let s=normKapan(document.getElementById("uPickSearch").value);
+  let held=stockHeld();
+  if(!held.length) held=data.map((d,idx)=>({...d,idx})).filter(d=>d.status==="Received"&&(d.to===STOCK_DEPT||d.to===STOCK_HOLD));
+  let list=held.filter(d=>!s||normKapan(d.item).includes(s));
+  document.getElementById("uPick").innerHTML=list.map(d=>`<option value="${d.idx}">${d.item} — ${d.carat}ct</option>`).join("")||`<option value="">— કોઈ Stock કાપણ નથી —</option>`;
+  fillUchakPickData();
+}
+function fillUchakPickData(){
+  let i=document.getElementById("uPick").value;
+  if(i===""){ ["uCarat","uNang","uVajan","uPis"].forEach(x=>document.getElementById(x).value=""); return; }
+  let d=data[i]; document.getElementById("uCarat").value=d.carat; document.getElementById("uNang").value=d.nang; document.getElementById("uVajan").value=d.vajan||0; document.getElementById("uPis").value=d.pis;
+}
+function sendToUchak(){
+  let i=document.getElementById("uPick").value; if(i===""){ toast("Kapan પસંદ કરો!","error"); return; }
+  if(!uStepRows.length){ toast("ઓછામાં ઓછું એક Step ઉમેરો!","error"); return; }
+  let src=data[i];
+  let d=getUchakDept();
+  let steps=[];
+  for(let rid of uStepRows){
+    let proc=document.getElementById(rid+"_p")?.value;
+    if(!proc){ toast("બધા Step માટે Process પસંદ કરો!","error"); return; }
+    let op=document.getElementById(rid+"_o")?.value.trim()||"";
+    let rate=parseFloat(document.getElementById(rid+"_r")?.value)||0;
+    steps.push({process:proc,operator:op,rate,status:"pending",inAt:"",outAt:""});
+  }
+  let id=uid();
+  if(steps.length) steps[0].inAt=now();
+  uchak.push({id,kapan:src.item,carat:src.carat,nang:src.nang,vajan:src.vajan||0,pis:src.pis,dept:d,steps,currentStep:0,status:"chalu",sentAt:now(),sentMs:Date.now(),okBy:"",okAt:"",plannedAt:"",nextOpts:[]});
+  data.splice(i,1);
+  hist.push({item:src.item,action:"Uchak-Send",from:"Stock",to:d,sentAt:now(),sentMs:Date.now()});
+  uStepRows=[]; renderUchakSteps();
+  save(); refresh(); showUchakInbox(); addNotif("send","Old Uchak Send",src.item+" → "+d); toast("✅ "+d+" ને મોકલાઈ ગયું!","success");
+}
+function showUchakInbox(){ showJangadInbox(); }
+function uchakStepDone(id){ jangadStepDone(id); }
+function openUchakNextPanel(id){ openJangadNextPanel(id); }
 </script>
 
 </body>
