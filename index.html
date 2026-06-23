@@ -1669,6 +1669,8 @@ function showJangadInbox(){
     let routeLabel=j.depts?j.depts.join(" → "):j.dept;
     // Show "📤 Send" button for Uchak (admin/stock only)
     let headerAct=j.dept==="Uchak"?`<button class="set" onclick="jangadSendFirstDept('${j.id}')" style="padding:3px 6px;font-size:11px">📤 Send to ${j.depts[0]||"First Dept"}</button>`:"";
+    // Show "🔄 Reset" for non-Uchak active jangads (admin/stock only)
+    if(j.dept!=="Uchak"&&!isDeptUser) headerAct+=` <button class="del" onclick="jangadReset('${j.id}')" style="padding:3px 6px;font-size:11px">🔄 Reset</button>`;
     // Header row
     rows+=`<tr style="background:#eaf2f8;font-weight:600"><td><input type="checkbox" class="jgChk" data-id="${j.id}" onchange="updateBatchBar()"></td><td><b>${j.no}</b>${vigLabel}</td><td>${j.kapan}</td><td style="font-size:11px">${routeLabel}</td><td>${tagIcon}</td><td></td><td>${j.nang}</td><td>${j.vajan}</td><td>${j.pis}</td><td>${j.dept==="Uchak"?"⏳ ઉચક":j.status==="chalu"?"⏳ ચાલુ":"✅ Done"}</td><td>${headerAct}</td></tr>`;
     // Step rows
@@ -1742,6 +1744,13 @@ function jangadSendFirstDept(id){
   j.dept=j.depts[0];
   if(j.steps.length) j.steps[0].inAt=now();
   save(); showJangadInbox(); showActiveUchakEntries(); addNotif("send","Jangad Sent",j.no+" → "+j.dept); toast("✅ #"+j.no+" → "+j.dept+" મોકલાયું!","success");
+}
+function jangadReset(id){
+  if(!confirm("આ જંગડને Uchak માં Reset કરવાની ખાતરી છે? બધા step data ખોવાઈ જશે!")) return;
+  let j=jangads.find(x=>x.id===id); if(!j) return;
+  j.dept="Uchak"; j.currentStep=0;
+  j.steps.forEach(s=>{ s.operator=""; s.rate=0; s.status="pending"; s.inAt=""; s.outAt=""; });
+  save(); showJangadInbox(); showActiveUchakEntries(); toast("🔄 #"+j.no+" Uchak માં Reset થઈ ગયું!","success");
 }
 function jangadStockDone(id){
   let j=jangads.find(x=>x.id===id); if(!j) return;
