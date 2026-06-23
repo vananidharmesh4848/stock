@@ -312,7 +312,7 @@
     <div class="box" id="sendFree"><h2>📤 નવી કાપણ બનાવો (Stock)</h2><div class="row"><div><label>Item / Kapan</label><input id="item"></div><div><label>Carat</label><input id="carat" type="number" step="0.01" value="0"></div><div><label>Nang</label><input id="nang" type="number" value="0"></div><div><label>Vajan</label><input id="vajan" type="number" step="0.01" value="0"></div><div><label>Pis</label><input id="pis" type="number" value="0"></div></div><div class="row"><div><label>📝 વિગત</label><input id="note" placeholder="વિગત"></div><div><label>Tag</label><select id="tag"><option value="regular">🟢 Regular</option><option value="urgent">🔴 Urgent</option><option value="agal">🟡 Agal</option></select></div><div><label>કયા Office ને</label><select id="to"></select></div></div><button onclick="addItemFree()">📤 Send</button></div>
     <div class="box fwdbox" id="stockFwd"><h2>📤 Stock પાસેનું કાપણ આગળ મોકલો</h2><div class="row"><div><label>🔍 Kapan શોધો</label><input id="sfSearch" oninput="fillSFPick()" placeholder="Kapan"></div><div><label>કયું Kapan</label><select id="sfPick" onchange="fillSF()"></select></div><div><label>Carat</label><input id="sfCarat" readonly></div><div><label>Nang</label><input id="sfNang" readonly></div><div><label>Vajan</label><input id="sfVajan" readonly></div><div><label>Pis</label><input id="sfPis" readonly></div></div><div class="row"><div><label>📝 વિગત</label><input id="sfNote" placeholder="વિગત"></div><div><label>Tag</label><select id="sfTag"><option value="regular">🟢 Regular</option><option value="urgent">🔴 Urgent</option><option value="agal">🟡 Agal</option></select></div><div><label>કયા Office ને</label><select id="sfTo"></select></div></div><button onclick="stockForward()">📤 આગળ મોકલો</button></div>
     <div class="box splitbox" id="splitBox"><h2>✂️ કાપણ ના ભાગ પાડો</h2><div class="row"><div><label>🔍 Kapan શોધો</label><input id="spSearch" oninput="fillSplitPick()" placeholder="Kapan"></div><div><label>કયું Kapan</label><select id="splitPick" onchange="fillSplit()"></select></div><div><label>Carat</label><input id="spCarat" readonly></div><div><label>Nang</label><input id="spNang" readonly></div><div><label>Vajan</label><input id="spVajan" readonly></div><div><label>Pis</label><input id="spPis" readonly></div></div><h3>ભાગ:</h3><table><thead><tr><th>Carat</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>Tag</th><th>Label</th><th>વિગત</th><th>Office</th><th>—</th></tr></thead><tbody id="partsBody"></tbody></table><button class="addp" onclick="addPartRow()">➕ બીજો ભાગ</button><div class="sumline" id="splitSum"></div><button onclick="doSplit()">✂️ ભાગ પાડી મોકલો</button></div>
-    <div class="box" id="kapanTransferBox"><h2>🔄 Kapan Transfer — Department થી Department</h2><div class="row"><div><label>🔍 Kapan શોધો</label><input id="ktrSearch" oninput="fillKtrPick()" placeholder="Kapan"></div><div><label>કયું Kapan</label><select id="ktrPick" onchange="fillKtr()"></select></div><div><label>Carat</label><input id="ktrCarat" readonly></div><div><label>Nang</label><input id="ktrNang" readonly></div><div><label>Vajan</label><input id="ktrVajan" readonly></div><div><label>Pis</label><input id="ktrPis" readonly></div></div><div class="row"><div><label>🏢 હાલનું Department</label><input id="ktrCurDept" readonly style="background:#ffeaa7;font-weight:700"></div><div><label>📤 Transfer to</label><select id="ktrTo"></select></div><div style="display:flex;align-items:flex-end"><button onclick="doKapanTransfer()" style="background:#2980b9;color:#fff;padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-weight:600">🔄 Transfer</button></div></div></div>
+    <div class="box" id="kapanTransferBox"><h2>🔄 Kapan Transfer — Department થી Department</h2><div class="row"><div><label>🔍 Kapan શોધો</label><input id="ktrSearch" oninput="fillKtrPick()" placeholder="Kapan"></div><div style="display:flex;align-items:flex-end"><button onclick="fillKtrPick()" style="background:#27ae60;color:#fff;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;font-weight:600">🔄</button></div><div><label>કયું Kapan</label><select id="ktrPick" onchange="fillKtr()"></select></div><div><label>Carat</label><input id="ktrCarat" readonly></div><div><label>Nang</label><input id="ktrNang" readonly></div><div><label>Vajan</label><input id="ktrVajan" readonly></div><div><label>Pis</label><input id="ktrPis" readonly></div></div><div class="row"><div><label>🏢 હાલનું Department</label><input id="ktrCurDept" readonly style="background:#ffeaa7;font-weight:700"></div><div><label>📤 Transfer to</label><select id="ktrTo"></select></div><div><label>🔑 Password</label><input id="ktrPass" type="password" placeholder="Transfer Password" style="width:120px"></div><div style="display:flex;align-items:flex-end"><button onclick="doKapanTransfer()" style="background:#2980b9;color:#fff;padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-weight:600">🔄 Transfer</button></div></div></div>
   </div>
 
   <!-- PAGE: STOCK -->
@@ -471,23 +471,6 @@
         <button onclick="createJangads()" style="background:#2980b9;color:#fff;padding:10px 24px;border:none;border-radius:6px;font-weight:600;cursor:pointer">🏭 Uchak Entry Save કરો</button>
       </div>
     </div>
-    <!-- ⚙️ Uchak Master — Process & Rate (collapsible) -->
-    <div class="box uchakAdmin" style="border:1px solid #ddd">
-      <h2 onclick="toggleUchakMaster()" style="cursor:pointer;user-select:none">⚙️ Uchak Master — Process & Rate <span id="uchakMasterToggle">▼</span></h2>
-      <div id="uchakMasterBody" class="hide">
-        <div class="row"><div><b>🏢 Department</b> <select id="uchakMasterDept" onchange="onUchakMasterDeptChange()" style="width:auto;min-width:120px"></select></div></div>
-        <hr style="margin:8px 0">
-        <div class="row"><div style="flex:2"><b>📋 Process Master</b></div></div>
-        <div class="row"><div style="flex:2"><input id="nUProc" placeholder="નવું Process નામ"></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addUchakProcess()" style="width:100%">➕ ઉમેરો</button></div></div><div id="uchakProcList" style="margin-top:6px"></div>
-        <hr style="margin:12px 0">
-        <div class="row"><div><b>👤 Operator Master</b></div></div>
-        <div class="row"><div style="flex:2"><input id="nUOp" placeholder="નવું Operator નામ"></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addUchakOp()" style="width:100%">➕ ઉમેરો</button></div></div><div id="uchakOpList" style="margin-top:6px"></div>
-        <hr style="margin:12px 0">
-        <div class="row"><div><b>💰 Rate Master</b></div></div>
-        <div class="row"><div><label>Process</label><select id="uRateProc" onchange="fillUchakRateOpList()"></select></div><div><label>Operator</label><select id="uRateOp"><option value="">— Operator —</option></select></div><div><label>Rate</label><input id="uRateVal" type="number" step="0.01" placeholder="ભાવ"></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addUchakRate()" style="width:100%">➕ ઉમેરો</button></div></div>
-        <table><thead><tr><th>Process</th><th>Operator</th><th>Rate</th><th>Action</th></tr></thead><tbody id="uchakRateList"></tbody></table>
-      </div>
-    </div>
     <!-- 🏭 Active Uchak Entries -->
     <div class="box uchakAdmin" style="border:2px solid #27ae60">
       <h2>🏭 Active Uchak Entries — Kapanwise</h2>
@@ -508,7 +491,10 @@
     </div>
 
     <!-- Report -->
-    <div class="box"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 id="uchakReportTitle">📋 Report</h2><div class="dlbar"><button class="xls" onclick="dlUchakExcel()">📊 Excel</button><button class="pdf" onclick="dlUchakPDF()">📄 PDF</button></div></div><div class="row datebar"><div><label>🔍 Kapan</label><input id="urSearch" placeholder="Kapan"></div><div><label>🏢 Department</label><select id="urDept" onchange="onUrDeptChange()"></select></div><div><label>🔧 Process</label><select id="urProcess"><option value="">— All —</option></select></div><div><label>📅 થી</label><input id="urFrom" type="date"></div><div><label>📅 સુધી</label><input id="urTo" type="date"></div><div style="display:flex;align-items:flex-end"><button onclick="showUchakReport()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div><div style="display:flex;align-items:flex-end"><button onclick="clearUchakReport()" style="background:#7f8c8d;width:100%">🔄</button></div></div><table><thead><tr><th>જંગડ નં.</th><th>Kapan</th><th>વિગત</th><th>Department</th><th>Process</th><th>Operator</th><th>Rate</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>In D-T</th><th>Out D-T</th><th>Status</th></tr></thead><tbody id="uchakReportBody"><tr><td colspan="13" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr></tbody></table></div>
+    <div class="box"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 id="uchakReportTitle">📋 Report</h2><div class="dlbar"><button class="xls" onclick="dlUchakExcel()">📊 Excel</button><button class="pdf" onclick="dlUchakPDF()">📄 PDF</button></div></div><div class="row datebar"><div><label>🔍 Kapan</label><input id="urSearch" placeholder="Kapan"></div><div><label>🏢 Department</label><select id="urDept" onchange="onUrDeptChange()"></select></div><div><label>🔧 Process</label><select id="urProcess"><option value="">— All —</option></select></div><div><label>📅 થી</label><input id="urFrom" type="date"></div><div><label>📅 સુધી</label><input id="urTo" type="date"></div><div style="display:flex;align-items:flex-end"><button onclick="showUchakReport()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div>        <div style="display:flex;align-items:flex-end"><button onclick="clearUchakReport()" style="background:#7f8c8d;width:100%">🔄</button></div></div><table><thead><tr><th>જંગડ નં.</th><th>Kapan</th><th>વિગત</th><th>Department</th><th>Process</th><th>Operator</th><th>Rate</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>In D-T</th><th>Out D-T</th><th>Status</th></tr></thead><tbody id="uchakReportBody"><tr><td colspan="13" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr></tbody></table></div>
+    <hr style="margin:14px 0;border-color:#ddd">
+    <!-- Department Rate Master (Uchak) -->
+    <div class="box" style="margin:12px 0;border:2px solid #8e44ad"><h2>💰 Department Rate Master</h2><div class="row"><div><label>Department</label><select id="uRateDeptUchak" onchange="onUchakRateDeptChange()"></select></div><div><label>Process</label><select id="uRateProcUchak" onchange="showUchakRateValUchak()"></select></div><div><label>Operator</label><input id="uRateOpUchak" placeholder="Operator" style="width:100%;padding:6px;font-size:13px;border:1px solid #ccc;border-radius:4px"></div><div><label>Rate</label><select id="uRateValUchak"><option value="">— Rate —</option></select></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addUchakRateUchak()" style="width:100%">➕ ઉમેરો</button></div></div><table><thead><tr><th>Process</th><th>Operator</th><th>Rate</th><th>Action</th></tr></thead><tbody id="uchakRateListUchak"></tbody></table></div>
   </div>
 
   <!-- PAGE: ADMIN -->
@@ -550,6 +536,8 @@
           <label><input type="checkbox" id="setDarkMode" onchange="toggleDarkMode()"> Dark Mode</label>
           <label><input type="checkbox" id="setMobileView" onchange="toggleMobileViewSetting()"> Mobile View Default</label>
           <label><input type="checkbox" id="setShowHints" checked onchange="saveAdminSettings()"> Show Keyboard Hints</label>
+          <label style="margin-top:8px">🔑 Transfer Password</label>
+          <input id="setKtrPass" type="password" placeholder="Transfer Password" onchange="saveAdminSettings()" style="width:100%;padding:6px;font-size:13px;border:1px solid #ccc;border-radius:4px">
         </div>
       </div>
       <hr style="margin:14px 0;border-color:#ddd">
@@ -588,13 +576,6 @@
 
       <!-- Department Process Master (Admin) -->
       <div class="box" style="margin:12px 0;border:2px solid #16a085"><h2>🔀 Department Process Master</h2><div class="row"><div><label>Department</label><select id="uProcDeptAdmin" onchange="onAdminProcDeptChange()"></select></div><div style="flex:2"><input id="nUProcAdmin" placeholder="નવું Process નામ"></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addUchakProcessAdmin()" style="width:100%">➕ ઉમેરો</button></div></div><div id="uchakProcListAdmin" style="margin-top:6px"></div></div>
-      <hr style="margin:14px 0;border-color:#ddd">
-      <!-- Department Operator Master (Admin) -->
-      <div class="box" style="margin:12px 0;border:2px solid #8e44ad"><h2>👤 Department Operator Master</h2><div class="row"><div><label>Department</label><select id="uOpDeptAdmin" onchange="onAdminOpDeptChange()"></select></div><div style="flex:2"><input id="nUOpAdmin" placeholder="નવું Operator નામ"></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addUchakOpAdmin()" style="width:100%">➕ ઉમેરો</button></div></div><div id="uchakOpListAdmin" style="margin-top:6px"></div></div>
-      <hr style="margin:14px 0;border-color:#ddd">
-
-      <!-- Department Rate Master (Admin) -->
-      <div class="box" style="margin:12px 0;border:2px solid #8e44ad"><h2>💰 Department Rate Master</h2><div class="row"><div><label>Department</label><select id="uRateDeptAdmin" onchange="onAdminRateDeptChange()"></select></div><div><label>Process</label><select id="uRateProcAdmin" onchange="fillUchakAdminRateOpList()"></select></div><div><label>Operator</label><select id="uRateOpAdmin"><option value="">— Operator —</option></select></div><div><label>Rate</label><input id="uRateValAdmin" type="number" step="0.01" placeholder="ભાવ"></div><div style="display:flex;align-items:flex-end"><button class="addp" onclick="addUchakRateAdmin()" style="width:100%">➕ ઉમેરો</button></div></div><table><thead><tr><th>Process</th><th>Operator</th><th>Rate</th><th>Action</th></tr></thead><tbody id="uchakRateListAdmin"></tbody></table></div>
       <hr style="margin:14px 0;border-color:#ddd">
 
       <!-- Users -->
@@ -738,7 +719,8 @@ function openApp(){
   document.querySelectorAll(".uchakAdmin").forEach(el=>el.classList.toggle("hide",!isFull));
   fillDeptDropdown(); fillFilterDept(); fillHistDept(); fillRepDeptFilter(); fillRepairDropdown(); fillManagerDropdown(); fillMgrDropdownStock(); fillDataEntryDropdown(); fillSugToChk(); fillSugFiltDept(); fillDashStatDept(); showUsers(); showLabels(); showManagers(); showDEAdminList(); showMyMgrList(); showMyDEList(); showGoogleReqs(); showAllowedEmails(); populateAdminReqDept(); populateAdminOfficeSels(); loadAdminSettings(); applyDarkMode(); updateNotifCount(); showNotifications(); addInputValidation(); injectDateQuick(); resetActivityTimer();
   populateUchakDeptSel(); populateUchakAdminDeptSels();
-  showUchakProcesses(); showUchakProcessesAdmin(); showUchakRates(); showUchakRatesAdmin(); fillUchakProcSels(); showUchakOps(); showUchakOpsAdmin(); fillUchakRateOpList();
+  showUchakProcessesAdmin();
+  onUchakRateDeptChange();
   initJangadEntry(); showJangadInbox();
   if(isFull){ partRows=[]; addPartRow(); addPartRow(); }
   buildNav();
@@ -767,8 +749,8 @@ function togglePassVisibility(){ let p=document.getElementById("upass"); if(p.ty
 
 // === ADMIN SETTINGS ===
 let adminSettings=JSON.parse(localStorage.getItem("adminSettings")||"null")||{sessionTimeout:30,maxAttempts:5,lockoutDuration:300,autoLogout:true,shortcuts:true,showHints:true};
-function saveAdminSettings(){ adminSettings.sessionTimeout=parseInt(document.getElementById("setSessionTimeout").value)||30; adminSettings.maxAttempts=parseInt(document.getElementById("setMaxAttempts").value)||5; adminSettings.lockoutDuration=parseInt(document.getElementById("setLockoutDuration").value)||300; adminSettings.autoLogout=document.getElementById("setAutoLogout").checked; adminSettings.shortcuts=document.getElementById("setShortcuts").checked; adminSettings.showHints=document.getElementById("setShowHints").checked; localStorage.setItem("adminSettings",JSON.stringify(adminSettings)); localStorage.setItem("adminMaxAttempts",adminSettings.maxAttempts); localStorage.setItem("adminLockoutDuration",adminSettings.lockoutDuration); toast("Settings saved!","success"); }
-function loadAdminSettings(){ if(!adminSettings) return; let e=(id,val)=>{ let el=document.getElementById(id); if(el) el.value=val; }; let c=(id,val)=>{ let el=document.getElementById(id); if(el) el.checked=val; }; e("setSessionTimeout",adminSettings.sessionTimeout); e("setMaxAttempts",adminSettings.maxAttempts); e("setLockoutDuration",adminSettings.lockoutDuration); c("setAutoLogout",adminSettings.autoLogout); c("setShortcuts",adminSettings.shortcuts); c("setShowHints",adminSettings.showHints); c("setDarkMode",document.body.classList.contains("dark")); c("setMobileView",document.body.classList.contains("mobile-view")); localStorage.setItem("adminMaxAttempts",adminSettings.maxAttempts); localStorage.setItem("adminLockoutDuration",adminSettings.lockoutDuration); }
+function saveAdminSettings(){ adminSettings.sessionTimeout=parseInt(document.getElementById("setSessionTimeout").value)||30; adminSettings.maxAttempts=parseInt(document.getElementById("setMaxAttempts").value)||5; adminSettings.lockoutDuration=parseInt(document.getElementById("setLockoutDuration").value)||300; adminSettings.autoLogout=document.getElementById("setAutoLogout").checked; adminSettings.shortcuts=document.getElementById("setShortcuts").checked; adminSettings.showHints=document.getElementById("setShowHints").checked; localStorage.setItem("adminSettings",JSON.stringify(adminSettings)); localStorage.setItem("adminMaxAttempts",adminSettings.maxAttempts); localStorage.setItem("adminLockoutDuration",adminSettings.lockoutDuration); let ktrPwd=document.getElementById("setKtrPass")?.value.trim(); if(ktrPwd) localStorage.setItem("ktrPassword",ktrPwd); toast("Settings saved!","success"); }
+function loadAdminSettings(){ if(!adminSettings) return; let e=(id,val)=>{ let el=document.getElementById(id); if(el) el.value=val; }; let c=(id,val)=>{ let el=document.getElementById(id); if(el) el.checked=val; }; e("setSessionTimeout",adminSettings.sessionTimeout); e("setMaxAttempts",adminSettings.maxAttempts); e("setLockoutDuration",adminSettings.lockoutDuration); c("setAutoLogout",adminSettings.autoLogout); c("setShortcuts",adminSettings.shortcuts); c("setShowHints",adminSettings.showHints); c("setDarkMode",document.body.classList.contains("dark")); c("setMobileView",document.body.classList.contains("mobile-view")); localStorage.setItem("adminMaxAttempts",adminSettings.maxAttempts); localStorage.setItem("adminLockoutDuration",adminSettings.lockoutDuration); let ktrPwd=localStorage.getItem("ktrPassword")||"admin@123"; let ktrEl=document.getElementById("setKtrPass"); if(ktrEl) ktrEl.value=ktrPwd; }
 
 // === AUTO LOGOUT ===
 let activityTimer=null;
@@ -990,8 +972,8 @@ function fillSFPick(){ let s=normKapan(document.getElementById("sfSearch").value
 function fillSF(){ let i=document.getElementById("sfPick").value; if(i===""){ ["sfCarat","sfNang","sfVajan","sfPis","sfTag"].forEach(x=>document.getElementById(x).value=""); return; } let d=data[i]; document.getElementById("sfCarat").value=d.carat; document.getElementById("sfNang").value=d.nang; document.getElementById("sfVajan").value=d.vajan||0; document.getElementById("sfPis").value=d.pis; document.getElementById("sfTag").value=d.tag||"regular"; }
 function stockForward(){ let i=document.getElementById("sfPick").value; if(i===""){ toast("કાપણ પસંદ કરો!","error"); return; } let src=data[i]; let tag=document.getElementById("sfTag").value,note=document.getElementById("sfNote").value.trim(); let [to,toPart]=document.getElementById("sfTo").value.split("|||"); let id=uid(); let rec={id,item:src.item,carat:src.carat,nang:src.nang,vajan:src.vajan||0,pis:src.pis,note,tag,from:STOCK_DEPT,fromPart:"Main",to,toPart,label:src.label||"",manager:"",dataentry:"",fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0}; data.push(rec); hist.push({...rec,action:"Send"}); data.splice(i,1); document.getElementById("sfNote").value=""; save(); refresh(); addNotif("send","Stock Forward",STOCK_DEPT+" → "+to+": "+src.item); toast("✅ આગળ મોકલાઈ ગયું!","success"); }
 function fillKtrPick(){ let s=normKapan(document.getElementById("ktrSearch").value); let list=data.filter(d=>d.status==="Received").filter(d=>!s||normKapan(d.item).includes(s)); document.getElementById("ktrPick").innerHTML=list.map((d,i)=>`<option value="${i}">${d.item} — ${d.carat}ct — ${d.to}</option>`).join("")||`<option value="">— કોઈ નથી —</option>`; fillKtr(); }
-function fillKtr(){ let i=document.getElementById("ktrPick").value; if(i===""){ ["ktrCarat","ktrNang","ktrVajan","ktrPis","ktrCurDept"].forEach(x=>document.getElementById(x).value=""); return; } let d=data[i]; document.getElementById("ktrCarat").value=d.carat; document.getElementById("ktrNang").value=d.nang; document.getElementById("ktrVajan").value=d.vajan||0; document.getElementById("ktrPis").value=d.pis; document.getElementById("ktrCurDept").value=d.to; let depts=[...new Set(users.filter(u=>u.dept!=="Admin"&&u.dept!=="Stock").map(u=>u.dept))].sort(); let sel=document.getElementById("ktrTo"); sel.innerHTML=depts.filter(d2=>d2!==d.to).map(d2=>`<option value="${d2}">${d2}</option>`).join("")||`<option value="">— No other dept —</option>`; }
-function doKapanTransfer(){ let i=document.getElementById("ktrPick").value; if(i===""){ toast("Kapan પસંદ કરો!","error"); return; } let nd=document.getElementById("ktrTo").value; if(!nd){ toast("Transfer Department પસંદ કરો!","error"); return; } let d=data[i]; let oldDept=d.to; if(!confirm(d.item+" ને "+oldDept+" થી "+nd+" માં Transfer કરવાની ખાતરી છે?")) return; d.to=nd; d.recvAt=""; d.recvTime=0; d.sentAt=now(); d.sentMs=Date.now(); d.status="Pending"; d.manager=""; d.dataentry=""; d.dstat=""; hist.push({id:d.id,item:d.item,carat:d.carat,nang:d.nang,vajan:d.vajan||0,pis:d.pis,action:"Transfer",from:oldDept,to:nd,sentAt:now(),sentMs:Date.now()}); save(); refresh(); addNotif("send","Kapan Transfer",d.item+" → "+oldDept+" → "+nd); toast("🔄 "+d.item+" "+oldDept+" થી "+nd+" માં Transfer થયું!","success"); }
+function fillKtr(){ let i=document.getElementById("ktrPick").value; if(i===""){ ["ktrCarat","ktrNang","ktrVajan","ktrPis","ktrCurDept","ktrPass"].forEach(x=>{let el=document.getElementById(x);if(el)el.value="";}); return; } let d=data[i]; document.getElementById("ktrCarat").value=d.carat; document.getElementById("ktrNang").value=d.nang; document.getElementById("ktrVajan").value=d.vajan||0; document.getElementById("ktrPis").value=d.pis; document.getElementById("ktrCurDept").value=d.to;   let depts=[...new Set(users.filter(u=>u.dept!=="Admin"&&u.dept!=="Stock").map(u=>u.dept))].sort(); let sel=document.getElementById("ktrTo"); sel.innerHTML=depts.filter(d2=>d2!==d.to).map(d2=>`<option value="${d2}">${d2}</option>`).join("")||`<option value="">— No other dept —</option>`; }
+function doKapanTransfer(){ let i=document.getElementById("ktrPick").value; if(i===""){ toast("Kapan પસંદ કરો!","error"); return; } let nd=document.getElementById("ktrTo").value; if(!nd){ toast("Transfer Department પસંદ કરો!","error"); return; } let ktrPass=document.getElementById("ktrPass").value.trim(); let savedPass=localStorage.getItem("ktrPassword")||"admin@123"; if(ktrPass!==savedPass){ toast("❌ ખોટો Password!","error"); return; } let d=data[i]; let oldDept=d.to; if(!confirm(d.item+" ને "+oldDept+" થી "+nd+" માં Transfer કરવાની ખાતરી છે?")) return; d.to=nd; d.recvAt=""; d.recvTime=0; d.sentAt=now(); d.sentMs=Date.now(); d.status="Pending"; d.manager=""; d.dataentry=""; d.dstat=""; hist.push({id:d.id,item:d.item,carat:d.carat,nang:d.nang,vajan:d.vajan||0,pis:d.pis,action:"Transfer",from:oldDept,to:nd,sentAt:now(),sentMs:Date.now()}); save(); refresh(); addNotif("send","Kapan Transfer",d.item+" → "+oldDept+" → "+nd); toast("🔄 "+d.item+" "+oldDept+" થી "+nd+" માં Transfer થયું!","success"); document.getElementById("ktrPass").value=""; }
 
 let partRows=[];
 function fillSplitPick(){ let s=normKapan(document.getElementById("spSearch").value); let list=data.map((d,idx)=>({...d,idx})).filter(d=>d.status==="Received"&&(d.to===STOCK_DEPT||d.to===STOCK_HOLD)&&(!s||normKapan(d.item).includes(s))); document.getElementById("splitPick").innerHTML=list.map(d=>`<option value="${d.idx}">${d.item} — ${d.carat}ct</option>`).join("")||`<option value="">— કોઈ નથી —</option>`; fillSplit(); }
@@ -1451,7 +1433,8 @@ function applyCloudData(d){
     showUsers();
     showLabels();
     populateUchakDeptSel(); populateUchakAdminDeptSels();
-    showUchakProcesses(); showUchakProcessesAdmin(); showUchakRates(); showUchakRatesAdmin(); fillUchakProcSels();
+    showUchakProcessesAdmin();
+    onUchakRateDeptChange();
     showUchakInbox();
   }
 }
@@ -1574,7 +1557,7 @@ function populateUchakMasterDept(){
 }
 function onUchakMasterDeptChange(){
   let d=document.getElementById("uchakMasterDept")?.value; if(!d) return;
-  fillUchakProcSels(d); showUchakProcesses(d); showUchakRates(d); showUchakOps(d); fillUchakRateOpList();
+  fillUchakProcSels(d); showUchakProcesses(d); showUchakRates(d); showUchakOps(d); fillUchakRateOpList(); fillUchakRateValList();
 }
 function toggleUchakMaster(){
   let b=document.getElementById("uchakMasterBody"); let t=document.getElementById("uchakMasterToggle");
@@ -1924,12 +1907,7 @@ function onUchakDeptChange(){
 }
 function buildRateSelect(jid,process,dept,curOp,curRate){
   let isDeptUser=cur.role!=="admin"&&cur.role!=="stock";
-  let ops=(deptOps[dept]||[]).map(o=>`<option value="${o}">`).join("");
-  let opDlId=`jgOpDl_${jid}`;
-  let opInput=`<input id="jgOp_${jid}" placeholder="Operator" value="${curOp||""}" style="width:80px;padding:4px;font-size:11px" list="${opDlId}"><datalist id="${opDlId}">${ops}</datalist>`;
-  if(isDeptUser){
-    return `${opInput} <input id="jgRate_${jid}" type="number" step="0.01" placeholder="Rate" value="${curRate||""}" style="width:65px;padding:4px;font-size:11px">`;
-  }
+  let opInput=`<input id="jgOp_${jid}" placeholder="Operator" value="${curOp||""}" style="width:80px;padding:4px;font-size:11px">`;
   let rates=(getDeptRatesList(dept)).filter(r=>r.process===process);
   if(!rates.length){
     return `${opInput} <input id="jgRate_${jid}" type="number" step="0.01" placeholder="Rate" value="${curRate||""}" style="width:65px;padding:4px;font-size:11px">`;
@@ -2016,7 +1994,44 @@ function populateUchakAdminDeptSels(){
   let depts=[...new Set(users.filter(u=>u.dept!=="Admin"&&u.dept!=="Stock").map(u=>u.dept))].sort();
   if(!depts.includes("ઉચક")) depts.unshift("ઉચક");
   let opts=depts.map(d=>`<option value="${d}">${d}</option>`).join("");
-  ["uProcDeptAdmin","uRateDeptAdmin","uOpDeptAdmin"].forEach(id=>{ let el=document.getElementById(id); if(el) el.innerHTML=opts; });
+  ["uProcDeptAdmin"].forEach(id=>{ let el=document.getElementById(id); if(el) el.innerHTML=opts; });
+  ["uRateDeptUchak"].forEach(id=>{ let el=document.getElementById(id); if(el) el.innerHTML=opts; });
+}
+function onUchakRateDeptChange(){
+  let d=document.getElementById("uRateDeptUchak")?.value||"ઉચક";
+  let procs=getDeptProcs(d);
+  let el=document.getElementById("uRateProcUchak"); if(el) el.innerHTML=`<option value="">— Process —</option>`+procs.map(p=>`<option value="${p}">${p}</option>`).join("");
+  showUchakRateUchak();
+  showUchakRateValUchak();
+}
+function showUchakRateUchak(){
+  let d=document.getElementById("uRateDeptUchak")?.value||"ઉચક";
+  let el=document.getElementById("uchakRateListUchak"); if(!el) return;
+  let rates=getDeptRatesList(d);
+  el.innerHTML=rates.map((r,i)=>`<tr><td>${r.process}</td><td>${r.operator||"—"}</td><td>${r.rate}</td><td><button class="del" onclick="delUchakRateUchak(${i})" style="padding:2px 6px;font-size:11px">✖</button></td></tr>`).join("")||`<tr><td colspan="4">કોઈ Rate નથી</td></tr>`;
+}
+function showUchakRateValUchak(){
+  let d=document.getElementById("uRateDeptUchak")?.value||"ઉચક";
+  let proc=document.getElementById("uRateProcUchak")?.value;
+  let el=document.getElementById("uRateValUchak"); if(!el) return;
+  if(!proc){ el.innerHTML=`<option value="">— Rate —</option>`; return; }
+  let rates=[...new Set((getDeptRatesList(d)).filter(r=>r.process===proc).map(r=>r.rate))];
+  el.innerHTML=`<option value="">— Rate —</option>`+rates.map(r=>`<option value="${r}">${r}</option>`).join("")+`<option value="__add__">✚ નવું લખો</option>`;
+}
+function addUchakRateUchak(){
+  let d=document.getElementById("uRateDeptUchak")?.value||"ઉચક";
+  let proc=document.getElementById("uRateProcUchak").value,op=document.getElementById("uRateOpUchak").value.trim();
+  let rateEl=document.getElementById("uRateValUchak"); let rate;
+  if(rateEl.value==="__add__"){ rate=parseFloat(prompt("નવો Rate લખો:")||"0"); } else { rate=parseFloat(rateEl.value); }
+  if(!proc||!rate){ toast("Process અને Rate ભરો!","error"); return; }
+  if(!deptRates[d]) deptRates[d]=[];
+  deptRates[d].push({process:proc,operator:op||"",rate}); save();
+  document.getElementById("uRateOpUchak").value=""; document.getElementById("uRateValUchak").value=""; showUchakRateUchak(); showUchakRateValUchak();
+}
+function delUchakRateUchak(i){
+  let d=document.getElementById("uRateDeptUchak")?.value||"ઉચક";
+  if(deptRates[d]) deptRates[d].splice(i,1);
+  save(); showUchakRateUchak();
 }
 
 function fillUchakProcSels(dept){
@@ -2024,6 +2039,7 @@ function fillUchakProcSels(dept){
   let procs=getDeptProcs(d);
   let opts=`<option value="">— Process —</option>`+procs.map(p=>`<option value="${p}">${p}</option>`).join("");
   ["uStepProc","uRateProc"].forEach(id=>{ let el=document.getElementById(id); if(el) el.innerHTML=opts; });
+  fillUchakRateValList();
 }
 function showUchakProcesses(dept){
   let d=dept||getUchakDept();
@@ -2064,7 +2080,7 @@ function onAdminRateDeptChange(){
   let procs=getDeptProcs(d);
   let el=document.getElementById("uRateProcAdmin"); if(el) el.innerHTML=`<option value="">— Process —</option>`+procs.map(p=>`<option value="${p}">${p}</option>`).join("");
   showUchakRatesAdmin();
-  fillUchakAdminRateOpList();
+  fillUchakAdminRateOpList(); fillUchakAdminRateValList();
   showUchakOps(d);
 }
 function delUchakProcessAdmin(p){
@@ -2092,76 +2108,34 @@ function delUchakOp(i){
   if(deptOps[d]) deptOps[d].splice(i,1);
   save(); showUchakOps(d); fillUchakRateOpList();
 }
-function getUchakAdminOpDept(){ return document.getElementById("uOpDeptAdmin")?.value||""; }
-function showUchakOpsAdmin(){
-  let d=getUchakAdminOpDept();
-  let el=document.getElementById("uchakOpListAdmin"); if(!el) return;
-  let ops=deptOps[d]||[];
-  el.innerHTML=ops.map((o,i)=>`<span class="mgr" style="font-size:13px;padding:5px 10px;margin:3px;display:inline-block">${o} <a href="#" onclick="delUchakOpAdmin(${i});return false;" style="color:#fff">✖</a></span>`).join(" ")||"<span class='small'>કોઈ Operator નથી</span>";
-}
-function onAdminOpDeptChange(){ showUchakOpsAdmin(); }
-function addUchakOpAdmin(){
-  let d=getUchakAdminOpDept(); if(!d){ toast("Department પસંદ કરો!","error"); return; }
-  let n=document.getElementById("nUOpAdmin").value.trim(); if(!n){ toast("નામ લખો!","error"); return; }
-  if(!deptOps[d]) deptOps[d]=[];
-  if(deptOps[d].includes(n)){ toast("પહેલેથી છે!","warning"); return; }
-  deptOps[d].push(n); save(); document.getElementById("nUOpAdmin").value=""; showUchakOpsAdmin();
-}
-function delUchakOpAdmin(i){
-  let d=getUchakAdminOpDept();
-  if(!confirm("Delete operator?")) return;
-  if(deptOps[d]) deptOps[d].splice(i,1);
-  save(); showUchakOpsAdmin();
-}
 function showUchakRates(dept){
   let d=dept||getUchakDept();
   let el=document.getElementById("uchakRateList"); if(!el) return;
   let rates=getDeptRatesList(d);
   el.innerHTML=rates.map((r,i)=>`<tr><td>${r.process}</td><td>${r.operator||"—"}</td><td>${r.rate}</td><td><button class="del" onclick="delUchakRate(${i})" style="padding:2px 6px;font-size:11px">✖</button></td></tr>`).join("")||`<tr><td colspan="4">કોઈ Rate નથી</td></tr>`;
 }
-function showUchakRatesAdmin(){
-  let d=getUchakAdminRateDept();
-  let el=document.getElementById("uchakRateListAdmin"); if(!el) return;
-  let rates=getDeptRatesList(d);
-  el.innerHTML=rates.map((r,i)=>`<tr><td>${r.process}</td><td>${r.operator||"—"}</td><td>${r.rate}</td><td><button class="del" onclick="delUchakRateAdmin(${i})" style="padding:2px 6px;font-size:11px">✖</button></td></tr>`).join("")||`<tr><td colspan="4">કોઈ Rate નથી</td></tr>`;
-}
-function fillUchakRateOpList(){
+function fillUchakRateValList(){
   let d=getUchakDept();
-  let el=document.getElementById("uRateOp"); if(!el) return;
-  let ops=deptOps[d]||[];
-  el.innerHTML=`<option value="">— Operator —</option>`+ops.map(o=>`<option value="${o}">${o}</option>`).join("");
-}
-function fillUchakAdminRateOpList(){
-  let d=getUchakAdminRateDept();
-  let el=document.getElementById("uRateOpAdmin"); if(!el) return;
-  let ops=deptOps[d]||[];
-  el.innerHTML=`<option value="">— Operator —</option>`+ops.map(o=>`<option value="${o}">${o}</option>`).join("");
+  let proc=document.getElementById("uRateProc")?.value;
+  let el=document.getElementById("uRateVal"); if(!el) return;
+  if(!proc){ el.innerHTML=`<option value="">— Rate —</option>`; return; }
+  let rates=[...new Set((getDeptRatesList(d)).filter(r=>r.process===proc).map(r=>r.rate))];
+  el.innerHTML=`<option value="">— Rate —</option>`+rates.map(r=>`<option value="${r}">${r}</option>`).join("")+`<option value="__add__">✚ નવું લખો</option>`;
 }
 function addUchakRate(){
   let d=getUchakDept();
-  let proc=document.getElementById("uRateProc").value,op=document.getElementById("uRateOp").value.trim(),rate=parseFloat(document.getElementById("uRateVal").value);
+  let proc=document.getElementById("uRateProc").value,op=document.getElementById("uRateOp").value.trim();
+  let rateEl=document.getElementById("uRateVal"); let rate;
+  if(rateEl.value==="__add__"){ rate=parseFloat(prompt("નવો Rate લખો:")||"0"); } else { rate=parseFloat(rateEl.value); }
   if(!proc||!rate){ toast("Process અને Rate ભરો!","error"); return; }
   if(!deptRates[d]) deptRates[d]=[];
   deptRates[d].push({process:proc,operator:op||"",rate}); save();
-  document.getElementById("uRateOp").value=""; document.getElementById("uRateVal").value=""; showUchakRates(d);
-}
-function addUchakRateAdmin(){
-  let d=getUchakAdminRateDept();
-  let proc=document.getElementById("uRateProcAdmin").value,op=document.getElementById("uRateOpAdmin").value.trim(),rate=parseFloat(document.getElementById("uRateValAdmin").value);
-  if(!proc||!rate){ toast("Process અને Rate ભરો!","error"); return; }
-  if(!deptRates[d]) deptRates[d]=[];
-  deptRates[d].push({process:proc,operator:op||"",rate}); save();
-  document.getElementById("uRateOpAdmin").value=""; document.getElementById("uRateValAdmin").value=""; showUchakRatesAdmin();
+  document.getElementById("uRateOp").value=""; document.getElementById("uRateVal").value=""; showUchakRates(d); fillUchakRateValList();
 }
 function delUchakRate(i){
   let d=getUchakDept();
   if(deptRates[d]) deptRates[d].splice(i,1);
   save(); showUchakRates(d);
-}
-function delUchakRateAdmin(i){
-  let d=getUchakAdminRateDept();
-  if(deptRates[d]) deptRates[d].splice(i,1);
-  save(); showUchakRatesAdmin();
 }
 function fillUchakRateForProc(proc,elId,dept){
   let d=dept||getUchakDept();
