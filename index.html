@@ -374,7 +374,7 @@
     <div class="box repbox"><h2>🔧 Repairing — બીજા Department ને મોકલો</h2><div class="row">        <div><label>Kapan <span class="reqstar">*</span></label><input id="rpKapan" placeholder="Kapan"></div><div><label>Carat</label><input id="rpCarat" type="number" step="0.01" value="0"></div><div><label>Nang</label><input id="rpNang" type="number" value="0"></div><div><label>Pis</label><input id="rpPis" type="number" value="0"></div></div><div class="row"><div><label>Jangad <span class="reqstar">*</span></label><input id="rpJangad" placeholder="જાંગડ"></div><div><label>કયા Dept ને</label><select id="rpTo"></select></div><div><label>👤 Manager (કોણ મોકલે છે)</label><select id="rpManager" onchange="onManagerChange()"></select></div></div><div class="row"><div style="flex:2"><label>📝 Remark / નોંધ</label><input id="rpRemark" placeholder="Repairing વિશે નોંધ લખો..."></div><div style="display:flex;align-items:flex-end"><button class="repsend" onclick="sendRepair()" style="width:100%">🔧 મોકલો</button></div></div></div>
     <div class="box repbox"><h2>🔧 Repairing Inbox</h2><table><thead>        <tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>Jangad</th><th>From</th><th>Manager</th><th>Remark</th><th>Date</th><th>Action</th></tr></thead><tbody id="repInbox"></tbody></table></div>
     <div class="box repbox"><h2>🔧 મેં મોકલેલ Repairing</h2><table><thead><tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>Jangad</th><th>To</th><th>Manager</th><th>Remark</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody id="repSent"></tbody></table></div>
-    <div class="box repbox"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2>🔧 Repairing History</h2><div class="dlbar"><button class="xls" onclick="dlRepHistExcel()">📊 Excel</button><button class="pdf" onclick="dlRepHistPDF()">📄 PDF</button></div></div><div class="row datebar"><div><label>🔍 Kapan</label><input id="rhSearch" oninput="showRepHist()" placeholder="Kapan"></div><div><label>Dept</label><select id="rhDept" onchange="showRepHist()"></select></div><div><label>📅 થી</label><input id="rhFrom" type="date" onchange="showRepHist()"></div><div><label>📅 સુધી</label><input id="rhTo" type="date" onchange="showRepHist()"></div><div style="display:flex;align-items:flex-end"><button onclick="clearRepHist()" style="background:#7f8c8d;width:100%">🔄</button></div></div><table><thead>        <tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>Jangad</th><th>From</th><th>To</th><th>Manager</th><th>Remark</th><th>Issue D-T</th><th>Recv D-T</th><th>Recv By</th><th>Status</th></tr></thead><tbody id="repHist"></tbody></table></div>
+    <div class="box repbox"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2>🔧 Repairing History</h2><div class="dlbar"><button class="xls" onclick="dlRepHistExcel()">📊 Excel</button><button class="pdf" onclick="dlRepHistPDF()">📄 PDF</button></div></div><div class="row datebar"><div><label>🔍 Kapan</label><input id="rhSearch" placeholder="Kapan"></div><div><label>Dept</label><select id="rhDept"><option value="">— બધા —</option></select></div><div><label>📅 થી</label><input id="rhFrom" type="date"></div><div><label>📅 સુધી</label><input id="rhTo" type="date"></div><div style="display:flex;align-items:flex-end"><button onclick="showRepHist()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div><div style="display:flex;align-items:flex-end"><button onclick="clearRepHist()" style="background:#7f8c8d;width:100%">🔄 Clear</button></div></div><table><thead>        <tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>Jangad</th><th>From</th><th>To</th><th>Manager</th><th>Remark</th><th>Issue D-T</th><th>Recv D-T</th><th>Recv By</th><th>Status</th></tr></thead><tbody id="repHist"></tbody></table></div>
   </div>
 
   <!-- PAGE: SUGGESTION -->
@@ -636,18 +636,6 @@
   <!-- PAGE: ADMIN -->
   <div class="page" id="pg_admin">
 
-    <!-- NOTIFICATION + SUGGESTION PANEL -->
-    <div class="box adminbox" style="border:2px solid #2980b9;background:#eef5fb;text-align:center">
-      <h2>🔔 Notifications & Edit Approvals</h2>
-      <p style="color:#555">Notifications માટે અલગ પેજ ખોલો</p>
-      <button onclick="showPage('notif');showNotifPage()" style="background:#2980b9;color:#fff;padding:10px 24px;font-size:15px;border:0;border-radius:6px;cursor:pointer">🔔 Notifications પેજ ખોલો</button>
-    </div>
-    <div class="box adminbox" style="border:2px solid #8e44ad;background:#f5eef8;text-align:center">
-      <h2>💡 Suggestion</h2>
-      <p style="color:#555">Suggestion માટે અલગ પેજ ખોલો</p>
-      <button onclick="showPage('sug')" style="background:#8e44ad;color:#fff;padding:10px 24px;font-size:15px;border:0;border-radius:6px;cursor:pointer">💡 Suggestion પેજ ખોલો</button>
-    </div>
-
     <!-- MAIN ADMIN PANEL (ALL IN ONE BOX) -->
     <div class="box adminbox" id="adminPanel">
       <h2>👑 Admin Panel</h2>
@@ -785,6 +773,48 @@
     <div class="box adminbox"><h2>🔐 Login History</h2><p style="font-size:12px;color:#555">ક્યા PC થી કોણે login કર્યું તેની હિસ્ટ્રી.</p><div class="row datebar"><div><label>Search ID/PC</label><input id="lhSearch" placeholder="Search..."></div><div><label>📅 થી</label><input type="date" id="lhFrom"></div><div><label>📅 સુધી</label><input type="date" id="lhTo"></div><div style="display:flex;align-items:flex-end"><button onclick="showLoginHistory()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div><div style="display:flex;align-items:flex-end"><button onclick="clearLoginFilter()" style="background:#7f8c8d;width:100%">🔄 Clear</button></div></div><div class="dlbar" style="margin-bottom:10px"><button class="xls" onclick="dlLoginHistExcel()">📊 Excel</button><button class="del" onclick="clearLoginHist()" style="background:#e74c3c">🗑️ Delete All</button></div><div style="overflow-x:auto;max-height:500px;overflow-y:auto"><table><thead><tr><th>#</th><th>User ID</th><th>Department</th><th>Role</th><th>PC / Browser</th><th>Date-Time</th><th>Action</th></tr></thead><tbody id="loginHistBody"><tr><td colspan="7" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr></tbody></table></div></div>
   </div>
 
+  <!-- PAGE: URGENT PANEL -->
+  <div class="page" id="pg_urgent">
+    <div class="box" style="border:3px solid #e74c3c;background:#fdedec">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+        <h2 style="margin:0;color:#c0392b">🔴 Urgent Panel — તમારા Department માં</h2>
+        <div style="font-size:13px;color:#555" id="urgentCounts"></div>
+      </div>
+
+      <!-- Section: Urgent Kapan -->
+      <div style="margin-bottom:16px;background:#fff;border:2px solid #e74c3c;border-radius:8px;overflow:hidden">
+        <div style="background:#e74c3c;color:#fff;padding:8px 14px;font-weight:700;font-size:15px">📦 Urgent Kapan</div>
+        <div style="overflow-x:auto">
+          <table style="margin:0;border:none"><thead><tr style="background:#fadbd8">
+            <th>Kapan</th><th>Carat</th><th>નાંગ</th><th>પીસ</th><th>From</th><th>Status</th><th>Date</th>
+          </tr></thead><tbody id="urgentKapanBody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- Section: Urgent Uchak -->
+      <div style="margin-bottom:16px;background:#fff;border:2px solid #e67e22;border-radius:8px;overflow:hidden">
+        <div style="background:#e67e22;color:#fff;padding:8px 14px;font-weight:700;font-size:15px">🔀 Urgent Uchak</div>
+        <div style="overflow-x:auto">
+          <table style="margin:0;border:none"><thead><tr style="background:#fdebd0">
+            <th>Kapan</th><th>Jangad#</th><th>નાંગ</th><th>વજન</th><th>પીસ</th><th>Process</th><th>Dept</th><th>Date</th>
+          </tr></thead><tbody id="urgentUchakBody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- Section: Urgent Repairing -->
+      <div style="margin-bottom:16px;background:#fff;border:2px solid #8e44ad;border-radius:8px;overflow:hidden">
+        <div style="background:#8e44ad;color:#fff;padding:8px 14px;font-weight:700;font-size:15px">🔧 Urgent Repairing</div>
+        <div style="overflow-x:auto">
+          <table style="margin:0;border:none"><thead><tr style="background:#ebdef0">
+            <th>Kapan</th><th>Jangad</th><th>નાંગ</th><th>પીસ</th><th>From</th><th>Remark</th><th>Status</th><th>Date</th>
+          </tr></thead><tbody id="urgentRepairBody"></tbody></table>
+        </div>
+      </div>
+
+      <div id="urgentEmpty" style="display:none;text-align:center;padding:30px;color:#888;font-size:15px">✅ તમારા Department માં કોઈ Urgent item નથી</div>
+    </div>
+  </div>
+
 </div>
 <script>
 let users = JSON.parse(localStorage.getItem("users") || "null");
@@ -885,7 +915,7 @@ function save(){
 
 let curPage="";
 function showPage(pg){ curPage=pg; document.querySelectorAll(".page").forEach(p=>p.classList.remove("show")); let el=document.getElementById("pg_"+pg); if(el) el.classList.add("show"); document.querySelectorAll(".navbar button").forEach(b=>b.classList.toggle("active", b.dataset.pg===pg)); let sb=document.querySelector(".schbox"); if(sb) sb.style.display=pg==="admin"?"none":""; refresh(); }
-function buildNav(){ let isFull=(cur.role==="admin"||cur.role==="stock");   let items=[]; if(isFull) items.push(["dash","📊 Dashboard"]); if(isFull) items.push(["send","📤 કાપણ મોકલો"]); items.push(["stock","📥 Stock & Inbox"]); items.push(["rep","🔧 Repairing"]); items.push(["sug","💡 Suggestion"]); items.push(["notif","🔔 Notifications"]); items.push(["anal","📊 Analysis"]); items.push(["hist","🕒 History"]); items.push(["uchak","🔀 ઉચક"]); if(cur.role==="admin") items.push(["admin","👑 Admin"]); if(cur.role==="admin") items.push(["lhist","🔐 Login History"]); document.getElementById("navbar").innerHTML=items.map(it=>`<button data-pg="${it[0]}" onclick="showPage('${it[0]}')">${it[1]}</button>`).join(""); showPage(isFull?"dash":"stock"); }
+function buildNav(){ let isFull=(cur.role==="admin"||cur.role==="stock");   let items=[]; if(isFull) items.push(["dash","📊 Dashboard"]); if(isFull) items.push(["send","📤 કાપણ મોકલો"]); items.push(["stock","📥 Stock & Inbox"]); items.push(["urgent","🔴 Urgent"]); items.push(["rep","🔧 Repairing"]); items.push(["sug","💡 Suggestion"]); items.push(["notif","🔔 Notifications"]); items.push(["anal","📊 Analysis"]); items.push(["hist","🕒 History"]); items.push(["uchak","🔀 ઉચક"]); if(cur.role==="admin") items.push(["admin","👑 Admin"]); if(cur.role==="admin") items.push(["lhist","🔐 Login History"]); document.getElementById("navbar").innerHTML=items.map(it=>`<button data-pg="${it[0]}" onclick="showPage('${it[0]}')">${it[1]}</button>`).join(""); showPage("urgent"); }
 
 function startSession(u){ sessionStorage.setItem("curId",u.id); }
 function endSession(){ sessionStorage.removeItem("curId"); }
@@ -1291,7 +1321,7 @@ function saveEdit(){
 function closeEdit(){ document.getElementById("editModal").classList.add("hide"); document.getElementById("editOverlay").classList.add("hide"); }
 
 function applyFilters(list){ let s=normKapan(document.getElementById("fSearch").value),tg=document.getElementById("fTag").value,stt=document.getElementById("fStatus").value,dp=document.getElementById("fDept")?document.getElementById("fDept").value:""; return list.filter(d=>{ if(s&&!normKapan(d.item).includes(s)) return false; if(tg&&d.tag!==tg) return false; if(stt&&d.status!==stt) return false; if(dp&&d.from!==dp&&d.to!==dp) return false; return true; }); }
-function refresh(){ if(!cur) return; updateUndoRedoTopBar(); showUchakReadyList(); showUchakHistory(); showCards(); showFinal(); showDashStat(); show4P(); showKapan(); showInbox(); showStock(); showRepInbox(); showRepSent(); showRepHist(); showSugInbox(); showSugHist();   showSugAllHist(); showAnalysis(); showMyStatusList(); fillPickDropdown(); showReport(); showSugAdminInbox(); showUchakInbox(); showActiveUchakEntries(); initJangadEntry();  if(cur.role==="admin"||cur.role==="stock"){ fillSplitPick(); fillSFPick(); } if(cur.role==="admin"){ showUchakProcessesAdmin(); showUchakRatesAdmin(); } }
+function refresh(){ if(!cur) return; updateUndoRedoTopBar(); showUchakReadyList(); showUchakHistory(); showCards(); showFinal(); showDashStat(); show4P(); showKapan(); showInbox(); showStock(); showRepInbox(); showRepSent(); showRepHist(); showSugInbox(); showSugHist();   showSugAllHist(); showAnalysis(); showMyStatusList(); fillPickDropdown(); showReport(); showSugAdminInbox(); showUchakInbox(); showActiveUchakEntries(); initJangadEntry(); showUrgentPanel();  if(cur.role==="admin"||cur.role==="stock"){ fillSplitPick(); fillSFPick(); } if(cur.role==="admin"||cur.role==="stock"){ showUchakProcessesAdmin(); showUchakRatesAdmin(); } }
 
 function deptStats(){ let t={}; users.filter(u=>u.role==="dept").forEach(u=>{ let lbl=unitLabel(u.dept,u.office); getParts(u).forEach(p=>t[lbl+"|||"+p]={lbl,dept:u.dept,office:u.office,part:p,chC:0,chN:0,chP:0,okC:0,okN:0,okP:0,issC:0}); }); hist.forEach(h=>{ if(h.action==="Send"||h.action==="Forward"||h.action==="Split-Send"){ let tk=h.to+"|||"+(h.toPart||"Main"); if(t[tk]) t[tk].issC+=Number(h.carat); } }); data.forEach(d=>{ if(d.status==="Received"){ let tk=d.to+"|||"+(d.toPart||"Main"); if(t[tk]){ t[tk].chC+=Number(d.carat); t[tk].chN+=Number(d.nang); t[tk].chP+=Number(d.pis); } } }); hist.forEach(h=>{ if(h.action==="Receive"){ let tk=h.to+"|||"+(h.toPart||"Main"); if(t[tk]){ let live=data.find(d=>d.id===h.id&&d.status==="Received"&&d.to===h.to); if(!live){ t[tk].okC+=Number(h.carat); t[tk].okN+=Number(h.nang); t[tk].okP+=Number(h.pis); } } } }); return t; }
 function showCards(){ if(!(cur.role==="admin"||cur.role==="stock")) return; let t=deptStats(); let html=""; for(let k in t){ let x=t[k]; let off=x.office?`🏢 ${x.office}`:""; html+=`<div class="card" onclick="openReport('${x.lbl.replace(/'/g,"")}','${x.part}')"><h4>${x.dept}</h4><div class="off">${off}${x.part!=="Main"?" • "+x.part:""}</div><div class="line issC"><span>📤 Issue Ct</span><b>${x.issC.toFixed(2)}</b></div><hr style="border-color:#555;margin:6px 0"><div class="line chaluC"><span>🔵 Chalu Ct</span><b>${x.chC.toFixed(2)}</b></div><div class="line chaluC"><span>Chalu Nang</span><b>${x.chN}</b></div><div class="line chaluC"><span>Chalu Pis</span><b>${x.chP}</b></div><hr style="border-color:#555;margin:6px 0"><div class="line okC"><span>✅ OK Ct</span><b>${x.okC.toFixed(2)}</b></div><div class="line okC"><span>OK Nang</span><b>${x.okN}</b></div><div class="line okC"><span>OK Pis</span><b>${x.okP}</b></div><div class="clickhint">👆 click — report</div></div>`; } document.getElementById("cards").innerHTML=html; }
@@ -1805,7 +1835,9 @@ function toggleUchakMaster(){
 }
 function showActiveUchakEntries(){
   let el=document.getElementById("uchakActiveEntries"); if(!el) return;
-  let list=jangads.filter(j=>j.status==="chalu");
+  let isDept=cur.role!=="admin"&&cur.role!=="stock";
+  let jDept=isDept?cur.dept:null;
+  let list=jangads.filter(j=>j.status==="chalu"&&(!isDept||j.dept===jDept));
   // Group by entryId so same-kapan different entries are shown separately
   let groups={};
   list.forEach(j=>{
@@ -1836,7 +1868,7 @@ function showActiveUchakEntries(){
     let procStr=Object.entries(procs).map(([p,cv])=>`<span class="small">${p}: ${cv.done}✅ ${cv.pend}⏳</span>`).join(" ");
     let deptStr=[...new Set(g.items.map(j=>j.dept))].join(", ");
     let allGroupDone=g.items.every(j=>j.steps.every(s=>s.status==="done"));
-    let okBtn=allGroupDone?`<button onclick="event.stopPropagation();uchakOkEntry('${eid}')" style="background:#27ae60;padding:3px 10px;margin:0 0 0 8px;font-size:11px">✅ Uchak OK</button>`:"";
+    let okBtn=allGroupDone&&!isDept?`<button onclick="event.stopPropagation();uchakOkEntry('${eid}')" style="background:#27ae60;padding:3px 10px;margin:0 0 0 8px;font-size:11px">✅ Uchak OK</button>`:"";
     let detailRows=g.items.map(j=>{
       let cs=j.steps[j.currentStep];
       let st=cs.status==="done"?"✅ Done":"⏳ "+cs.process;
@@ -1854,10 +1886,15 @@ function toggleKapanRows(cls){
 }
 function initJangadEntry(){
   initJangadSearchEdit();
+  let isFull=cur.role==="admin"||cur.role==="stock";
   let entryBox=document.getElementById("uchakEntryBox");
-  if(entryBox) entryBox.style.display=(cur.role==="admin"||cur.role==="stock")?"":"none";
+  if(entryBox) entryBox.style.display=isFull?"":"none";
   let masterBox=document.getElementById("uchakMasterBox");
-  if(masterBox) masterBox.style.display=cur.role==="admin"?"":"none";
+  if(masterBox) masterBox.style.display=isFull?"":"none";
+  let okBox=document.getElementById("uchakOkBox");
+  if(okBox) okBox.style.display=isFull?"":"none";
+  let nextPanel=document.getElementById("uchakNextPanel");
+  if(nextPanel) nextPanel.style.display=isFull?"":"none";
   if(!jgRows.length) addJangadRow();
   let sel=document.getElementById("jgDeptSel"); if(!sel) return;
   let depts=[...new Set(users.filter(u=>u.dept!=="Admin"&&u.dept!=="Stock").map(u=>u.dept))].sort();
@@ -2207,7 +2244,7 @@ function createJangads(){
     rowIdx++;
   }
   let createdCount=created.length;
-  document.getElementById("jgKapan").value=""; document.getElementById("jgVigat").value=""; document.getElementById("jgTag").value="Regular"; jgRows=[]; addJangadRow();
+  document.getElementById("jgKapan").value=""; document.getElementById("jgVigat").value=""; document.getElementById("jgTag").value="Regular"; jgRows=[]; let body=document.getElementById("jgRowsBody"); if(body) body.innerHTML=""; addJangadRow();
   jgDeptSeq=[]; renderDeptSeq();
   save(); showJangadInbox(); showActiveUchakEntries(); addNotif("send","Uchak Jangad Created",createdCount+" jangad for "+kapan+" → "+depts.join(" → ")); toast("✅ "+kapan+" ના "+createdCount+" જંગડ બનાવ્યા! ("+created.map(c=>"#"+c.no).join(", ")+")","success");
 }
@@ -2227,7 +2264,9 @@ function switchActiveTab(tab){
 
 function showProcesswiseView(){
   let el = document.getElementById("processwiseView"); if(!el) return;
-  let list = jangads.filter(j=>j.status==="chalu");
+  let isDept=cur.role!=="admin"&&cur.role!=="stock";
+  let jDept=isDept?cur.dept:null;
+  let list = jangads.filter(j=>j.status==="chalu"&&(!isDept||j.dept===jDept));
   // Group by process+dept
   let pmap = {};
   list.forEach(j=>{
@@ -2290,6 +2329,9 @@ function filterProcessFlow(){
 
 function populatePfFilters(){
   let el=document.getElementById("pfDeptFilter"); if(!el) return;
+  let isDept=cur.role!=="admin"&&cur.role!=="stock";
+  if(isDept){ el.style.display="none"; return; }
+  el.style.display="";
   let depts=[...new Set(jangads.filter(j=>j.status==="chalu").map(j=>j.dept))].sort();
   let cur2=el.value;
   el.innerHTML=`<option value="">— બધા Dept —</option>`+depts.map(d=>`<option value="${d}">${d}</option>`).join("");
@@ -2298,7 +2340,9 @@ function populatePfFilters(){
 
 function showPfSummaryBar(){
   let el=document.getElementById("pfSummaryBar"); if(!el) return;
-  let list=jangads.filter(j=>j.status==="chalu");
+  let isDept=cur.role!=="admin"&&cur.role!=="stock";
+  let jDept=isDept?cur.dept:null;
+  let list=jangads.filter(j=>j.status==="chalu"&&(!isDept||j.dept===jDept));
   let totalN=0,totalV=0,totalP=0;
   list.forEach(j=>{totalN+=Number(j.nang);totalV+=Number(j.vajan);totalP+=Number(j.pis);});
   let pending=list.filter(j=>j.steps[j.currentStep]?.status==="pending").length;
@@ -2323,7 +2367,9 @@ function updateUndoRedoTopBar(){
 
 function showJangadInbox(){
   let el=document.getElementById("jangadInbox"); if(!el) return;
-  let list=jangads.filter(j=>j.status==="chalu");
+  let isDept=cur.role!=="admin"&&cur.role!=="stock";
+  let jDept=isDept?cur.dept:null;
+  let list=jangads.filter(j=>j.status==="chalu"&&(!isDept||j.dept===jDept));
   // Group by entryId (each unique batch entry is separate)
   let groups={};
   list.forEach(j=>{
@@ -2367,8 +2413,9 @@ function showJangadInbox(){
       let editBtn=canEdit?`<button class="edit" onclick="openJangadEditPanel('${j.id}')" style="padding:2px 8px;font-size:11px;margin:0 0 0 8px">✏ Edit</button>`:"";
       html+=`<div style="margin-bottom:8px;padding:6px;background:#f9f9f9;border-radius:4px">
         <div style="font-size:12px;margin-bottom:4px"><b>#${j.no}</b> | નાંગ:${j.nang} વજન:${j.vajan} પીસ:${j.pis} ${j.vigat?`<span class="small">(${j.vigat})</span>`:""}${editBtn}</div>`;
-      // Steps list
+      // Steps list — for dept users show ONLY their current step
       j.steps.forEach((st,si)=>{
+        if(isDept && si!==j.currentStep) return; // skip other steps for dept
         let isCurrent=si===j.currentStep&&st.status==="pending";
         let stepLabel=isCurrent?`<b>${si+1}. ${st.process}</b> <span style="color:#e67e22">◀</span>`:`${si+1}. ${st.process}`;
         let deptLabel=j.depts&&j.depts.length>1?` <span class="mgr">${st.dept}</span>`:"";
@@ -2384,7 +2431,7 @@ function showJangadInbox(){
             <select id="jgRate_${j.id}" onchange="var t=this.options[this.selectedIndex].text;var i=t.indexOf(' — ');if(i>0)document.getElementById('jgOp_${j.id}').value=t.substring(0,i)" style="width:100px;padding:4px;font-size:11px">${rateOpts}</select>
             <button class="recv" onclick="jangadStepDone('${j.id}')" style="padding:4px 10px;font-size:11px">✔ OK</button>
           </div>`;
-        } else if(si===j.currentStep&&st.status==="done"&&si>=j.steps.length-1){
+        } else if(!isDept && si===j.currentStep&&st.status==="done"&&si>=j.steps.length-1){
           if(j.dept!=="Stock"){
             actHtml=`<button class="set" onclick="openJangadNextPanel('${j.id}')" style="padding:4px 8px;font-size:11px">📤 Next Dept</button>`;
           } else {
@@ -2395,12 +2442,14 @@ function showJangadInbox(){
           ${stepLabel}${deptLabel} — ${statLabel} ${actHtml}
         </div>`;
       });
-      // If all steps done and not at Stock, show "Next Dept" option
-      let allStepsDone=j.steps.every(s=>s.status==="done");
-      if(allStepsDone&&j.dept!=="Stock"){
-        html+=`<div style="margin-top:4px"><button class="set" onclick="openJangadNextPanel('${j.id}')" style="padding:4px 8px;font-size:11px">📤 Send to Next Department</button></div>`;
-      } else if(allStepsDone&&j.dept==="Stock"&&j.status==="chalu"){
-        html+=`<div style="margin-top:4px"><button class="okfin" onclick="jangadStockDone('${j.id}')" style="padding:4px 8px;font-size:11px">📦 Stock OK → History</button></div>`;
+      // Next Dept / Stock OK buttons — only for non-dept
+      if(!isDept){
+        let allStepsDone=j.steps.every(s=>s.status==="done");
+        if(allStepsDone&&j.dept!=="Stock"){
+          html+=`<div style="margin-top:4px"><button class="set" onclick="openJangadNextPanel('${j.id}')" style="padding:4px 8px;font-size:11px">📤 Send to Next Department</button></div>`;
+        } else if(allStepsDone&&j.dept==="Stock"&&j.status==="chalu"){
+          html+=`<div style="margin-top:4px"><button class="okfin" onclick="jangadStockDone('${j.id}')" style="padding:4px 8px;font-size:11px">📦 Stock OK → History</button></div>`;
+        }
       }
       html+=`</div>`;
     });
@@ -2636,7 +2685,9 @@ function uchakOkAll(){
 
 function showUchakReadyList(){
   let el=document.getElementById("uchakReadyList"); if(!el) return;
-  let ready=jangads.filter(j=>j.status==="chalu"&&j.steps.every(s=>s.status==="done"));
+  let isDept=cur.role!=="admin"&&cur.role!=="stock";
+  let jDept=isDept?cur.dept:null;
+  let ready=jangads.filter(j=>j.status==="chalu"&&j.steps.every(s=>s.status==="done")&&(!isDept||j.dept===jDept));
   if(!ready.length){
     el.innerHTML=`<div style="color:#27ae60;font-size:13px;padding:8px;background:#d4efdf;border-radius:6px">✅ કોઈ pending entry નથી — બધું OK છે!</div>`;
     return;
@@ -2656,6 +2707,69 @@ function showUchakReadyList(){
   });
   html+=`</tbody></table></div>`;
   el.innerHTML=html;
+}
+
+// === URGENT PANEL ===
+function showUrgentPanel(){
+  let isDept=cur.role!=="admin"&&cur.role!=="stock";
+  let myDept=isDept?myLbl():null;
+  // 1. Urgent Kapan (stock data — pending/received in my dept, tag==="urgent")
+  let urgentKapan=data.filter(d=>
+    (d.status==="Pending"||d.status==="Received")
+    && d.tag==="urgent"
+    && (!isDept||d.to===myDept)
+  );
+  let kapanBody=document.getElementById("urgentKapanBody");
+  if(kapanBody){
+    if(!urgentKapan.length){
+      kapanBody.innerHTML=`<tr><td colspan="7" style="text-align:center;color:#999;padding:12px">કોઈ Urgent Kapan નથી</td></tr>`;
+    } else {
+      kapanBody.innerHTML=urgentKapan.map(d=>`<tr style="background:#fef9e7"><td style="color:#c0392b;font-weight:700">${d.item}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td><td><b>${d.from}</b></td><td><span style="color:#c0392b;font-weight:700">${d.status==="Pending"?"⏳ Transit":"🔵 Received"}</span></td><td class="small">${d.sentAt||""}</td></tr>`).join("");
+    }
+  }
+  // 2. Urgent Uchak (jangads with tag==="Urgent"/"High", in my dept, chalu)
+  let jDept2=isDept?cur.dept:null;
+  let urgentUchak=jangads.filter(j=>
+    j.status==="chalu"
+    && (j.tag==="Urgent"||j.tag==="High")
+    && (!isDept||j.dept===jDept2)
+  );
+  let uchakBody=document.getElementById("urgentUchakBody");
+  if(uchakBody){
+    if(!urgentUchak.length){
+      uchakBody.innerHTML=`<tr><td colspan="8" style="text-align:center;color:#999;padding:12px">કોઈ Urgent Uchak નથી</td></tr>`;
+    } else {
+      uchakBody.innerHTML=urgentUchak.map(j=>{
+        let cs=j.steps[j.currentStep];
+        return `<tr style="background:#fef9e7"><td style="color:#c0392b;font-weight:700">${j.kapan}</td><td>#${j.no}</td><td>${j.nang}</td><td>${j.vajan}</td><td>${j.pis}</td><td>${cs.process} (${j.currentStep+1}/${j.steps.length})</td><td><b>${j.dept}</b></td><td class="small">${j.createdAt||""}</td></tr>`;
+      }).join("");
+    }
+  }
+  // 3. Urgent Repairing (reps in my dept, not closed)
+  let urgentRepair=reps.filter(r=>
+    r.status!=="Closed"
+    && (!isDept||r.to===myDept)
+  );
+  let repBody=document.getElementById("urgentRepairBody");
+  if(repBody){
+    if(!urgentRepair.length){
+      repBody.innerHTML=`<tr><td colspan="8" style="text-align:center;color:#999;padding:12px">કોઈ Urgent Repairing નથી</td></tr>`;
+    } else {
+      repBody.innerHTML=urgentRepair.map(r=>{
+        let stLabel=r.status==="Sent"?"⏳ Sent":r.status==="Received"?"🔵 Received":r.status==="OK-Back"?"✅ OK-Back":r.status;
+        return `<tr style="background:#fef9e7"><td style="color:#c0392b;font-weight:700">${r.kapan}</td><td>${r.jangad}</td><td>${r.nang}</td><td>${r.pis}</td><td><b>${r.from}</b></td><td>${r.remark?`<span class="notebox">${r.remark}</span>`:"—"}</td><td><span style="color:#c0392b;font-weight:700">${stLabel}</span></td><td class="small">${r.sentAt||""}</td></tr>`;
+      }).join("");
+    }
+  }
+  // Counts
+  let countEl=document.getElementById("urgentCounts");
+  if(countEl){
+    let total=urgentKapan.length+urgentUchak.length+urgentRepair.length;
+    countEl.innerHTML=`<b>${total}</b> Urgent items &nbsp;|&nbsp; 📦 ${urgentKapan.length} Kapan &nbsp;|&nbsp; 🔀 ${urgentUchak.length} Uchak &nbsp;|&nbsp; 🔧 ${urgentRepair.length} Repairing`;
+  }
+  // Empty state
+  let emptyEl=document.getElementById("urgentEmpty");
+  if(emptyEl) emptyEl.style.display=urgentKapan.length||urgentUchak.length||urgentRepair.length?"none":"";
 }
 
 function showUchakHistory(){
