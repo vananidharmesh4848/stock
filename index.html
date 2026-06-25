@@ -1321,7 +1321,7 @@ function saveEdit(){
 function closeEdit(){ document.getElementById("editModal").classList.add("hide"); document.getElementById("editOverlay").classList.add("hide"); }
 
 function applyFilters(list){ let s=normKapan(document.getElementById("fSearch").value),tg=document.getElementById("fTag").value,stt=document.getElementById("fStatus").value,dp=document.getElementById("fDept")?document.getElementById("fDept").value:""; return list.filter(d=>{ if(s&&!normKapan(d.item).includes(s)) return false; if(tg&&d.tag!==tg) return false; if(stt&&d.status!==stt) return false; if(dp&&d.from!==dp&&d.to!==dp) return false; return true; }); }
-function refresh(){ if(!cur) return; updateUndoRedoTopBar(); showUchakReadyList(); showUchakHistory(); showCards(); showFinal(); showDashStat(); show4P(); showKapan(); showInbox(); showStock(); showRepInbox(); showRepSent(); showRepHist(); showSugInbox(); showSugHist();   showSugAllHist(); showAnalysis(); showMyStatusList(); fillPickDropdown(); showReport(); showSugAdminInbox(); showUchakInbox(); showActiveUchakEntries(); initJangadEntry(); showUrgentPanel();  if(cur.role==="admin"||cur.role==="stock"){ fillSplitPick(); fillSFPick(); } if(cur.role==="admin"||cur.role==="stock"){ showUchakProcessesAdmin(); showUchakRatesAdmin(); } }
+function refresh(){ if(!cur) return; updateUndoRedoTopBar(); switch(curPage){ case"urgent":showUrgentPanel();break; case"dash":showUchakReadyList();showUchakHistory();showCards();showFinal();showDashStat();show4P();showKapan();showInbox();showMyStatusList();fillPickDropdown();if(cur.role==="admin"||cur.role==="stock"){fillSplitPick();fillSFPick();}break; case"uchak":showUchakReadyList();showUchakHistory();showUchakInbox();showActiveUchakEntries();initJangadEntry();if(cur.role==="admin"||cur.role==="stock"){showUchakProcessesAdmin();showUchakRatesAdmin();}break; case"stock":showStock();break; case"rep":showRepInbox();showRepSent();showRepHist();break; case"sug":showSugInbox();showSugHist();showSugAllHist();break; case"analysis":showAnalysis();break; case"report":showReport();break; case"admin":showSugAdminInbox();break; case"lhist":break; case"notif":break; case"send":break; default:showUchakReadyList();showUchakHistory();showCards();showFinal();showDashStat();show4P();showKapan();showInbox();showStock();showRepInbox();showRepSent();showRepHist();showSugInbox();showSugHist();showSugAllHist();showAnalysis();showMyStatusList();fillPickDropdown();showReport();showSugAdminInbox();showUchakInbox();showActiveUchakEntries();initJangadEntry();showUrgentPanel();if(cur.role==="admin"||cur.role==="stock"){fillSplitPick();fillSFPick();showUchakProcessesAdmin();showUchakRatesAdmin();}} }
 
 function deptStats(){ let t={}; users.filter(u=>u.role==="dept").forEach(u=>{ let lbl=unitLabel(u.dept,u.office); getParts(u).forEach(p=>t[lbl+"|||"+p]={lbl,dept:u.dept,office:u.office,part:p,chC:0,chN:0,chP:0,okC:0,okN:0,okP:0,issC:0}); }); hist.forEach(h=>{ if(h.action==="Send"||h.action==="Forward"||h.action==="Split-Send"){ let tk=h.to+"|||"+(h.toPart||"Main"); if(t[tk]) t[tk].issC+=Number(h.carat); } }); data.forEach(d=>{ if(d.status==="Received"){ let tk=d.to+"|||"+(d.toPart||"Main"); if(t[tk]){ t[tk].chC+=Number(d.carat); t[tk].chN+=Number(d.nang); t[tk].chP+=Number(d.pis); } } }); hist.forEach(h=>{ if(h.action==="Receive"){ let tk=h.to+"|||"+(h.toPart||"Main"); if(t[tk]){ let live=data.find(d=>d.id===h.id&&d.status==="Received"&&d.to===h.to); if(!live){ t[tk].okC+=Number(h.carat); t[tk].okN+=Number(h.nang); t[tk].okP+=Number(h.pis); } } } }); return t; }
 function showCards(){ if(!(cur.role==="admin"||cur.role==="stock")) return; let t=deptStats(); let html=""; for(let k in t){ let x=t[k]; let off=x.office?`🏢 ${x.office}`:""; html+=`<div class="card" onclick="openReport('${x.lbl.replace(/'/g,"")}','${x.part}')"><h4>${x.dept}</h4><div class="off">${off}${x.part!=="Main"?" • "+x.part:""}</div><div class="line issC"><span>📤 Issue Ct</span><b>${x.issC.toFixed(2)}</b></div><hr style="border-color:#555;margin:6px 0"><div class="line chaluC"><span>🔵 Chalu Ct</span><b>${x.chC.toFixed(2)}</b></div><div class="line chaluC"><span>Chalu Nang</span><b>${x.chN}</b></div><div class="line chaluC"><span>Chalu Pis</span><b>${x.chP}</b></div><hr style="border-color:#555;margin:6px 0"><div class="line okC"><span>✅ OK Ct</span><b>${x.okC.toFixed(2)}</b></div><div class="line okC"><span>OK Nang</span><b>${x.okN}</b></div><div class="line okC"><span>OK Pis</span><b>${x.okP}</b></div><div class="clickhint">👆 click — report</div></div>`; } document.getElementById("cards").innerHTML=html; }
@@ -1378,7 +1378,6 @@ function showStock(){
   }
   document.getElementById("statFiltRow").style.display="none";
   let dft=document.getElementById("stockDeptFilter"); if(dft) dft.closest(".row").style.display="";
-  list=applyFilters(list);
   list.sort((a,b)=>{
     let dc=(a.to||"").localeCompare(b.to||"");
     if(dc!==0) return dc;
@@ -2369,6 +2368,9 @@ function showJangadInbox(){
   let el=document.getElementById("jangadInbox"); if(!el) return;
   let isDept=cur.role!=="admin"&&cur.role!=="stock";
   let jDept=isDept?cur.dept:null;
+  // Preserve expanded groups
+  let expanded=new Set();
+  document.querySelectorAll(".pfRow").forEach(r=>{ if(r.style.display!=="none"){ let s=r.dataset.safe; if(s) expanded.add(s); } });
   let list=jangads.filter(j=>j.status==="chalu"&&(!isDept||j.dept===jDept));
   // Group by entryId (each unique batch entry is separate)
   let groups={};
@@ -2401,23 +2403,60 @@ function showJangadInbox(){
     let entryLabel=kapanEntryCounts[k]>1?` <span style="background:#8e44ad;color:#fff;font-size:10px;padding:1px 6px;border-radius:8px">Entry ${kapanEntryIdx[k]}</span>`:"";
     let vigLabel=g.vigat?` <span class="small" style="color:#666">(${g.vigat})</span>`:"";
     let dateLabel=g.createdAt?` <span class="small" style="color:#888;font-size:11px">${g.createdAt}</span>`:"";
+    // Extract flow from first jangad's steps
+    let firstJ=g.items[0];
+    let deptFlow="",curStepStr="",curDeptStr="";
+    if(firstJ&&firstJ.steps){
+      let seen=[];
+      firstJ.steps.forEach(s=>{ if(s.dept&&!seen.includes(s.dept)) seen.push(s.dept); });
+      deptFlow=seen.join(" → ");
+      let cs=firstJ.steps[firstJ.currentStep];
+      curStepStr=cs?`${cs.process} (${firstJ.currentStep+1}/${firstJ.steps.length})`:"—";
+      curDeptStr=firstJ.dept||"—";
+    }
     // Kapan group header
     html+=`<tr class="jiHead_${safe} pfHead" data-safe="${safe}" onclick="toggleJangadKapan('${safe}')" style="cursor:pointer;background:#e8f8f5">
-      <td><b>${k}</b>${entryLabel}${vigLabel} ${dateLabel}</td><td>${g.tn}</td><td>${g.tv}</td><td>${g.tp}</td><td>${g.items.length}</td><td>${statIcon}</td><td></td><td></td><td></td>
+      <td><b>${k}</b>${entryLabel}${vigLabel} ${dateLabel}</td><td>${g.tn}</td><td>${g.tv}</td><td>${g.tp}</td><td>${g.items.length}</td><td style="font-size:11px;color:#16a085">${deptFlow}</td><td style="font-size:11px">${curStepStr}</td><td style="font-size:11px;font-weight:600;color:#2c3e50">${curDeptStr}</td><td><span style="color:#999;font-size:10px">▾</span></td>
     </tr>`;
-    // Expanded detail
+    // Expanded detail — side by side cards
     html+=`<tr class="jiDetail_${safe} pfRow" data-safe="${safe}" data-kapan="${k.toLowerCase()}" data-dept="" data-status="" style="display:none"><td colspan="9" style="padding:0">
-      <div style="background:#fff;border:1px solid #ddd;border-radius:6px;margin:4px;padding:8px">`;
+      <div style="background:#fff;border:1px solid #ddd;border-radius:6px;margin:4px;padding:8px;display:flex;flex-wrap:wrap;gap:8px">`;
     g.items.forEach((j,ji)=>{
       let canEdit=cur.role==="admin"||cur.role==="stock";
-      let editBtn=canEdit?`<button class="edit" onclick="openJangadEditPanel('${j.id}')" style="padding:2px 8px;font-size:11px;margin:0 0 0 8px">✏ Edit</button>`:"";
-      html+=`<div style="margin-bottom:8px;padding:6px;background:#f9f9f9;border-radius:4px">
-        <div style="font-size:12px;margin-bottom:4px"><b>#${j.no}</b> | નાંગ:${j.nang} વજન:${j.vajan} પીસ:${j.pis} ${j.vigat?`<span class="small">(${j.vigat})</span>`:""}${editBtn}</div>`;
+      let editBtn=canEdit?`<button class="edit" onclick="openJangadEditPanel('${j.id}')" style="padding:3px 10px;font-size:11px;margin:0">✏ Edit</button>`:"";
+      let cs=j.steps[j.currentStep];
+      let pendingDept=cs?cs.dept:"—";
+      let curStepLabel=cs?`${cs.process} (${j.currentStep+1}/${j.steps.length})`:"—";
+      let allStepsDone=j.steps.every(s=>s.status==="done");
+      let statusIcon=allStepsDone&&j.dept==="Stock"?"✅":"⏳";
+      html+=`<div style="flex:1;min-width:240px;max-width:400px;border:1px solid #d0d0d0;border-radius:6px;padding:8px;background:#fff">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#2c3e50">${k}</div>
+            <div style="font-size:13px;font-weight:700;color:#8e44ad">#${j.no}${j.vigat?` <span style="font-weight:400;font-size:11px;color:#95a5a6">• ${j.vigat}</span>`:""}</div>
+          </div>
+          <div style="text-align:right">${editBtn}</div>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <div style="background:#eaf2f8;border-radius:4px;padding:3px 8px;text-align:center;flex:1">
+            <div style="font-size:9px;color:#7f8c8d">નાંગ</div>
+            <div style="font-size:14px;font-weight:700;color:#2c3e50">${j.nang}</div>
+          </div>
+          <div style="background:#fef9e7;border-radius:4px;padding:3px 8px;text-align:center;flex:1">
+            <div style="font-size:9px;color:#7f8c8d">વજન</div>
+            <div style="font-size:14px;font-weight:700;color:#2c3e50">${j.vajan}</div>
+          </div>
+          <div style="background:#eafaf1;border-radius:4px;padding:3px 8px;text-align:center;flex:1">
+            <div style="font-size:9px;color:#7f8c8d">પીસ</div>
+            <div style="font-size:14px;font-weight:700;color:#2c3e50">${j.pis}</div>
+          </div>
+        </div>
+        <div style="border-top:1px solid #eee;padding-top:6px">`;
       // Steps list — for dept users show ONLY their current step
       j.steps.forEach((st,si)=>{
-        if(isDept && si!==j.currentStep) return; // skip other steps for dept
+        if(isDept && si!==j.currentStep) return;
         let isCurrent=si===j.currentStep&&st.status==="pending";
-        let stepLabel=isCurrent?`<b>${si+1}. ${st.process}</b> <span style="color:#e67e22">◀</span>`:`${si+1}. ${st.process}`;
+        let stepLabel=isCurrent?`<b>${st.process}</b> <span style="color:#e67e22">◀</span>`:st.process;
         let deptLabel=j.depts&&j.depts.length>1?` <span class="mgr">${st.dept}</span>`:"";
         let statLabel=st.status==="done"?"✅ Done":"⏳ Pending";
         let actHtml="";
@@ -2425,37 +2464,38 @@ function showJangadInbox(){
           let opVal=st.operator||"";
           let rateVal=st.rate||0;
           let rates=(deptRates[st.dept]||[]).filter(r=>r.process===st.process);
-          let rateOpts=`<option value="">— Rate —</option>`+rates.map(r=>`<option value="${r.rate}" ${Number(r.rate)===Number(rateVal)?"selected":""}>${r.operator?""+r.operator+" — ":""}${r.rate}</option>`).join("");
-          actHtml=`<div style="display:flex;gap:6px;align-items:center;margin-top:4px">
-            <input id="jgOp_${j.id}" placeholder="Operator" value="${opVal}" style="width:100px;padding:4px;font-size:11px">
-            <select id="jgRate_${j.id}" onchange="var t=this.options[this.selectedIndex].text;var i=t.indexOf(' — ');if(i>0)document.getElementById('jgOp_${j.id}').value=t.substring(0,i)" style="width:100px;padding:4px;font-size:11px">${rateOpts}</select>
+          let rateOpts=`<option value="">Rate</option>`+rates.map(r=>`<option value="${r.rate}" ${Number(r.rate)===Number(rateVal)?"selected":""}>${r.operator?""+r.operator+" — ":""}${r.rate}</option>`).join("");
+          actHtml=`<div style="border:1px solid #ddd;border-radius:4px;background:#fafafa;padding:5px;margin-top:3px;display:flex;gap:4px;align-items:flex-end;flex-wrap:wrap">
+            <div><label style="font-size:9px;color:#555;display:block;margin-bottom:1px">👤 Operator</label><input id="jgOp_${j.id}" placeholder="Name" value="${opVal}" style="width:80px;padding:3px 5px;font-size:11px;border:1px solid #ccc;border-radius:3px"></div>
+            <div><label style="font-size:9px;color:#555;display:block;margin-bottom:1px">💰 Rate</label><select id="jgRate_${j.id}" onchange="var t=this.options[this.selectedIndex].text;var i=t.indexOf(' — ');if(i>0)document.getElementById('jgOp_${j.id}').value=t.substring(0,i)" style="width:80px;padding:3px 5px;font-size:11px;border:1px solid #ccc;border-radius:3px">${rateOpts}</select></div>
             <button class="recv" onclick="jangadStepDone('${j.id}')" style="padding:4px 10px;font-size:11px">✔ OK</button>
           </div>`;
         } else if(!isDept && si===j.currentStep&&st.status==="done"&&si>=j.steps.length-1){
           if(j.dept!=="Stock"){
-            actHtml=`<button class="set" onclick="openJangadNextPanel('${j.id}')" style="padding:4px 8px;font-size:11px">📤 Next Dept</button>`;
+            actHtml=`<button class="set" onclick="openJangadNextPanel('${j.id}')" style="padding:3px 8px;font-size:11px">📤 Next Dept</button>`;
           } else {
-            actHtml=`<button class="okfin" onclick="jangadStockDone('${j.id}')" style="padding:4px 8px;font-size:11px">📦 Stock OK</button>`;
+            actHtml=`<button class="okfin" onclick="jangadStockDone('${j.id}')" style="padding:3px 8px;font-size:11px">📦 Stock OK</button>`;
           }
         }
-        html+=`<div style="font-size:11px;padding:2px 6px;margin:2px 0;background:${isCurrent?"#fef9e7":"transparent"};border-radius:3px">
+        html+=`<div style="font-size:11px;padding:2px 4px;margin:2px 0;background:${isCurrent?"#fef9e7":"transparent"};border-radius:3px">
           ${stepLabel}${deptLabel} — ${statLabel} ${actHtml}
         </div>`;
       });
       // Next Dept / Stock OK buttons — only for non-dept
       if(!isDept){
-        let allStepsDone=j.steps.every(s=>s.status==="done");
         if(allStepsDone&&j.dept!=="Stock"){
-          html+=`<div style="margin-top:4px"><button class="set" onclick="openJangadNextPanel('${j.id}')" style="padding:4px 8px;font-size:11px">📤 Send to Next Department</button></div>`;
+          html+=`<div style="margin-top:4px"><button class="set" onclick="openJangadNextPanel('${j.id}')" style="padding:3px 8px;font-size:11px">📤 Send to Next Department</button></div>`;
         } else if(allStepsDone&&j.dept==="Stock"&&j.status==="chalu"){
-          html+=`<div style="margin-top:4px"><button class="okfin" onclick="jangadStockDone('${j.id}')" style="padding:4px 8px;font-size:11px">📦 Stock OK → History</button></div>`;
+          html+=`<div style="margin-top:4px"><button class="okfin" onclick="jangadStockDone('${j.id}')" style="padding:3px 8px;font-size:11px">📦 Stock OK → History</button></div>`;
         }
       }
-      html+=`</div>`;
+      html+=`</div></div>`;
     });
     html+=`</div></td></tr>`;
   });
   el.innerHTML=html||`<tr><td colspan="9" style="text-align:center;color:#999">કોઈ જંગડ નથી</td></tr>`;
+  // Restore expanded groups
+  expanded.forEach(s=>{ document.querySelectorAll(".jiDetail_"+s).forEach(r=>{ r.style.display=""; }); });
   populatePfFilters();
   showPfSummaryBar();
   if(activeUchakTab==="process") showProcesswiseView();
