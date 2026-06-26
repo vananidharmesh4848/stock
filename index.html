@@ -401,7 +401,7 @@
       <button class="sugsend" onclick="sendSugAll()" style="background:#8e44ad">📤 મોકલો</button>
       <div id="sugAllList" style="margin-top:14px"><h3 style="font-size:15px;margin-bottom:6px;color:#555">તમારા સૂચનો</h3><div id="sugAllHist"></div></div>
     </div>
-    <div class="box sugbox"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2>💡 Suggestion History</h2><div class="dlbar"><button class="xls" onclick="dlSugHistExcel()">📊 Excel</button><button class="pdf" onclick="dlSugHistPDF()">📄 PDF</button></div></div><div class="row datebar"><div id="sgFiltDeptDiv"><label>Department</label><select id="sgFiltDept" onchange="showSugHist()"></select></div><div><label>📅 થી</label><input id="sgFiltFrom" type="date" onchange="showSugHist()"></div><div><label>📅 સુધી</label><input id="sgFiltTo" type="date" onchange="showSugHist()"></div><div style="display:flex;align-items:flex-end"><button onclick="clearSugHist()" style="background:#7f8c8d;width:100%">🔄</button></div></div><table><thead><tr><th>Topic</th><th>વિગત</th><th>Department</th><th>Date</th><th>Accept Time</th><th>કોણે</th><th>Status</th></tr></thead><tbody id="sugHist"></tbody></table></div>
+    <div class="box sugbox"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2>💡 Suggestion History</h2><div class="dlbar"><button class="xls" onclick="dlSugHistExcel()">📊 Excel</button><button class="pdf" onclick="dlSugHistPDF()">📄 PDF</button></div></div><div class="row datebar"><div id="sgFiltDeptDiv"><label>Department</label><select id="sgFiltDept" onchange="showSugHist()"></select></div><div><label>📅 થી</label><input id="sgFiltFrom" type="date" onchange="showSugHist()"></div><div><label>📅 સુધી</label><input id="sgFiltTo" type="date" onchange="showSugHist()"></div><div style="display:flex;align-items:flex-end"><button onclick="showSugHist()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div><div style="display:flex;align-items:flex-end"><button onclick="clearSugHist()" style="background:#7f8c8d;width:100%">🔄</button></div></div><table><thead><tr><th>Topic</th><th>વિગત</th><th>Department</th><th>Date</th><th>Accept Info</th><th>Status</th></tr></thead><tbody id="sugHist"></tbody></table></div>
   </div>
 
   <!-- PAGE: ANALYSIS -->
@@ -537,7 +537,7 @@
     <div class="box" style="border:2px solid #27ae60">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:10px">
         <h2 style="margin:0">🏭 Active Uchak Entries</h2>
-        <div style="font-size:12px;color:#555">કુલ: <b><span id="activeKapanCount">0</span></b> Kapan &nbsp;|&nbsp; <b><span id="activeJangadCount">0</span></b> Jangad</div>
+        <div class="dlbar"><button class="xls" onclick="dlActiveUchakExcel()">📊 Excel</button><button class="pdf" onclick="dlActiveUchakPDF()">📄 PDF</button><span style="font-size:12px;color:#555">કુલ: <b><span id="activeKapanCount">0</span></b> Kapan &nbsp;|&nbsp; <b><span id="activeJangadCount">0</span></b> Jangad</span></div>
       </div>
       <!-- View Tabs -->
       <div style="display:flex;gap:0;margin-bottom:12px;border:1px solid #27ae60;border-radius:8px;overflow:hidden;width:fit-content">
@@ -562,6 +562,7 @@
     <div class="box" id="processFlowBox">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:8px">
         <h2 id="uchakInboxTitle" style="margin:0">📥 Process Flow</h2>
+        <div class="dlbar"><button class="xls" onclick="dlProcessFlowExcel()">📊 Excel</button><button class="pdf" onclick="dlProcessFlowPDF()">📄 PDF</button></div>
         <div style="display:flex;gap:6px;align-items:center">
           <input id="pfSearch" placeholder="🔍 Kapan શોધો..." oninput="filterProcessFlow()" style="width:160px;padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #ccc">
           <select id="pfDeptFilter" onchange="filterProcessFlow()" style="padding:5px;font-size:12px;border-radius:6px;border:1px solid #ccc">
@@ -815,6 +816,44 @@
     </div>
   </div>
 
+  <!-- PAGE: 4P PANEL -->
+  <div class="page" id="pg_4p">
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+        <h2 style="margin:0">4️⃣ 4P Panel — Stock Kapans Send to 4P</h2>
+        <div class="dlbar"><button class="xls" onclick="dl4PStockExcel()">📊 Excel</button><button class="pdf" onclick="dl4PStockPDF()">📄 PDF</button><span style="font-size:12px;color:#555" id="fourPTotal"></span></div>
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <div style="flex:2"><label>🔍 Kapan શોધો</label><input id="fpKapanSearch" placeholder="Kapan નંબર લખો..." style="width:100%"></div>
+        <div style="display:flex;align-items:flex-end"><button onclick="show4PPanel()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div>
+        <div style="display:flex;align-items:flex-end"><button onclick="document.getElementById('fpKapanSearch').value='';show4PPanel()" style="background:#7f8c8d;width:100%">🔄 Clear</button></div>
+      </div>
+      <div id="fourPPanel"><p style="text-align:center;color:#999;padding:20px">Stock માં રહેલા બધા Kapans — શોધીને 4P મોકલો</p></div>
+    </div>
+    <div class="box" style="border:2px solid #8e44ad">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:8px"><h3 style="margin:0">📋 4P History — Restore to Stock</h3><div class="dlbar"><button class="xls" onclick="dl4PExcel()">📊 Excel</button><button class="pdf" onclick="dl4PPDF()">📄 PDF</button></div></div>
+      <div class="row datebar" style="margin-bottom:10px">
+        <div><label>🔍 Kapan</label><input id="fphSearch" placeholder="Kapan" oninput="show4PHistory()"></div>
+        <div><label>📅 થી</label><input id="fphFrom" type="date" onchange="show4PHistory()"></div>
+        <div><label>📅 સુધી</label><input id="fphTo" type="date" onchange="show4PHistory()"></div>
+        <div style="display:flex;align-items:flex-end"><button onclick="show4PHistory()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div>
+        <div style="display:flex;align-items:flex-end"><button onclick="document.getElementById('fphSearch').value='';document.getElementById('fphFrom').value='';document.getElementById('fphTo').value='';show4PHistory()" style="background:#7f8c8d;width:100%">🔄</button></div>
+      </div>
+      <div style="margin-bottom:10px">
+        <button class="sugcat" onclick="dateQuick('today','fphFrom,fphTo',show4PHistory)" style="background:#2980b9;font-size:12px;padding:4px 10px;margin:2px">Today</button>
+        <button class="sugcat" onclick="dateQuick('week','fphFrom,fphTo',show4PHistory)" style="background:#2980b9;font-size:12px;padding:4px 10px;margin:2px">This Week</button>
+        <button class="sugcat" onclick="dateQuick('month','fphFrom,fphTo',show4PHistory)" style="background:#2980b9;font-size:12px;padding:4px 10px;margin:2px">This Month</button>
+        <button class="sugcat" onclick="dateQuick('30days','fphFrom,fphTo',show4PHistory)" style="background:#2980b9;font-size:12px;padding:4px 10px;margin:2px">30 Days</button>
+        <button class="sugcat" onclick="dateQuick('all','fphFrom,fphTo',show4PHistory)" style="background:#7f8c8d;font-size:12px;padding:4px 10px;margin:2px">All</button>
+      </div>
+      <div style="overflow-x:auto;max-height:400px;overflow-y:auto">
+      <table><thead><tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>From</th><th>Date-Time</th><th>Action</th></tr></thead>
+        <tbody id="fourPHistBody"><tr><td colspan="7" style="text-align:center;color:#999">કોઈ 4P record નથી</td></tr></tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
 </div>
 <script>
 let users = JSON.parse(localStorage.getItem("users") || "null");
@@ -915,7 +954,7 @@ function save(){
 
 let curPage="";
 function showPage(pg){ curPage=pg; document.querySelectorAll(".page").forEach(p=>p.classList.remove("show")); let el=document.getElementById("pg_"+pg); if(el) el.classList.add("show"); document.querySelectorAll(".navbar button").forEach(b=>b.classList.toggle("active", b.dataset.pg===pg)); let sb=document.querySelector(".schbox"); if(sb) sb.style.display=pg==="admin"?"none":""; refresh(); }
-function buildNav(){ let isFull=(cur.role==="admin"||cur.role==="stock");   let items=[]; if(isFull) items.push(["dash","📊 Dashboard"]); if(isFull) items.push(["send","📤 કાપણ મોકલો"]); items.push(["stock","📥 Stock & Inbox"]); items.push(["urgent","🔴 Urgent"]); items.push(["rep","🔧 Repairing"]); items.push(["sug","💡 Suggestion"]); items.push(["notif","🔔 Notifications"]); items.push(["anal","📊 Analysis"]); items.push(["hist","🕒 History"]); items.push(["uchak","🔀 ઉચક"]); if(cur.role==="admin") items.push(["admin","👑 Admin"]); if(cur.role==="admin") items.push(["lhist","🔐 Login History"]); document.getElementById("navbar").innerHTML=items.map(it=>`<button data-pg="${it[0]}" onclick="showPage('${it[0]}')">${it[1]}</button>`).join(""); showPage("urgent"); }
+function buildNav(){ let isFull=(cur.role==="admin"||cur.role==="stock");   let items=[]; if(isFull) items.push(["dash","📊 Dashboard"]); if(isFull) items.push(["send","📤 કાપણ મોકલો"]); items.push(["stock","📥 Stock & Inbox"]); items.push(["urgent","🔴 Urgent"]); if(isFull) items.push(["4p","4️⃣ 4P"]); items.push(["rep","🔧 Repairing"]); items.push(["sug","💡 Suggestion"]); items.push(["notif","🔔 Notifications"]); items.push(["anal","📊 Analysis"]); items.push(["hist","🕒 History"]); items.push(["uchak","🔀 ઉચક"]); if(cur.role==="admin") items.push(["admin","👑 Admin"]); if(cur.role==="admin") items.push(["lhist","🔐 Login History"]); document.getElementById("navbar").innerHTML=items.map(it=>`<button data-pg="${it[0]}" onclick="showPage('${it[0]}')">${it[1]}</button>`).join(""); showPage("urgent"); }
 
 function startSession(u){ sessionStorage.setItem("curId",u.id); }
 function endSession(){ sessionStorage.removeItem("curId"); }
@@ -1321,7 +1360,7 @@ function saveEdit(){
 function closeEdit(){ document.getElementById("editModal").classList.add("hide"); document.getElementById("editOverlay").classList.add("hide"); }
 
 function applyFilters(list){ let s=normKapan(document.getElementById("fSearch").value),tg=document.getElementById("fTag").value,stt=document.getElementById("fStatus").value,dp=document.getElementById("fDept")?document.getElementById("fDept").value:""; return list.filter(d=>{ if(s&&!normKapan(d.item).includes(s)) return false; if(tg&&d.tag!==tg) return false; if(stt&&d.status!==stt) return false; if(dp&&d.from!==dp&&d.to!==dp) return false; return true; }); }
-function refresh(){ if(!cur) return; updateUndoRedoTopBar(); switch(curPage){ case"urgent":showUrgentPanel();break; case"dash":showUchakReadyList();showUchakHistory();showCards();showFinal();showDashStat();show4P();showKapan();showInbox();showMyStatusList();fillPickDropdown();if(cur.role==="admin"||cur.role==="stock"){fillSplitPick();fillSFPick();}break; case"uchak":showUchakReadyList();showUchakHistory();showUchakInbox();showActiveUchakEntries();initJangadEntry();if(cur.role==="admin"||cur.role==="stock"){showUchakProcessesAdmin();showUchakRatesAdmin();}break; case"stock":showStock();break; case"rep":showRepInbox();showRepSent();showRepHist();break; case"sug":showSugInbox();showSugHist();showSugAllHist();break; case"analysis":showAnalysis();break; case"report":showReport();break; case"admin":showSugAdminInbox();break; case"lhist":break; case"notif":break; case"send":break; default:showUchakReadyList();showUchakHistory();showCards();showFinal();showDashStat();show4P();showKapan();showInbox();showStock();showRepInbox();showRepSent();showRepHist();showSugInbox();showSugHist();showSugAllHist();showAnalysis();showMyStatusList();fillPickDropdown();showReport();showSugAdminInbox();showUchakInbox();showActiveUchakEntries();initJangadEntry();showUrgentPanel();if(cur.role==="admin"||cur.role==="stock"){fillSplitPick();fillSFPick();showUchakProcessesAdmin();showUchakRatesAdmin();}} }
+function refresh(){ if(!cur) return; updateUndoRedoTopBar(); switch(curPage){ case"urgent":showUrgentPanel();break; case"dash":showUchakReadyList();showUchakHistory();showCards();showFinal();showDashStat();show4P();showKapan();showInbox();showMyStatusList();fillPickDropdown();if(cur.role==="admin"||cur.role==="stock"){fillSplitPick();fillSFPick();}break; case"uchak":showUchakReadyList();showUchakHistory();showUchakInbox();showActiveUchakEntries();initJangadEntry();if(cur.role==="admin"||cur.role==="stock"){showUchakProcessesAdmin();showUchakRatesAdmin();}break; case"stock":showStock();break; case"rep":showRepInbox();showRepSent();showRepHist();break; case"sug":showSugInbox();showSugHist();showSugAllHist();break; case"analysis":showAnalysis();break; case"report":showReport();break; case"admin":showSugAdminInbox();break; case"4p":show4PPanel();show4PHistory();break; case"lhist":break; case"notif":break; case"send":break; default:showUchakReadyList();showUchakHistory();showCards();showFinal();showDashStat();show4P();showKapan();showInbox();showStock();showRepInbox();showRepSent();showRepHist();showSugInbox();showSugHist();showSugAllHist();showAnalysis();showMyStatusList();fillPickDropdown();showReport();showSugAdminInbox();showUchakInbox();showActiveUchakEntries();initJangadEntry();showUrgentPanel();if(cur.role==="admin"||cur.role==="stock"){fillSplitPick();fillSFPick();showUchakProcessesAdmin();showUchakRatesAdmin();}} }
 
 function deptStats(){ let t={}; users.filter(u=>u.role==="dept").forEach(u=>{ let lbl=unitLabel(u.dept,u.office); getParts(u).forEach(p=>t[lbl+"|||"+p]={lbl,dept:u.dept,office:u.office,part:p,chC:0,chN:0,chP:0,okC:0,okN:0,okP:0,issC:0}); }); hist.forEach(h=>{ if(h.action==="Send"||h.action==="Forward"||h.action==="Split-Send"){ let tk=h.to+"|||"+(h.toPart||"Main"); if(t[tk]) t[tk].issC+=Number(h.carat); } }); data.forEach(d=>{ if(d.status==="Received"){ let tk=d.to+"|||"+(d.toPart||"Main"); if(t[tk]){ t[tk].chC+=Number(d.carat); t[tk].chN+=Number(d.nang); t[tk].chP+=Number(d.pis); } } }); hist.forEach(h=>{ if(h.action==="Receive"){ let tk=h.to+"|||"+(h.toPart||"Main"); if(t[tk]){ let live=data.find(d=>d.id===h.id&&d.status==="Received"&&d.to===h.to); if(!live){ t[tk].okC+=Number(h.carat); t[tk].okN+=Number(h.nang); t[tk].okP+=Number(h.pis); } } } }); return t; }
 function showCards(){ if(!(cur.role==="admin"||cur.role==="stock")) return; let t=deptStats(); let html=""; for(let k in t){ let x=t[k]; let off=x.office?`🏢 ${x.office}`:""; html+=`<div class="card" onclick="openReport('${x.lbl.replace(/'/g,"")}','${x.part}')"><h4>${x.dept}</h4><div class="off">${off}${x.part!=="Main"?" • "+x.part:""}</div><div class="line issC"><span>📤 Issue Ct</span><b>${x.issC.toFixed(2)}</b></div><hr style="border-color:#555;margin:6px 0"><div class="line chaluC"><span>🔵 Chalu Ct</span><b>${x.chC.toFixed(2)}</b></div><div class="line chaluC"><span>Chalu Nang</span><b>${x.chN}</b></div><div class="line chaluC"><span>Chalu Pis</span><b>${x.chP}</b></div><hr style="border-color:#555;margin:6px 0"><div class="line okC"><span>✅ OK Ct</span><b>${x.okC.toFixed(2)}</b></div><div class="line okC"><span>OK Nang</span><b>${x.okN}</b></div><div class="line okC"><span>OK Pis</span><b>${x.okP}</b></div><div class="clickhint">👆 click — report</div></div>`; } document.getElementById("cards").innerHTML=html; }
@@ -1331,6 +1370,73 @@ function show4P(){ if(!(cur.role==="admin"||cur.role==="stock")) return; let el=
 function clear4P(){ ["fpSearch","fpFrom","fpTo"].forEach(x=>{ if(document.getElementById(x)) document.getElementById(x).value=""; }); show4P(); }
 function dl4PExcel(){ let list=fourP.slice().reverse(); downloadCSV("4P_History.csv",[["Kapan","Carat","Nang","Pis","From","Date-Time"],...list.map(f=>[f.item,f.carat,f.nang,f.pis,f.from,f.movedAt])]); }
 function dl4PPDF(){ let list=fourP.slice().reverse(); printPDF("4P History",["Kapan","Carat","Nang","Pis","From","Date-Time"],list.map(f=>[f.item,f.carat,f.nang,f.pis,f.from,f.movedAt])); }
+
+// === 4P PANEL ===
+function show4PPanel(){
+  if(cur.role!=="admin"&&cur.role!=="stock") return;
+  let el=document.getElementById("fourPPanel"); if(!el) return;
+  let order={urgent:1,agal:2,regular:3};
+  let search=normKapan(document.getElementById("fpKapanSearch")?.value||"");
+  let list=data.map((d,idx)=>({...d,idx})).filter(d=>d.status==="Received"&&(d.to===STOCK_DEPT||d.to===STOCK_HOLD)&&(!search||normKapan(d.item).includes(search)));
+  let groups={};
+  list.forEach(d=>{ let lbl=d.label||"— Unlabeled —"; if(!groups[lbl]) groups[lbl]=[]; groups[lbl].push(d); });
+  let totalK=0,totalC=0,totalN=0,totalP=0;
+  let html=Object.keys(groups).sort((a,b)=>{ if(a==="— Unlabeled —") return 1; if(b==="— Unlabeled —") return -1; return a.localeCompare(b); }).map(lbl=>{
+    let items=groups[lbl];
+    let rows=items.map(d=>{
+      totalK++; totalC+=Number(d.carat); totalN+=Number(d.nang); totalP+=Number(d.pis);
+      let lb=d.label?`<span class="lblbadge">${d.label}</span> `:"";
+      return `<tr>
+        <td>${lb}${d.item}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td>
+        <td>${d.from}</td><td class="small">${d.sentAt||""}</td>
+        <td><button class="set" onclick="sendKapanTo4P(${d.idx})" style="padding:3px 10px;font-size:11px">📤 Send to 4P</button></td>
+      </tr>`;
+    }).join("");
+    return `<div style="margin-bottom:12px;border:1px solid #d5e8d0;border-radius:8px;overflow:hidden">
+      <div style="background:#27ae60;color:#fff;padding:6px 12px;font-size:13px;font-weight:700">${lbl==="— Unlabeled —"?"📦 "+lbl:"🏷️ "+lbl} (${items.length})</div>
+      <table style="margin:0"><thead><tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>From</th><th>Date</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+  }).join("");
+  document.getElementById("fourPTotal").innerHTML=`📦 ${totalK} Kapan | 💎 ${totalC.toFixed(2)}ct | 📏 ${totalN} નાંગ | 🔢 ${totalP} પીસ`;
+  el.innerHTML=html||`<p style="text-align:center;color:#999;padding:20px">Stock માં કોઈ Kapan નથી</p>`;
+}
+function sendKapanTo4P(idx){
+  let d=data[idx]; if(!d) return;
+  if(!confirm(`📤 ${d.item} — ${d.carat}ct / ${d.nang}નાંગ / ${d.pis}પીસ\nઆ Kapan 4P માં મોકલવી છે?\nહા — History માં save થઈ Stock માંથી દૂર થશે.`)) return;
+  fourP.push({item:d.item,carat:d.carat,nang:d.nang,pis:d.pis,label:d.label,from:d.to,movedAt:now(),movedMs:Date.now()});
+  hist.push({item:d.item,carat:d.carat,nang:d.nang,pis:d.pis,from:d.from,to:d.to,label:d.label,action:"4P-Send",sentAt:now(),sentMs:Date.now()});
+  data.splice(idx,1);
+  save(); show4PPanel(); show4PHistory(); refresh();
+  toast("✅ 4P માં મોકલાઈ ગયું! History માં જુઓ.","success");
+}
+function show4PHistory(){
+  let el=document.getElementById("fourPHistBody"); if(!el) return;
+  let s=normKapan(document.getElementById("fphSearch")?.value||"");
+  let from=document.getElementById("fphFrom")?.value||"";
+  let to=document.getElementById("fphTo")?.value||"";
+  let list=fourP.slice().reverse().filter(f=>{
+    if(s&&!normKapan(f.item).includes(s)) return false;
+    if(f.movedMs){ let iso=todayISO(f.movedMs); if(from&&iso<from) return false; if(to&&iso>to) return false; }
+    return true;
+  });
+  el.innerHTML=list.map((f,i)=>{
+    let ri=fourP.length-1-i;
+    return `<tr>
+      <td>${f.item}</td><td>${f.carat}</td><td>${f.nang}</td><td>${f.pis}</td>
+      <td>${f.from||"—"}</td><td class="small">${f.movedAt||""}</td>
+      <td><button class="edit" onclick="restoreFrom4P(${ri})" style="padding:3px 10px;font-size:11px">↩ Restore</button></td>
+    </tr>`;
+  }).join("")||`<tr><td colspan="7" style="text-align:center;color:#999">કોઈ 4P record નથી</td></tr>`;
+}
+function restoreFrom4P(idx){
+  let f=fourP[idx]; if(!f) return;
+  if(!confirm(`↩ ${f.item} — ${f.carat}ct\nStock માં પાછું મૂકવું છે?`)) return;
+  data.push({id:uid(),item:f.item,carat:f.carat,nang:f.nang,pis:f.pis,label:f.label||"",from:f.from||STOCK_DEPT,to:STOCK_DEPT,toPart:"Main",status:"Received",tag:"regular",note:"",manager:"",dataentry:"",fin:"",dstat:"",sentAt:now(),sentMs:Date.now(),recvAt:now(),recvTime:Date.now()});
+  hist.push({item:f.item,carat:f.carat,nang:f.nang,pis:f.pis,from:"4P",to:STOCK_DEPT,action:"4P-Restore",sentAt:now(),sentMs:Date.now()});
+  fourP.splice(idx,1);
+  save(); show4PPanel(); show4PHistory(); refresh();
+  toast("↩ Stock માં પાછું મૂકાઈ ગયું!","success");
+}
 function showDeptWise(){ if(!(cur.role==="admin"||cur.role==="stock")) return; let order={urgent:1,agal:2,regular:3}; let s=normKapan(document.getElementById("dwSearch").value); let dp=document.getElementById("dwDept").value;     let list=data.filter(d=>d.status==="Received").filter(d=>{ if(s&&!normKapan(d.item).includes(s)) return false; if(dp&&d.to!==dp) return false; return true; }); let g={}; list.forEach(d=>{ (g[d.to]=g[d.to]||[]).push(d); }); let rows=""; Object.keys(g).sort().forEach(dpto=>{ let recs=g[dpto]; recs.sort((a,b)=>order[a.tag]-order[b.tag]); let tC=0,tN=0,tP=0; recs.forEach(d=>{tC+=Number(d.carat);tN+=Number(d.nang);tP+=Number(d.pis);}); rows+=`<tr class="deptgrp"><td>🏬 ${dpto}</td><td>${tC.toFixed(2)}ct</td><td>${tN}</td><td>${tP}</td><td colspan="5">⬇ ${recs.length}</td></tr>`; recs.forEach(d=>{ let lb=d.label?`<span class="lblbadge">${d.label}</span> `:""; let st=d.dstat?`<span class="statbadge">${d.dstat}</span>`:"—"; rows+=`<tr class="${d.tag==='urgent'?'urgent-row':''}"><td style="padding-left:25px">${dpto}</td><td>${lb}${d.item} ${noteHTML(d.note)}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td><td><span class="tag ${d.tag}">${tagName(d.tag)}</span></td><td>${st}</td><td>${d.manager?`<span class="mgr">${d.manager}</span>`:"—"}</td><td class="hrs">${hoursSince(d.recvTime)}</td></tr>`; }); }); document.getElementById("deptWise").innerHTML=rows||`<tr><td colspan="9">કોઈ record નથી</td></tr>`; }
 function clearDeptWise(){ document.getElementById("dwSearch").value=""; document.getElementById("dwDept").value=""; document.getElementById("deptWise").innerHTML=`<tr><td colspan="9" style="text-align:center;color:#999">Filters clear — ▶ લોડ કરો બટન દબાવો</td></tr>`; }
 function openReport(lbl,part){ reportKey={lbl,part}; document.getElementById("reportBox").classList.remove("hide"); showReport(); window.scrollTo({top:document.getElementById("reportBox").offsetTop-20,behavior:'smooth'}); }
@@ -1411,8 +1517,8 @@ function clearLoginFilter(){ document.getElementById("lhSearch").value=''; docum
 function sendSuggestion(){ let topic=document.getElementById("sgTopic").value.trim(),detail=document.getElementById("sgDetail").value.trim(); let tos=[...document.querySelectorAll(".sgcb:checked")].map(c=>c.value); if(!topic||!detail){ toast("Topic અને વિગત ભરો!","error"); return; } if(tos.length===0){ toast("ઓછામાં ઓછું એક Department!","error"); return; } sugs.push({id:uid(),topic,detail,tos,sentAt:now(),sentMs:Date.now(),accepts:{}}); save(); document.getElementById("sgTopic").value=""; document.getElementById("sgDetail").value=""; document.querySelectorAll(".sgcb").forEach(c=>c.checked=false); refresh(); toast("💡 "+tos.length+" Department ને મોકલાઈ ગયું!","success"); }
 function acceptSug(id){ let s=sugs.find(x=>x.id===id); if(!s) return; let me=myLbl(); let by=prompt("Receive કરનાર નું નામ:"); if(by===null) return; by=by.trim(); if(!by){ toast("નામ ભરો!","error"); return; } s.accepts=s.accepts||{}; s.accepts[me]={at:now(),by}; save(); refresh(); toast("✅ Accept થયું!","success"); }
 function showSugInbox(){ if(cur.role!=="dept") return; let me=myLbl(); let list=sugs.filter(s=>(s.tos||[]).includes(me)); document.getElementById("sugInbox").innerHTML=list.map(s=>{ let acc=s.accepts&&s.accepts[me]; let st=acc?`<span class="okfin">✅ Accepted (${acc.by})</span>`:`<span class="st-pending">⏳ નવું</span>`; let act=acc?`<span class="small">${acc.at}</span>`:`<button class="recv" onclick="acceptSug('${s.id}')">✔ Accept</button>`; return `<tr><td><b>${s.topic}</b></td><td>${s.detail}</td><td class="small">${s.sentAt}</td><td>${st}</td><td>${act}</td></tr>`; }).join("")||`<tr><td colspan="5">કોઈ suggestion નથી</td></tr>`; }
-function showSugHist(){ let rows=[]; sugs.forEach(s=>{ (s.tos||[]).forEach(dept=>{ let acc=s.accepts&&s.accepts[dept]; rows.push({topic:s.topic,detail:s.detail,dept,sentAt:s.sentAt,sentMs:s.sentMs,acceptAt:acc?acc.at:"",acceptBy:acc?acc.by:"",status:acc?"Accepted":"Pending"}); }); }); if(cur.role==="admin"){ let dp=document.getElementById("sgFiltDept").value; rows=rows.filter(r=>!dp||r.dept===dp); } else if(cur.role==="dept"){ let me=myLbl(); rows=rows.filter(r=>r.dept===me); } let from=document.getElementById("sgFiltFrom").value,to=document.getElementById("sgFiltTo").value; rows=rows.filter(r=>{ if(r.sentMs){ let iso=todayISO(r.sentMs); if(from&&iso<from) return false; if(to&&iso>to) return false; } return true; }).reverse(); document.getElementById("sugHist").innerHTML=rows.map(r=>`<tr><td><b>${r.topic}</b></td><td>${r.detail}</td><td>${r.dept}</td><td class="small">${r.sentAt}</td><td class="small">${r.acceptAt||"—"}</td><td>${r.acceptBy?`<span class="mgr">${r.acceptBy}</span>`:"—"}</td><td>${r.status}</td></tr>`).join("")||`<tr><td colspan="7">કોઈ record નથી</td></tr>`; }
-function sugHistData(){ let rows=[]; sugs.forEach(s=>{ (s.tos||[]).forEach(dept=>{ let acc=s.accepts&&s.accepts[dept]; rows.push([s.topic,s.detail,dept,s.sentAt,acc?acc.at:"—",acc?acc.by:"—",acc?"Accepted":"Pending",s.sentMs]); }); }); if(cur.role==="admin"){ let dp=document.getElementById("sgFiltDept").value; rows=rows.filter(r=>!dp||r[2]===dp); } else if(cur.role==="dept"){ let me=myLbl(); rows=rows.filter(r=>r[2]===me); } let from=document.getElementById("sgFiltFrom").value,to=document.getElementById("sgFiltTo").value; rows=rows.filter(r=>{ if(r[7]){ let iso=todayISO(r[7]); if(from&&iso<from) return false; if(to&&iso>to) return false; } return true; }).reverse(); return rows.map(r=>r.slice(0,7)); }
+function showSugHist(){ let rows=[]; sugs.forEach(s=>{ let depts=(s.tos||[]).map(dept=>{ let acc=s.accepts&&s.accepts[dept]; return {dept,acceptAt:acc?acc.at:"",acceptBy:acc?acc.by:"",status:acc?"Accepted":"Pending"}; }); rows.push({topic:s.topic,detail:s.detail,depts,sentAt:s.sentAt,sentMs:s.sentMs,allStatus:depts.every(d=>d.status==="Accepted")?"✅ All Accepted":"⏳ Partial"}); }); if(cur.role==="admin"){ let dp=document.getElementById("sgFiltDept").value; if(dp) rows=rows.filter(r=>r.depts.some(d=>d.dept===dp)); } else if(cur.role==="dept"){ let me=myLbl(); rows=rows.filter(r=>r.depts.some(d=>d.dept===me)); } let from=document.getElementById("sgFiltFrom").value,to=document.getElementById("sgFiltTo").value; rows=rows.filter(r=>{ if(r.sentMs){ let iso=todayISO(r.sentMs); if(from&&iso<from) return false; if(to&&iso>to) return false; } return true; }).reverse(); document.getElementById("sugHist").innerHTML=rows.map(r=>{ let deptHtml=r.depts.map(d=>`<span style="display:inline-block;background:#eee;border-radius:3px;padding:1px 6px;margin:1px;font-size:11px">${d.dept} ${d.status==="Accepted"?`✅ ${d.acceptBy||""}`:""}</span>`).join(" "); return `<tr><td><b>${r.topic}</b></td><td style="max-width:250px;font-size:12px">${r.detail}</td><td style="min-width:140px">${deptHtml}</td><td class="small">${r.sentAt}</td><td style="font-size:11px">${r.allStatus}</td><td>${r.allStatus.includes("All")?"✅":"⏳"}</td></tr>`; }).join("")||`<tr><td colspan="6">કોઈ record નથી</td></tr>`; }
+function sugHistData(){ let rows=[]; sugs.forEach(s=>{ let depts=(s.tos||[]).map(dept=>{ let acc=s.accepts&&s.accepts[dept]; return `${dept}${acc?" ✅"+acc.by:""}`; }).join("; "); let allAccepted=(s.tos||[]).every(dept=>s.accepts&&s.accepts[dept]); rows.push([s.topic,s.detail,depts,s.sentAt,allAccepted?"✅ All Accepted":"⏳ Partial",allAccepted?"✅":"⏳",s.sentMs]); }); if(cur.role==="admin"){ let dp=document.getElementById("sgFiltDept").value; if(dp) rows=rows.filter(r=>{ let depts=r[2].split("; ").map(x=>x.split(" ✅")[0]); return depts.includes(dp); }); } else if(cur.role==="dept"){ let me=myLbl(); rows=rows.filter(r=>{ let depts=r[2].split("; ").map(x=>x.split(" ✅")[0]); return depts.includes(me); }); } let from=document.getElementById("sgFiltFrom").value,to=document.getElementById("sgFiltTo").value; rows=rows.filter(r=>{ if(r[6]){ let iso=todayISO(r[6]); if(from&&iso<from) return false; if(to&&iso>to) return false; } return true; }).reverse(); return rows.map(r=>r.slice(0,6)); }
 function fillSugToChk(){ let html=users.filter(u=>u.role==="dept").map(u=>{ let lbl=unitLabel(u.dept,u.office); return `<label><input type="checkbox" class="sgcb" value="${lbl}"> ${lbl}</label>`; }).join(""); if(document.getElementById("sgToChk")) document.getElementById("sgToChk").innerHTML=html; if(document.getElementById("sgToChkA")) document.getElementById("sgToChkA").innerHTML=html; }
 function fillSugFiltDept(){ if(document.getElementById("sgFiltDept")) document.getElementById("sgFiltDept").innerHTML=deptOptsList(`<option value="">— બધા —</option>`); }
 function sendSugAdmin(){ let topic=document.getElementById("sgTopicA").value.trim(),detail=document.getElementById("sgDetailA").value.trim(); let tos=[...document.querySelectorAll("#sgToChkA .sgcb:checked")].map(c=>c.value); if(!topic||!detail){ toast("Topic અને વિગત ભરો!","error"); return; } if(tos.length===0){ toast("ઓછામાં ઓછું એક Department!","error"); return; } sugs.push({id:uid(),topic,detail,tos,sentAt:now(),sentMs:Date.now(),accepts:{}}); save(); document.getElementById("sgTopicA").value=""; document.getElementById("sgDetailA").value=""; document.querySelectorAll("#sgToChkA .sgcb").forEach(c=>c.checked=false); refresh(); toast("💡 "+tos.length+" Department ને મોકલાઈ ગયું!","success"); }
@@ -1462,11 +1568,17 @@ function repHistData(){ let s=normKapan(document.getElementById("rhSearch").valu
 let rhHead=["Kapan","Carat","Nang","Pis","Jangad","From","To","Manager","Remark","Issue D-T","Recv D-T","Recv By","Status"];
 function dlRepHistExcel(){ downloadCSV("Repairing_History.csv",[rhHead,...repHistData()]); } function dlRepHistPDF(){ printPDF("Repairing History",rhHead,repHistData()); }
 function sugHistData(){ let rows=[]; sugs.forEach(s=>{ rows.push([s.topic,s.detail,s.fromName||s.from||"",s.sentAt,s.acceptedAt||"",s.acceptedBy||"",s.status==="accepted"?"Accepted":"Pending",s.sentMs]); }); if(cur.role==="dept"){ let me=cur.dept+(cur.office?" — "+cur.office:""); rows=rows.filter(r=>r[2]===me); } let from=document.getElementById("sgFiltFrom").value,to=document.getElementById("sgFiltTo").value; rows=rows.filter(r=>{ if(r[7]){ let iso=todayISO(r[7]); if(from&&iso<from) return false; if(to&&iso>to) return false; } return true; }).reverse(); return rows.map(r=>r.slice(0,7)); }
-let sgHead=["Topic","વિગત","From","Date","Accept Time","કોણે","Status"];
+let sgHead=["Topic","વિગત","Departments","Date","Accept Info","Status"];
 function dlSugHistExcel(){ downloadCSV("Suggestion_History.csv",[sgHead,...sugHistData()]); } function dlSugHistPDF(){ printPDF("Suggestion History",sgHead,sugHistData()); }
 function dlReportExcel(){ if(!reportKey) return; let {lbl,part}=reportKey; let recv=hist.filter(h=>h.action==="Receive"&&h.to===lbl&&(h.toPart||"Main")===part); let chalu=[],ok=[]; recv.forEach(h=>{ let live=data.find(d=>d.id===h.id&&d.status==="Received"&&d.to===lbl); if(live) chalu.push([live.item,live.carat,live.nang,live.pis,h.from,live.manager||"—",live.recvAt||"",live.dstat||"Chalu"]); else ok.push([h.item,h.carat,h.nang,h.pis,h.from,h.manager||"—",h.recvAt||"","OK"]); }); let rows=[[lbl+" Report",now()],[""],["🔵 CHALU"],["Kapan","Carat","Nang","Pis","From","Manager","Date","Status"],...chalu,[""],["✅ OK"],["Kapan","Carat","Nang","Pis","From","Manager","Date","Status"],...ok]; downloadCSV(lbl+"_Report.csv",rows); }
 function dlReportPDF(){ if(!reportKey) return; let {lbl,part}=reportKey; let recv=hist.filter(h=>h.action==="Receive"&&h.to===lbl&&(h.toPart||"Main")===part); let ch="",ok=""; recv.forEach(h=>{ let live=data.find(d=>d.id===h.id&&d.status==="Received"&&d.to===lbl); if(live) ch+=`<tr><td>${live.item}</td><td>${live.carat}</td><td>${live.nang}</td><td>${live.pis}</td><td>${h.from}</td><td>${live.dstat||"Chalu"}</td></tr>`; else ok+=`<tr><td>${h.item}</td><td>${h.carat}</td><td>${h.nang}</td><td>${h.pis}</td><td>${h.from}</td><td>OK</td></tr>`; }); let w=window.open("","_blank"); w.document.write(`<html><head><title>${lbl}</title><style>body{font-family:Arial;padding:20px}h2,h3{color:#2c3e50}table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px}th,td{border:1px solid #999;padding:6px}th{background:#34495e;color:#fff}</style></head><body><h2>📋 ${lbl} Report</h2><p>${now()}</p><h3>🔵 Chalu</h3><table><thead><tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>From</th><th>Status</th></tr></thead><tbody>${ch}</tbody></table><h3>✅ OK</h3><table><thead><tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>From</th><th>Status</th></tr></thead><tbody>${ok}</tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>`); w.document.close(); }
 
+function dl4PStockExcel(){ let list=data.filter(d=>d.status==="Received"&&(d.to===STOCK_DEPT||d.to===STOCK_HOLD)); downloadCSV("4P_Stock.csv",[["Kapan","Carat","Nang","Pis","From","Date"],...list.map(d=>[d.item,d.carat,d.nang,d.pis,d.from,d.sentAt])]); }
+function dl4PStockPDF(){ let list=data.filter(d=>d.status==="Received"&&(d.to===STOCK_DEPT||d.to===STOCK_HOLD)); printPDF("4P Stock Kapans",["Kapan","Carat","Nang","Pis","From","Date"],list.map(d=>[d.item,d.carat,d.nang,d.pis,d.from,d.sentAt])); }
+function dlProcessFlowExcel(){ let isDept=cur.role!=="admin"&&cur.role!=="stock"; let jDept=isDept?cur.dept:null; let list=jangads.filter(j=>j.status==="chalu"&&(!isDept||j.dept===jDept)); let groups={}; list.forEach(j=>{ let eid=j.entryId||j.id; if(!groups[eid]) groups[eid]={kapan:j.kapan,items:[]}; groups[eid].items.push(j); }); let rows=[]; Object.keys(groups).forEach(eid=>{ let g=groups[eid]; g.items.forEach(j=>{ let cs=j.steps[j.currentStep]; let st=cs.status==="done"?"✅ Done":"⏳ "+cs.process; rows.push([j.kapan,j.no||"",j.nang,j.vajan,j.pis,st,j.dept]); }); }); downloadCSV("Process_Flow.csv",[["Kapan","Jangad#","Nang","Vajan","Pis","Current Step","Dept"],...rows]); }
+function dlProcessFlowPDF(){ let isDept=cur.role!=="admin"&&cur.role!=="stock"; let jDept=isDept?cur.dept:null; let list=jangads.filter(j=>j.status==="chalu"&&(!isDept||j.dept===jDept)); let groups={}; list.forEach(j=>{ let eid=j.entryId||j.id; if(!groups[eid]) groups[eid]={kapan:j.kapan,items:[]}; groups[eid].items.push(j); }); let rows=[]; Object.keys(groups).forEach(eid=>{ let g=groups[eid]; g.items.forEach(j=>{ let cs=j.steps[j.currentStep]; let st=cs.status==="done"?"✅ Done":"⏳ "+cs.process; rows.push([j.kapan,j.no||"",j.nang,j.vajan,j.pis,st,j.dept]); }); }); printPDF("Process Flow",["Kapan","Jangad#","Nang","Vajan","Pis","Current Step","Dept"],rows); }
+function dlActiveUchakExcel(){ let isDept=cur.role!=="admin"&&cur.role!=="stock"; let jDept=isDept?cur.dept:null; let list=jangads.filter(j=>j.status==="chalu"&&(!isDept||j.dept===jDept)); let groups={}; list.forEach(j=>{ let eid=j.entryId||j.id; if(!groups[eid]) groups[eid]={kapan:j.kapan,vigat:j.vigat||"",createdAt:j.createdAt||"",items:[]}; groups[eid].items.push(j); }); let rows=[]; Object.keys(groups).forEach(eid=>{ let g=groups[eid]; let procs=[...new Set(g.items.map(j=>j.steps[j.currentStep].process))].join(", "); let depts=[...new Set(g.items.map(j=>j.dept))].join(", "); g.items.forEach(j=>{ let cs=j.steps[j.currentStep]; let st=cs.status==="done"?"✅ Done":"⏳ "+cs.process; rows.push([g.kapan,g.vigat,"#"+j.no,j.nang,j.vajan,j.pis,st,procs,depts,g.createdAt]); }); }); downloadCSV("Active_Uchak.csv",[["Kapan","Vigat","Jangad","Nang","Vajan","Pis","Step","Processes","Dept","Created"],...rows]); }
+function dlActiveUchakPDF(){ let isDept=cur.role!=="admin"&&cur.role!=="stock"; let jDept=isDept?cur.dept:null; let list=jangads.filter(j=>j.status==="chalu"&&(!isDept||j.dept===jDept)); let groups={}; list.forEach(j=>{ let eid=j.entryId||j.id; if(!groups[eid]) groups[eid]={kapan:j.kapan,vigat:j.vigat||"",createdAt:j.createdAt||"",items:[]}; groups[eid].items.push(j); }); let rows=[]; Object.keys(groups).forEach(eid=>{ let g=groups[eid]; g.items.forEach(j=>{ let cs=j.steps[j.currentStep]; let st=cs.status==="done"?"✅ Done":"⏳ "+cs.process; rows.push([g.kapan,g.vigat,"#"+j.no,j.nang,j.vajan,j.pis,st,g.createdAt]); }); }); printPDF("Active Uchak",["Kapan","Vigat","Jangad","Nang","Vajan","Pis","Step","Created"],rows); }
 function showMgrReport(){
   let el=document.getElementById("mgrReportBody");
   if(!el) return;
@@ -2727,7 +2839,7 @@ function showUchakReadyList(){
   let el=document.getElementById("uchakReadyList"); if(!el) return;
   let isDept=cur.role!=="admin"&&cur.role!=="stock";
   let jDept=isDept?cur.dept:null;
-  let ready=jangads.filter(j=>j.status==="chalu"&&j.steps.every(s=>s.status==="done")&&(!isDept||j.dept===jDept));
+  let ready=jangads.filter(j=>j.status==="chalu"&&j.steps.every(s=>s.status==="done")&&(isDept?j.dept===jDept:j.dept==="Stock"));
   if(!ready.length){
     el.innerHTML=`<div style="color:#27ae60;font-size:13px;padding:8px;background:#d4efdf;border-radius:6px">✅ કોઈ pending entry નથી — બધું OK છે!</div>`;
     return;
