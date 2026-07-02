@@ -291,7 +291,7 @@
 </div>
 
 <div id="app" class="hide">
-  <div class="top"><span>💎 Diamond Stock System</span><span style="display:flex;align-items:center;gap:12px"><span class="notifbell" onclick="showPage('notif');showNotifPage()" id="notifBell">🔔<span class="notifcount hide" id="notifCount">0</span></span> <span onclick="toggleDarkMode()" style="cursor:pointer" id="darkToggle">🌙</span> <span onclick="undoAction()" id="undoBtn2" style="cursor:pointer;opacity:0.5" title="Undo (Ctrl+Z)">↩</span><span onclick="redoAction()" id="redoBtn2" style="cursor:pointer;opacity:0.5" title="Redo (Ctrl+Y)">↪</span> <span onclick="toggleViewMode()" style="cursor:pointer" id="viewToggle">📱</span> <b id="who"></b> | <a href="#" onclick="logout()" style="color:#fff;">Logout</a></span></div>
+  <div class="top"><span>💎 Diamond Stock System</span><span style="display:flex;align-items:center;gap:12px"><span onclick="manualRefresh()" style="cursor:pointer" id="refreshBtn" title="Refresh">🔄</span> <span class="notifbell" onclick="showPage('notif');showNotifPage()" id="notifBell">🔔<span class="notifcount hide" id="notifCount">0</span></span> <span onclick="toggleDarkMode()" style="cursor:pointer" id="darkToggle">🌙</span> <span onclick="undoAction()" id="undoBtn2" style="cursor:pointer;opacity:0.5" title="Undo (Ctrl+Z)">↩</span><span onclick="redoAction()" id="redoBtn2" style="cursor:pointer;opacity:0.5" title="Redo (Ctrl+Y)">↪</span> <span onclick="toggleViewMode()" style="cursor:pointer" id="viewToggle">📱</span> <b id="who"></b> | <a href="#" onclick="logout()" style="color:#fff;">Logout</a></span></div>
   <div class="navbar" id="navbar"></div>
   <div class="undobar hide" id="undoBar" style="display:none!important"><button onclick="undoAction()" id="undoBtn" disabled>↩ Undo</button><button onclick="redoAction()" id="redoBtn" disabled>↪ Redo</button></div>
 
@@ -674,6 +674,20 @@
           <button onclick="changeJangadPassUI()" style="background:#e67e22;width:100%;margin:0">🔐 Jangad Password સેટ કરો</button>
         </div>
 
+        <!-- Kapan Password Change Card -->
+        <div style="flex:1;min-width:260px;background:#fff;border:2px solid #2980b9;border-radius:10px;padding:16px">
+          <h3 style="margin:0 0 10px;color:#2980b9;font-size:15px">🔒 Kapan Edit/Delete Password</h3>
+          <p style="font-size:12px;color:#888;margin:0 0 8px">Kapan Edit/Delete વખતે આ password પૂછાય છે. Set ન હોય તો Admin password વપરાય.</p>
+          <label style="font-size:13px">જૂનો Password (Admin or Kapan)</label>
+          <div class="passwrap"><input type="password" id="kpOld" placeholder="જૂનો Password" style="margin-bottom:8px"><span class="togglepass" onclick="toggleFieldPass('kpOld')" style="top:40%">👁️</span></div>
+          <label style="font-size:13px">નવો Kapan Password</label>
+          <div class="passwrap"><input type="password" id="kpNew" placeholder="નવો Password" style="margin-bottom:8px"><span class="togglepass" onclick="toggleFieldPass('kpNew')" style="top:40%">👁️</span></div>
+          <label style="font-size:13px">નવો Password ફરી લખો</label>
+          <div class="passwrap"><input type="password" id="kpNew2" placeholder="Confirm Password" style="margin-bottom:10px"><span class="togglepass" onclick="toggleFieldPass('kpNew2')" style="top:40%">👁️</span></div>
+          <div id="kpMsg" style="font-size:12px;min-height:18px;margin-bottom:6px"></div>
+          <button onclick="changeKapanPassUI()" style="background:#2980b9;width:100%;margin:0">🔒 Kapan Password સેટ કરો</button>
+        </div>
+
 
         <!-- Show Current Passwords -->
         <div style="flex:1;min-width:260px;background:#fff;border:2px solid #27ae60;border-radius:10px;padding:16px">
@@ -687,6 +701,7 @@
             <div style="background:#f0faf4;border:1px solid #27ae60;border-radius:8px;padding:10px;font-size:13px">
               <div style="margin-bottom:6px"><b style="color:#2c3e50">👑 Admin Password:</b> <span id="cpAdmin" style="font-family:monospace;background:#e8f8f0;padding:2px 8px;border-radius:4px;color:#1a7a4a"></span></div>
               <div style="margin-bottom:6px"><b style="color:#2c3e50">🔐 Jangad Password:</b> <span id="cpJangad" style="font-family:monospace;background:#e8f8f0;padding:2px 8px;border-radius:4px;color:#1a7a4a"></span></div>
+              <div style="margin-bottom:6px"><b style="color:#2c3e50">🔒 Kapan Password:</b> <span id="cpKapan" style="font-family:monospace;background:#e8f8f0;padding:2px 8px;border-radius:4px;color:#1a7a4a"></span></div>
               <hr style="margin:8px 0;border-color:#c8e6c9">
               <b style="color:#2c3e50;font-size:12px">🏢 બધા Users:</b>
               <div id="cpUsers" style="margin-top:6px"></div>
@@ -918,6 +933,7 @@ uchak.forEach(u=>{ if(!u.dept) u.dept="ઉચક"; if(!u.nextOpts) u.nextOpts=[]
 let jangads = JSON.parse(localStorage.getItem("jangads") || "[]");
 let jangadCounter = parseInt(localStorage.getItem("jangadCounter") || "0");
 let jangadEditPass = localStorage.getItem("jangadEditPass") || "";
+let kapanEditPass = localStorage.getItem("kapanEditPass") || "";
 // Migration: ensure all jangads have depts, deptIndex, tag, and entryId
 jangads.forEach(j=>{
   if(!j.depts){ j.depts=[j.dept||"ઉચક"]; j.deptIndex=0; }
@@ -955,7 +971,7 @@ function save(){
     localStorage.setItem("sugs",JSON.stringify(sugs)); localStorage.setItem("labels",JSON.stringify(labels));
     localStorage.setItem("managers",JSON.stringify(managers)); localStorage.setItem("dataentrys",JSON.stringify(dataentrys));
     localStorage.setItem("dstatus",JSON.stringify(dstatus)); localStorage.setItem("fourP",JSON.stringify(fourP));
-    localStorage.setItem("uchak",JSON.stringify(uchak)); localStorage.setItem("uchakProcesses",JSON.stringify(uchakProcesses)); localStorage.setItem("uchakRates",JSON.stringify(uchakRates)); localStorage.setItem("deptProcesses",JSON.stringify(deptProcesses)); localStorage.setItem("deptRates",JSON.stringify(deptRates)); localStorage.setItem("jangads",JSON.stringify(jangads)); localStorage.setItem("jangadCounter",String(jangadCounter)); if(jangadEditPass) localStorage.setItem("jangadEditPass",jangadEditPass);
+    localStorage.setItem("uchak",JSON.stringify(uchak)); localStorage.setItem("uchakProcesses",JSON.stringify(uchakProcesses)); localStorage.setItem("uchakRates",JSON.stringify(uchakRates)); localStorage.setItem("deptProcesses",JSON.stringify(deptProcesses)); localStorage.setItem("deptRates",JSON.stringify(deptRates)); localStorage.setItem("jangads",JSON.stringify(jangads)); localStorage.setItem("jangadCounter",String(jangadCounter)); if(jangadEditPass) localStorage.setItem("jangadEditPass",jangadEditPass); if(kapanEditPass) localStorage.setItem("kapanEditPass",kapanEditPass);
   }catch(e){ console.warn("localStorage quota exceeded",e); toast("⚠️ Local storage full — Firebase backup only.","warning"); }
   if(window.cloudSave){ window.cloudSave({users,stock:data,hist,reps,sugs,labels,managers,dataentrys,dstatus,fourP,uchak,uchakProcesses,uchakRates,deptProcesses,deptRates,jangads,jangadCounter,updated:nowMs,sugAll,loginHistory:JSON.parse(localStorage.getItem("loginHistory")||"[]")}); }
 }
@@ -996,6 +1012,24 @@ function openApp(){
   buildNav();
 }
 function logout(){ endSession(); location.reload(); }
+function manualRefresh(){
+  let btn=document.getElementById("refreshBtn");
+  if(btn) btn.style.transform="rotate(360deg)", btn.style.transition="transform 0.6s";
+  if(window.cloudLoad){
+    window.cloudLoad(function(d){
+      if(d) applyCloudData(d);
+      refresh();
+      buildNav();
+      toast("🔄 Refreshed!","success");
+      if(btn) setTimeout(()=>{ btn.style.transition=""; btn.style.transform=""; },600);
+    });
+  } else {
+    refresh();
+    buildNav();
+    toast("🔄 Refreshed!","success");
+    if(btn) setTimeout(()=>{ btn.style.transition=""; btn.style.transform=""; },600);
+  }
+}
 
 // === TOAST NOTIFICATIONS ===
 function toast(msg,type){ let c=document.getElementById("toastContainer"); let t=document.createElement("div"); t.className="toast toast-"+(type||"info"); t.textContent=msg; c.appendChild(t); setTimeout(()=>{ t.style.opacity="0"; t.style.transition="opacity 0.3s"; setTimeout(()=>t.remove(),300); },3000); }
@@ -1163,6 +1197,34 @@ function changeJangadPassUI(){
   toast("✅ Jangad Password સેટ!","success");
 }
 
+function getKapanEditPass(){
+  if(kapanEditPass) return kapanEditPass;
+  let adm=users.find(u=>u.role==="admin");
+  return adm?adm.pass:"admin123";
+}
+function verifyKapanPass(promptText){
+  let correct=getKapanEditPass();
+  let entered=prompt(promptText||"🔒 Kapan Edit/Delete Password:");
+  if(entered===null) return false;
+  if(entered.trim()!==correct){ toast("❌ ખોટો Password!","error"); return false; }
+  return true;
+}
+function changeKapanPassUI(){
+  let oldV=(document.getElementById("kpOld").value||"").trim();
+  let newV=(document.getElementById("kpNew").value||"").trim();
+  let new2V=(document.getElementById("kpNew2").value||"").trim();
+  let msg=document.getElementById("kpMsg");
+  let correct=getKapanEditPass();
+  if(!oldV||!newV||!new2V){ msg.style.color="#e74c3c"; msg.textContent="❌ બધા fields ભરો!"; return; }
+  if(oldV!==correct){ msg.style.color="#e74c3c"; msg.textContent="❌ જૂનો Password ખોટો!"; return; }
+  if(newV!==new2V){ msg.style.color="#e74c3c"; msg.textContent="❌ નવો Password match નથી!"; return; }
+  if(newV.length<4){ msg.style.color="#e74c3c"; msg.textContent="❌ ઓછામા ઓછા 4 characters!"; return; }
+  kapanEditPass=newV; localStorage.setItem("kapanEditPass",kapanEditPass);
+  document.getElementById("kpOld").value=""; document.getElementById("kpNew").value=""; document.getElementById("kpNew2").value="";
+  msg.style.color="#27ae60"; msg.textContent="✅ Kapan Password સફળ સેટ!";
+  toast("✅ Kapan Password સેટ!","success");
+}
+
 function showCurrentPasswords(){
   let a=users.find(u=>u.role==="admin");
   let entered=(document.getElementById("showPassVerify").value||"").trim();
@@ -1175,6 +1237,8 @@ function showCurrentPasswords(){
   // Jangad pass
   let jp=jangadEditPass||("(Admin password જ વપરાય: "+a.pass+")");
   document.getElementById("cpJangad").textContent=jp;
+  let kp=kapanEditPass||("(Admin password જ વપરાય: "+a.pass+")");
+  document.getElementById("cpKapan").textContent=kp;
   // All users
   let html=users.filter(u=>u.id).map(u=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #e8f4f0;font-size:12px">
@@ -1370,7 +1434,7 @@ function fillPickDropdown(){ if(cur.role!=="dept") return; let s=normKapan(docum
 function fillPick(){ let i=document.getElementById("pick").value; if(i===""){ ["dCarat","dNang","dPis","dTag"].forEach(x=>document.getElementById(x).value=""); return; } let d=data[i]; document.getElementById("dCarat").value=d.carat; document.getElementById("dNang").value=d.nang; document.getElementById("dPis").value=d.pis; document.getElementById("dTag").value=d.tag||"regular"; }
 function forwardItem(){ let i=document.getElementById("pick").value; if(i===""){ toast("કાપણ પસંદ કરો!","error"); return; } let mgr=document.getElementById("dMgr").value.trim(),dent=document.getElementById("dDent").value.trim(); if(!mgr||!dent){ toast("Manager અને Data Entry ફરજિયાત!","error"); return; }     let src=data[i]; let tag=document.getElementById("dTag").value,note=document.getElementById("dNote").value.trim(); let lbl=myLbl(); let id=uid(); let hops=nextHops(src); let rec={id,item:src.item,carat:src.carat,nang:src.nang,pis:src.pis,note,tag,from:lbl,fromPart:src.toPart||"Main",to:STOCK_DEPT,toPart:"Main",label:src.label||"",manager:mgr,dataentry:dent,fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0,hops}; let removed={...data[i],idx:i}; data.push(rec); hist.push({...rec,action:"Forward"}); data.splice(i,1); pushUndo({undo:()=>{ data.splice(data.length-1,1); data.splice(removed.idx,0,removed); hist=hist.filter(h=>h.id!==rec.id); save(); refresh(); },redo:()=>{ data.push(rec); hist.push({...rec,action:"Forward"}); data.splice(removed.idx,1); save(); refresh(); }}); ["dMgr","dDent","dNote"].forEach(x=>document.getElementById(x).value=""); save(); refresh(); addNotif("send","Kapan Forwarded",lbl+" → Stock: "+src.item); checkHopWarn(hops,src.item); toast("✅ Stock ને મોકલાઈ ગયું!","success"); }
 function receive(idx){ if(data[idx].status==="Received"){ toast("પહેલેથી Receive!","warning"); return; } data[idx].status="Received"; data[idx].recvAt=now(); data[idx].recvTime=Date.now(); hist.push({...data[idx],action:"Receive"}); save(); refresh(); toast("📥 Received!","success"); }
-function del(idx){ if(cur.role!=="admin"){ toast("⚠️ Delete ફક્ત Admin!","error"); return; } let pwd=prompt("🔑 Delete કરવા માટે Admin Password નાખો:"); if(pwd===null) return; let a=users.find(u=>u.role==="admin"); if(!a||pwd.trim()!==a.pass){ toast("❌ ખોટો Password!","error"); return; } let item={...data[idx]}; data.splice(idx,1); pushUndo({undo:()=>{ data.splice(idx,0,item); save(); refresh(); },redo:()=>{ data.splice(idx,1); save(); refresh(); }}); save(); refresh(); toast("🗑️ Deleted","info"); }
+function del(idx){ if(cur.role!=="admin"){ toast("⚠️ Delete ફક્ત Admin!","error"); return; } if(!verifyKapanPass("🔒 Kapan Delete કરવા માટે Password નાખો:")) return; let item={...data[idx]}; data.splice(idx,1); pushUndo({undo:()=>{ data.splice(idx,0,item); save(); refresh(); },redo:()=>{ data.splice(idx,1); save(); refresh(); }}); save(); refresh(); toast("🗑️ Deleted","info"); }
 function setFinal(idx,val){ if(val==="4P"){ let d=data[idx]; fourP.push({item:d.item,carat:d.carat,nang:d.nang,pis:d.pis,from:d.to,movedAt:now(),movedMs:Date.now()}); hist.push({...d,action:"4P",sentAt:now(),sentMs:Date.now()}); data.splice(idx,1); save(); refresh(); toast("✅ 4P માં ગયું!","success"); return; } data[idx].fin=val; save(); refresh(); }
 
 function myStatuses(){ let lbl=(cur.role==="dept")?myLbl():STOCK_DEPT; return dstatus[lbl]||[]; }
@@ -1394,9 +1458,7 @@ function showEditForm(idx){
 function saveEdit(){
   let idx=parseInt(document.getElementById("editId").value);
   let d=data[idx]; if(!d) return;
-  let pwd=prompt("🔑 સંપાદન સાચવવા માટે તમારો Password નાખો:");
-  if(pwd===null) return;
-  if(!cur||pwd.trim()!==cur.pass){ toast("❌ ખોટો Password!","error"); return; }
+  if(!verifyKapanPass("🔒 Kapan Edit સાચવવા માટે Password નાખો:")) return;
   let old={item:d.item,carat:d.carat,nang:d.nang,pis:d.pis,note:d.note,tag:d.tag};
   d.item=document.getElementById("editItem").value.trim();
   d.carat=parseFloat(document.getElementById("editCarat").value)||0;
