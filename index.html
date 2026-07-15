@@ -16,6 +16,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
   import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
   const firebaseConfig = {
     apiKey: "AIzaSyADKss0WogDYUxD9hsM5AhzM2HVTHRBKz0",
     authDomain: "diamond-stock-b82c0.firebaseapp.com",
@@ -28,7 +29,18 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const dbRef = ref(db, "stockdata/main");
-  
+  const auth = getAuth(app);
+  let authReady = false;
+  let authReadyResolve;
+  const authReadyPromise = new Promise((res) => { authReadyResolve = res; });
+  onAuthStateChanged(auth, (user) => {
+    if (user) { authReady = true; authReadyResolve(); }
+  });
+  signInAnonymously(auth).catch((e) => {
+    console.error("Anonymous sign-in failed", e);
+    alert("Firebase Auth Error: " + e.message);
+  });
+
   const originalDateNow = Date.now;
   let serverTimeOffset = 0;
   onValue(ref(db, ".info/serverTimeOffset"), (s) => {
@@ -44,6 +56,7 @@
     if (saveTimeout) clearTimeout(saveTimeout);
     saveTimeout = setTimeout(async () => {
       try {
+        if (!authReady) await authReadyPromise;
         await set(dbRef, p);
       } catch(e) {
         console.error("Save err", e);
@@ -53,7 +66,7 @@
   };
   
   window.cloudListen = function(cb){ onValue(dbRef, (s)=>{ if(s.exists()) cb(s.val()); }); };
-  window.cloudLoad = async function(cb){ try{ let s=await get(dbRef); cb(s.exists()?s.val():null); }catch(e){ cb(null); } };
+  window.cloudLoad = async function(cb){ try{ if (!authReady) await authReadyPromise; let s=await get(dbRef); cb(s.exists()?s.val():null); }catch(e){ cb(null); } };
   window.firebaseReady = true;
   console.log("✅ Firebase જોડાઈ ગયું!");
 </script>
