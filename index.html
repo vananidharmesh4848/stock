@@ -16,7 +16,6 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
   import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
-  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
   const firebaseConfig = {
     apiKey: "AIzaSyADKss0WogDYUxD9hsM5AhzM2HVTHRBKz0",
     authDomain: "diamond-stock-b82c0.firebaseapp.com",
@@ -29,18 +28,7 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const dbRef = ref(db, "stockdata/main");
-  const auth = getAuth(app);
-  let authReady = false;
-  let authReadyResolve;
-  const authReadyPromise = new Promise((res) => { authReadyResolve = res; });
-  onAuthStateChanged(auth, (user) => {
-    if (user) { authReady = true; authReadyResolve(); }
-  });
-  signInAnonymously(auth).catch((e) => {
-    console.error("Anonymous sign-in failed", e);
-    alert("Firebase Auth Error: " + e.message);
-  });
-
+  
   const originalDateNow = Date.now;
   let serverTimeOffset = 0;
   onValue(ref(db, ".info/serverTimeOffset"), (s) => {
@@ -56,7 +44,6 @@
     if (saveTimeout) clearTimeout(saveTimeout);
     saveTimeout = setTimeout(async () => {
       try {
-        if (!authReady) await authReadyPromise;
         await set(dbRef, p);
       } catch(e) {
         console.error("Save err", e);
@@ -66,7 +53,7 @@
   };
   
   window.cloudListen = function(cb){ onValue(dbRef, (s)=>{ if(s.exists()) cb(s.val()); }); };
-  window.cloudLoad = async function(cb){ try{ if (!authReady) await authReadyPromise; let s=await get(dbRef); cb(s.exists()?s.val():null); }catch(e){ cb(null); } };
+  window.cloudLoad = async function(cb){ try{ let s=await get(dbRef); cb(s.exists()?s.val():null); }catch(e){ cb(null); } };
   window.firebaseReady = true;
   console.log("✅ Firebase જોડાઈ ગયું!");
 </script>
@@ -313,7 +300,7 @@
     <div class="box schbox">
       <h2>🔍 Kapan Search & Filter</h2>
       <div class="row">
-        <div><label>🔍 Kapan</label><input id="fSearch" oninput="onSearchInput()" onkeydown="if(event.key==='Enter'){onKapanEnter()}" placeholder="Kapan ટાઈપ કરો"></div>
+        <div><label>🔍 Kapan</label><input id="fSearch" oninput="onSearchInput()" onfocus="onSearchInput()" onkeydown="if(event.key==='Enter'){onKapanEnter()}" placeholder="Kapan ટાઈપ કરો"></div>
         <div><label>Tag</label><select id="fTag" onchange="refresh()"><option value="">— બધા —</option><option value="urgent">🔴 Urgent</option><option value="agal">🟡 Agal</option><option value="regular">🟢 Regular</option></select></div>
         <div id="fStatusDiv"><label>Status</label><select id="fStatus" onchange="refresh()"><option value="">— બધા —</option><option value="Pending">⏳ Transit</option><option value="Received">🔵 Chalu</option></select></div>
         <div id="fDeptDiv"><label>Department</label><select id="fDept" onchange="refresh()"></select></div>
@@ -730,11 +717,11 @@
       <h3>⚙️ Admin Settings</h3>
       <div class="row">
         <div style="flex:1;min-width:250px">
-          <h4 style="margin:8px 0 4px">🔒 Security</h4>
+          <h4 style="margin:8px 0 4px">🔒 Security (All Users)</h4>
           <label>Session Timeout (minutes)</label><input id="setSessionTimeout" type="number" min="1" max="480" value="30" onchange="saveAdminSettings()">
-          <label>Max Login Attempts (0=unlimited)</label><input id="setMaxAttempts" type="number" min="0" max="20" value="5" onchange="saveAdminSettings()">
-          <label>Lockout Duration (seconds)</label><input id="setLockoutDuration" type="number" min="10" max="3600" value="300" onchange="saveAdminSettings()">
-          <label><input type="checkbox" id="setAutoLogout" checked onchange="saveAdminSettings()"> Enable Auto-Logout</label>
+          <label>Max Login Attempts — All Users (0=unlimited)</label><input id="setMaxAttempts" type="number" min="0" max="20" value="5" onchange="saveAdminSettings()">
+          <label>Lockout Duration — All Users (seconds)</label><input id="setLockoutDuration" type="number" min="10" max="3600" value="300" onchange="saveAdminSettings()">
+          <label><input type="checkbox" id="setAutoLogout" checked onchange="saveAdminSettings()"> Enable Auto-Logout (All Users)</label>
         </div>
         <div style="flex:1;min-width:250px">
           <h4 style="margin:8px 0 4px">⌨️ Keyboard Shortcuts</h4>
@@ -868,7 +855,7 @@
         <div><label>📅 થી</label><input id="fphFrom" type="date" onchange="show4PHistory()"></div>
         <div><label>📅 સુધી</label><input id="fphTo" type="date" onchange="show4PHistory()"></div>
         <div style="display:flex;align-items:flex-end"><button onclick="show4PHistory()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div>
-        <div style="display:flex;align-items:flex-end"><button onclick="document.getElementById('fphSearch').value='';document.getElementById('fphFrom').value='';document.getElementById('fphTo').value='';show4PHistory()" style="background:#7f8c8d;width:100%">🔄</button></div>
+        <div style="display:flex;align-items:flex-end"><button onclick="clear4PHistory()" style="background:#7f8c8d;width:100%">🔄</button></div>
       </div>
       <div style="margin-bottom:10px">
         <button class="sugcat" onclick="dateQuick('today','fphFrom,fphTo',show4PHistory)" style="background:#2980b9;font-size:12px;padding:4px 10px;margin:2px">Today</button>
@@ -1023,6 +1010,8 @@ function openApp(){
   initJangadEntry(); showJangadInbox();
   if(isFull){ partRows=[]; addPartRow(); addPartRow(); }
   buildNav();
+  document.addEventListener("contextmenu",function(e){ e.preventDefault(); });
+  document.addEventListener("keydown",function(e){ if(e.key==="F12"||(e.ctrlKey&&e.shiftKey&&["I","J","C"].includes(e.key.toUpperCase()))||(e.ctrlKey&&e.key==="U")){ e.preventDefault(); e.stopPropagation(); return false; } });
 }
 function logout(){ endSession(); location.reload(); }
 function manualRefresh(){
@@ -1324,8 +1313,8 @@ function fillHistDept(){ if(document.getElementById("hDept")) document.getElemen
 function fillRepDeptFilter(){ if(document.getElementById("rhDept")) document.getElementById("rhDept").innerHTML=`<option value="">— બધા —</option><option value="${STOCK_DEPT}">Stock</option>`+deptOptsList(""); }
 function fillDashStatDept(){ if(document.getElementById("dashStatDept")) document.getElementById("dashStatDept").innerHTML=deptOptsList(`<option value="">— બધા Office —</option>`); }
 function clearFilter(){ ["fSearch","fTag","fStatus"].forEach(x=>document.getElementById(x).value=""); if(document.getElementById("fDept")) document.getElementById("fDept").value=""; closeKapanLog(); document.getElementById("searchResultBox").classList.add("hide"); refresh(); }
-function onSearchInput(){ let s=(document.getElementById("fSearch").value||"").trim(); if(s.length>=2){ showKapanLog(s); showSearchResults(s); } else { closeKapanLog(); document.getElementById("searchResultBox").classList.add("hide"); } refresh(); }
-function onKapanEnter(){ let s=(document.getElementById("fSearch").value||"").trim(); if(s.length>=2){ showKapanLog(s); showSearchResults(s); } else { closeKapanLog(); document.getElementById("searchResultBox").classList.add("hide"); } refresh(); }
+function onSearchInput(){ let s=(document.getElementById("fSearch").value||"").trim(); if(s.length>=1){ showKapanLog(s); showSearchResults(s); } else { closeKapanLog(); document.getElementById("searchResultBox").classList.add("hide"); } refresh(); }
+function onKapanEnter(){ let s=(document.getElementById("fSearch").value||"").trim(); if(s.length>=1){ showKapanLog(s); showSearchResults(s); } else { closeKapanLog(); document.getElementById("searchResultBox").classList.add("hide"); } refresh(); }
 function showSearchResults(kapan){
   let kw=normKapan(kapan);
   let found=[];
@@ -1415,8 +1404,8 @@ function showKapanLog(kapan){
   document.getElementById("kapanLogBox").classList.remove("hide");
   document.getElementById("kapanLogBox").scrollIntoView({behavior:"smooth",block:"start"});
 }
-function clearHist(){ ["hSearch","hFrom","hTo"].forEach(x=>document.getElementById(x).value=""); document.getElementById("hDept").value=""; document.getElementById("history").innerHTML=`<tr><td colspan="12">Filters clear — ▶ લોડ કરો બટન દબાવો</td></tr>`; }
-function clearDeptHist(){ ["dhSearch","dhFrom","dhTo"].forEach(x=>document.getElementById(x).value=""); document.getElementById("deptHist").innerHTML=`<tr><td colspan="7" style="text-align:center;color:#999">Filters clear — ▶ લોડ કરો બટન દબાવો</td></tr>`; }
+function clearHist(){ ["hSearch","hFrom","hTo"].forEach(x=>document.getElementById(x).value=""); document.getElementById("hDept").value=""; showHistory(); }
+function clearDeptHist(){ ["dhSearch","dhFrom","dhTo"].forEach(x=>document.getElementById(x).value=""); showDeptHist(); }
 function clearRepHist(){ ["rhSearch","rhFrom","rhTo"].forEach(x=>document.getElementById(x).value=""); document.getElementById("rhDept").value=""; showRepHist(); }
 function clearSugHist(){ ["sgFiltFrom","sgFiltTo"].forEach(x=>document.getElementById(x).value=""); if(document.getElementById("sgFiltDept")) document.getElementById("sgFiltDept").value=""; showSugHist(); }
 
@@ -1440,7 +1429,8 @@ function addPartRow(){ partRows.push("p"+Math.random().toString(36).slice(2,7));
 function delPartRow(rid){ if(partRows.length<=1) return; partRows=partRows.filter(x=>x!==rid); renderPartRows(true); }
 function renderPartRows(keepValues){ let vals={}; if(keepValues){ partRows.forEach(rid=>{ let ge=id=>{let e=document.getElementById(id);return e?e.value:"";}; vals[rid]={c:ge(rid+"_c"),n:ge(rid+"_n"),p:ge(rid+"_p"),tag:ge(rid+"_tag"),lbl:ge(rid+"_lbl"),note:ge(rid+"_note"),to:ge(rid+"_to")}; }); } let opts=destOptions(true); let lo=`<option value="">— Label —</option>`+labels.map(l=>`<option value="${l}">${l}</option>`).join(""); document.getElementById("partsBody").innerHTML=partRows.map(rid=>{ let v=vals[rid]||{};     return `<tr class="partrow"><td><input id="${rid}_c" type="number" step="0.01" value="${v.c||0}" oninput="updateSplitSum()" class="carat-inp" style="width:90px"></td><td><input id="${rid}_n" type="number" value="${v.n||0}" oninput="updateSplitSum()" class="nang-inp" style="width:100px"></td><td><input id="${rid}_p" type="number" value="${v.p||0}" oninput="updateSplitSum()" class="pis-inp" style="width:110px"></td><td><select id="${rid}_tag">${['urgent','agal','regular'].map(t=>`<option value="${t}" ${(v.tag||'regular')===t?'selected':''}>${t==='urgent'?'🔴':t==='agal'?'🟡':'🟢'}</option>`).join('')}</select></td><td><select id="${rid}_lbl">${lo.replace(`value="${v.lbl||''}"`,`value="${v.lbl||''}" selected`)}</select></td><td><input id="${rid}_note" placeholder="વિગત" value="${v.note||''}" style="width:100px"></td><td><select id="${rid}_to">${opts.replace(`value="${v.to||''}"`,`value="${v.to||''}" selected`)}</select></td><td><button class="del" onclick="delPartRow('${rid}')">✖</button></td></tr>`; }).join(""); updateSplitSum(); }
 function updateSplitSum(){ let tc=parseFloat(document.getElementById("spCarat").value)||0,tn=parseInt(document.getElementById("spNang").value)||0,tp=parseInt(document.getElementById("spPis").value)||0; let sc=0,sn=0,sp=0; partRows.forEach(rid=>{ sc+=parseFloat(document.getElementById(rid+"_c")?.value)||0; sn+=parseInt(document.getElementById(rid+"_n")?.value)||0; sp+=parseInt(document.getElementById(rid+"_p")?.value)||0; }); let ok=Math.abs(sc-tc)<0.001; document.getElementById("splitSum").innerHTML=`કુલ: ${tc.toFixed(2)}ct/${tn}n/${tp}p → ભાગ: <b style="color:${ok?'#27ae60':'#e74c3c'}">${sc.toFixed(2)}ct</b>/${sn}n/${sp}p ${ok?'✅':'⚠️'}`; }
-function doSplit(){ let i=document.getElementById("splitPick").value; if(i===""){ toast("કાપણ પસંદ કરો!","error"); return; } let src=data[i]; let tc=Number(src.carat); let parts=[]; let sc=0; for(let rid of partRows){ let c=parseFloat(document.getElementById(rid+"_c").value)||0,n=parseInt(document.getElementById(rid+"_n").value)||0,p=parseInt(document.getElementById(rid+"_p").value)||0; let tag=document.getElementById(rid+"_tag").value,lbl=document.getElementById(rid+"_lbl").value,note=document.getElementById(rid+"_note").value.trim(),tv=document.getElementById(rid+"_to").value; if(c===0&&n===0&&p===0) continue; let [to,toPart]=tv.split("|||"); parts.push({c,n,p,tag,lbl,note,to,toPart}); sc+=c; } if(parts.length<2){ toast("ઓછામાં ઓછા 2 ભાગ!","error"); return; } if(Math.abs(sc-tc)>0.001){ if(!confirm("Carat મેળ નથી. આગળ?")) return; }     parts.forEach((pt,k)=>{ let id=uid(); let nm=src.item+" (ભાગ "+(k+1)+(pt.lbl?" - "+pt.lbl:"")+")"; if(pt.to===STOCK_HOLD){ let rec={id,item:nm,carat:pt.c,nang:pt.n,pis:pt.p,note:pt.note,tag:pt.tag,from:STOCK_DEPT,fromPart:"Main",to:STOCK_HOLD,toPart:"Main",label:pt.lbl,manager:"",dataentry:"",fin:"",dstat:"",status:"Received",sentAt:now(),sentMs:Date.now(),recvAt:now(),recvTime:Date.now(),hops:nextHops(src)}; data.push(rec); hist.push({...rec,action:"Split-Hold"}); } else { let rec={id,item:nm,carat:pt.c,nang:pt.n,pis:pt.p,note:pt.note,tag:pt.tag,from:STOCK_DEPT,fromPart:"Main",to:pt.to,toPart:pt.toPart,label:pt.lbl,manager:"",dataentry:"",fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0,hops:nextHops(src)}; data.push(rec); hist.push({...rec,action:"Split-Send"}); } }); data.splice(i,1); partRows=[]; addPartRow(); addPartRow(); save(); refresh(); addNotif("send","Kapan Split",src.item+" → "+parts.length+" parts"); toast("✅ "+parts.length+" ભાગ પાડ્યા!","success"); }
+function doSplit(){ let i=document.getElementById("splitPick").value; if(i===""){ toast("કાપણ પસંદ કરો!","error"); return; } let src=data[i]; let tc=Number(src.carat); let parts=[]; let sc=0; for(let rid of partRows){ let c=parseFloat(document.getElementById(rid+"_c").value)||0,n=parseInt(document.getElementById(rid+"_n").value)||0,p=parseInt(document.getElementById(rid+"_p").value)||0; let tag=document.getElementById(rid+"_tag").value,lbl=document.getElementById(rid+"_lbl").value,note=document.getElementById(rid+"_note").value.trim(),tv=document.getElementById(rid+"_to").value; if(c===0&&n===0&&p===0) continue; let [to,toPart]=tv.split("|||"); parts.push({c,n,p,tag,lbl,note,to,toPart}); sc+=c; }   for(let pt of parts){ if(!pt.lbl){ toast("દરેક ભાગ માટે Label પસંદ કરવું ફરજિયાત છે!","error"); return; } }
+  if(parts.length<2){ toast("ઓછામાં ઓછા 2 ભાગ!","error"); return; } if(Math.abs(sc-tc)>0.001){ if(!confirm("Carat મેળ નથી. આગળ?")) return; }     parts.forEach((pt,k)=>{ let id=uid(); let nm=src.item+" (ભાગ "+(k+1)+(pt.lbl?" - "+pt.lbl:"")+")"; if(pt.to===STOCK_HOLD){ let rec={id,item:nm,carat:pt.c,nang:pt.n,pis:pt.p,note:pt.note,tag:pt.tag,from:STOCK_DEPT,fromPart:"Main",to:STOCK_HOLD,toPart:"Main",label:pt.lbl,manager:"",dataentry:"",fin:"",dstat:"",status:"Received",sentAt:now(),sentMs:Date.now(),recvAt:now(),recvTime:Date.now(),hops:nextHops(src)}; data.push(rec); hist.push({...rec,action:"Split-Hold"}); } else { let rec={id,item:nm,carat:pt.c,nang:pt.n,pis:pt.p,note:pt.note,tag:pt.tag,from:STOCK_DEPT,fromPart:"Main",to:pt.to,toPart:pt.toPart,label:pt.lbl,manager:"",dataentry:"",fin:"",dstat:"",status:"Pending",sentAt:now(),sentMs:Date.now(),recvAt:"",recvTime:0,hops:nextHops(src)}; data.push(rec); hist.push({...rec,action:"Split-Send"}); } }); data.splice(i,1); partRows=[]; addPartRow(); addPartRow(); save(); refresh(); addNotif("send","Kapan Split",src.item+" → "+parts.length+" parts"); toast("✅ "+parts.length+" ભાગ પાડ્યા!","success"); }
 
 function myReceived(){ let lbl=myLbl(); return data.map((d,idx)=>({...d,idx})).filter(d=>d.status==="Received"&&d.to===lbl); }
 function fillPickDropdown(){ if(cur.role!=="dept") return; let s=normKapan(document.getElementById("pickSearch").value); let list=myReceived().filter(d=>!s||normKapan(d.item).includes(s)); document.getElementById("pick").innerHTML=list.map(d=>`<option value="${d.idx}">${d.item} — ${d.carat}ct</option>`).join("")||`<option value="">— કોઈ નથી —</option>`; fillPick(); }
@@ -1504,6 +1494,7 @@ function showFinal(){ if(!(cur.role==="admin"||cur.role==="stock")) return; let 
 function showDashStat(){ if(!(cur.role==="admin"||cur.role==="stock")) return; let dp=document.getElementById("dashStatDept")?document.getElementById("dashStatDept").value:""; let list=data.filter(d=>d.status==="Received"&&(dp?d.to===dp:true)); let g={}; list.forEach(d=>{ let s=d.dstat||"— Status વગર —"; let key=d.to+"|||"+s; if(!g[key]) g[key]={off:d.to,stat:s,c:0,n:0,p:0,cnt:0}; g[key].c+=Number(d.carat); g[key].n+=Number(d.nang); g[key].p+=Number(d.pis); g[key].cnt++; }); let rows=Object.values(g).sort((a,b)=>a.off.localeCompare(b.off)).map(x=>`<tr><td><b>${x.off}</b></td><td><span class="statbadge">${x.stat}</span></td><td>${x.cnt}</td><td>${x.c.toFixed(2)}</td><td>${x.n}</td><td>${x.p}</td></tr>`).join(""); document.getElementById("dashStat").innerHTML=rows||`<tr><td colspan="6">કોઈ નથી</td></tr>`; }
 function show4P(){ if(!(cur.role==="admin"||cur.role==="stock")) return; let el=document.getElementById("fourPList"); if(!el) return; let s=normKapan(document.getElementById("fpSearch")?.value||""); let from=document.getElementById("fpFrom")?.value,to=document.getElementById("fpTo")?.value; let list=fourP.filter(f=>{ if(s&&!normKapan(f.item).includes(s)) return false; if(f.movedMs){ let iso=todayISO(f.movedMs); if(from&&iso<from) return false; if(to&&iso>to) return false; } return true; }).slice().reverse(); let tC=0,tN=0,tP=0; list.forEach(f=>{tC+=Number(f.carat);tN+=Number(f.nang);tP+=Number(f.pis);}); let rows=list.map(f=>`<tr><td>${f.item}</td><td>${f.carat}</td><td>${f.nang}</td><td>${f.pis}</td><td>${f.from}</td><td class="small">${f.movedAt}</td></tr>`).join(""); let tot=list.length?`<tr class="totrow"><td>🧮 Total (${list.length})</td><td>${tC.toFixed(2)}</td><td>${tN}</td><td>${tP}</td><td colspan="2">⬆</td></tr>`:""; el.innerHTML=tot+(rows||`<tr><td colspan="6">કોઈ 4P record નથી</td></tr>`); }
 function clear4P(){ ["fpSearch","fpFrom","fpTo"].forEach(x=>{ if(document.getElementById(x)) document.getElementById(x).value=""; }); show4P(); }
+function clear4PHistory(){ ["fphSearch","fphFrom","fphTo"].forEach(x=>{ let el=document.getElementById(x); if(el) el.value=""; }); show4PHistory(); }
 function dl4PExcel(){ let list=fourP.slice().reverse(); downloadCSV("4P_History.csv",[["Kapan","Carat","Nang","Pis","From","Date-Time"],...list.map(f=>[f.item,f.carat,f.nang,f.pis,f.from,f.movedAt])]); }
 function dl4PPDF(){ let list=fourP.slice().reverse(); printPDF("4P History",["Kapan","Carat","Nang","Pis","From","Date-Time"],list.map(f=>[f.item,f.carat,f.nang,f.pis,f.from,f.movedAt])); }
 
@@ -1574,7 +1565,7 @@ function restoreFrom4P(idx){
   toast("↩ Stock માં પાછું મૂકાઈ ગયું!","success");
 }
 function showDeptWise(){ if(!(cur.role==="admin"||cur.role==="stock")) return; let order={urgent:1,agal:2,regular:3}; let s=normKapan(document.getElementById("dwSearch").value); let dp=document.getElementById("dwDept").value;     let list=data.filter(d=>d.status==="Received").filter(d=>{ if(s&&!normKapan(d.item).includes(s)) return false; if(dp&&d.to!==dp) return false; return true; }); let g={}; list.forEach(d=>{ (g[d.to]=g[d.to]||[]).push(d); }); let rows=""; Object.keys(g).sort().forEach(dpto=>{ let recs=g[dpto]; recs.sort((a,b)=>order[a.tag]-order[b.tag]); let tC=0,tN=0,tP=0; recs.forEach(d=>{tC+=Number(d.carat);tN+=Number(d.nang);tP+=Number(d.pis);}); rows+=`<tr class="deptgrp-${deptColorIndex(dpto)}" style="font-weight:bold;font-size:15px"><td>🏬 ${dpto}</td><td>${tC.toFixed(2)}ct</td><td>${tN}</td><td>${tP}</td><td colspan="5">⬇ ${recs.length}</td></tr>`; recs.forEach(d=>{ let lb=d.label?`<span class="lblbadge">${d.label}</span> `:""; let st=d.dstat?`<span class="statbadge">${d.dstat}</span>`:"—"; rows+=`<tr class="${d.tag==='urgent'?'urgent-row':''}"><td style="padding-left:25px">${dpto}</td><td>${lb}${d.item} ${noteHTML(d.note)}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td><td><span class="tag ${d.tag}">${tagName(d.tag)}</span></td><td>${st}</td><td>${d.manager?`<span class="mgr">${d.manager}</span>`:"—"}</td><td class="hrs">${hoursSince(d.recvTime)}</td></tr>`; }); }); document.getElementById("deptWise").innerHTML=rows||`<tr><td colspan="9">કોઈ record નથી</td></tr>`; }
-function clearDeptWise(){ document.getElementById("dwSearch").value=""; document.getElementById("dwDept").value=""; document.getElementById("deptWise").innerHTML=`<tr><td colspan="9" style="text-align:center;color:#999">Filters clear — ▶ લોડ કરો બટન દબાવો</td></tr>`; }
+function clearDeptWise(){ document.getElementById("dwSearch").value=""; document.getElementById("dwDept").value=""; showDeptWise(); }
 function openReport(lbl,part){ reportKey={lbl,part}; document.getElementById("reportBox").classList.remove("hide"); showReport(); window.scrollTo({top:document.getElementById("reportBox").offsetTop-20,behavior:'smooth'}); }
 function closeReport(){ reportKey=null; document.getElementById("reportBox").classList.add("hide"); }
 function reportSummary(){ if(!reportKey) return null; let {lbl,part}=reportKey; return deptStats()[lbl+"|||"+part]||null; }
@@ -1649,7 +1640,7 @@ function showLoginHistory(){ if(cur.role!=="admin") return; let el=document.getE
 function dlLoginHistExcel(){ let list=JSON.parse(localStorage.getItem("loginHistory")||"[]"); downloadCSV("Login_History.csv",[["#","User ID","Department","Role","PC / Browser","Date-Time"],...list.map((x,i)=>[i+1,x.id,x.dept,x.role,x.ua||"—",x.at])]); }
 function deleteLoginHist(idx){ if(!confirm("આ entry ડિલીટ કરવી છે?")) return; let list=JSON.parse(localStorage.getItem("loginHistory")||"[]"); list.splice(idx,1); localStorage.setItem("loginHistory",JSON.stringify(list)); document.getElementById("loginHistBody").innerHTML='<tr><td colspan="7" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr>'; toast("✅ ડિલીટ થઈ ગયું!","success"); }
 function clearLoginHist(){ if(!confirm("બધી Login History ડિલીટ કરવી છે?")) return; localStorage.setItem("loginHistory","[]"); document.getElementById("loginHistBody").innerHTML='<tr><td colspan="7" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr>'; toast("✅ બધી history સાફ થઈ ગઈ!","success"); }
-function clearLoginFilter(){ document.getElementById("lhSearch").value=''; document.getElementById("lhFrom").value=''; document.getElementById("lhTo").value=''; document.getElementById("loginHistBody").innerHTML='<tr><td colspan="7" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr>'; }
+function clearLoginFilter(){ document.getElementById("lhSearch").value=''; document.getElementById("lhFrom").value=''; document.getElementById("lhTo").value=''; showLoginHistory(); }
 
 
 function sendSuggestion(){ let topic=document.getElementById("sgTopic").value.trim(),detail=document.getElementById("sgDetail").value.trim(); let tos=[...document.querySelectorAll(".sgcb:checked")].map(c=>c.value); if(!topic||!detail){ toast("Topic અને વિગત ભરો!","error"); return; } if(tos.length===0){ toast("ઓછામાં ઓછું એક Department!","error"); return; } sugs.push({id:uid(),topic,detail,tos,sentAt:now(),sentMs:Date.now(),accepts:{}}); save(); document.getElementById("sgTopic").value=""; document.getElementById("sgDetail").value=""; document.querySelectorAll(".sgcb").forEach(c=>c.checked=false); refresh(); toast("💡 "+tos.length+" Department ને મોકલાઈ ગયું!","success"); }
@@ -1783,7 +1774,7 @@ function mgrReportData(){
   });
   return Object.values(map).map(d=>[d.kapan,d.dept,d.mgr,d.de,d.st]);
 }
-function clearMgrReport(){ ["mgrSearch","mgrFrom","mgrTo"].forEach(x=>document.getElementById(x).value=""); document.getElementById("mgrDept").value=""; document.getElementById("mgrReportBody").innerHTML=`<tr><td colspan="6" style="text-align:center;color:#999">Filters clear — ▶ લોડ કરો બટન દબાવો</td></tr>`; }
+function clearMgrReport(){ ["mgrSearch","mgrFrom","mgrTo"].forEach(x=>document.getElementById(x).value=""); document.getElementById("mgrDept").value=""; showMgrReport(); }
 function dlMgrReportExcel(){ downloadCSV("Kapan_Manager_Report.csv", [["Kapan","Department","Manager","Data Entry","Status"], ...mgrReportData()]); }
 function dlMgrReportPDF(){
   let rows = mgrReportData();
@@ -3141,7 +3132,7 @@ function showUchakReport(){
   });
   el.innerHTML=rows.map(r=>`<tr><td>${r.no}</td><td>${r.kapan}</td><td>${r.vigat?`<span class='small'>${r.vigat}</span>`:""}</td><td><span class="mgr">${r.dept}</span></td><td>${r.process}</td><td>${r.operator}</td><td>${r.rate}</td><td>${r.nang}</td><td>${r.vajan}</td><td>${r.pis}</td><td class="small">${r.inAt}</td><td class="small">${r.outAt}</td><td>${r.status}</td></tr>`).join("")||`<tr><td colspan="13">કોઈ record નથી</td></tr>`;
 }
-function clearUchakReport(){ ["urSearch","urFrom","urTo"].forEach(x=>document.getElementById(x).value=""); document.getElementById("urDept").value=""; document.getElementById("urProcess").innerHTML=`<option value="">— All —</option>`; document.getElementById("uchakReportBody").innerHTML=`<tr><td colspan="12" style="text-align:center;color:#999">Filters clear — ▶ લોડ કરો બટન દબાવો</td></tr>`; }
+function clearUchakReport(){ ["urSearch","urFrom","urTo"].forEach(x=>document.getElementById(x).value=""); document.getElementById("urDept").value=""; document.getElementById("urProcess").innerHTML=`<option value="">— All —</option>`; showUchakReport(); }
 function getDeptProcs(d){ return deptProcesses[d]||[]; }
 function getDeptRatesList(d){ return deptRates[d]||[]; }
 function getUchakDept(){ return document.getElementById("uchakMasterDept")?.value||"ઉચક"; }
