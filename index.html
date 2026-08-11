@@ -333,7 +333,7 @@
       <div class="sumline" id="smSummary" style="margin-bottom:10px;display:none"></div>
       <div style="overflow-x:auto">
       <table><thead>
-        <tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>હાલ ક્યાં છે</th><th>ત્યાં પહોંચ્યો</th><th>ત્યાંનો સમય ⏱</th><th>કુલ સમય (દિવસ) ⏱</th><th>⚙️ Dept Status</th><th>Tag</th></tr>
+        <tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>હાલ ક્યાં છે</th><th>ત્યાં પહોંચ્યો</th><th>ત્યાંનો સમય ⏱</th><th>કુલ સમય (દિવસ) ⏱</th><th>⚙️ Dept Status</th><th>Tag</th><th>Action</th></tr>
       </thead><tbody id="statusMasterBody">
         <tr><td colspan="10" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr>
       </tbody></table>
@@ -345,7 +345,7 @@
   <div class="page" id="pg_send">
     <div class="box" id="sendFree"><h2>📤 નવી કાપણ બનાવો (Stock)</h2><div class="row">        <div><label>Item / Kapan</label><input id="item"></div><div><label>Carat</label><input id="carat" type="number" step="0.01" value="0"></div><div><label>Nang</label><input id="nang" type="number" value="0"></div><div><label>Pis</label><input id="pis" type="number" value="0"></div></div><div class="row"><div><label>📝 વિગત</label><input id="note" placeholder="વિગત"></div><div><label>Tag</label><select id="tag"><option value="regular">🟢 Regular</option><option value="urgent">🔴 Urgent</option><option value="agal">🟡 Agal</option></select></div><div><label>કયા Office ને</label><select id="to"></select></div></div><button onclick="addItemFree()">📤 Send</button></div>
     <div class="box fwdbox" id="stockFwd"><h2>📤 Stock પાસેનું કાપણ આગળ મોકલો</h2><div class="row"><div><label>🔍 Kapan શોધો</label><input id="sfSearch" oninput="sfSearchList()" placeholder="Kapan"></div></div><div style="overflow-x:auto;max-height:260px;overflow-y:auto;margin-bottom:10px"><table><thead><tr><th>✓</th><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>Tag</th></tr></thead><tbody id="sfList"><tr><td colspan="6" style="text-align:center;color:#999">કાપણ શોધવા ઉપર લખો...</td></tr></tbody></table></div><div class="row"><div><label>📝 વિગત</label><input id="sfNote" placeholder="વિગત"></div><div><label>Tag</label><select id="sfTag"><option value="regular">🟢 Regular</option><option value="urgent">🔴 Urgent</option><option value="agal">🟡 Agal</option></select></div><div><label>કયા Office ને</label><select id="sfTo"></select></div></div><button onclick="stockForward()">📤 આગળ મોકલો</button></div>
-    <div class="box splitbox" id="splitBox"><h2>✂️ કાપણ ના ભાગ પાડો</h2><div class="row"><div><label>🔍 Kapan શોધો</label><input id="spSearch" oninput="fillSplitPick()" placeholder="Kapan"></div><div><label>કયું Kapan</label><select id="splitPick" onchange="fillSplit()"></select></div>        <div><label>Carat</label><input id="spCarat" readonly></div><div><label>Nang</label><input id="spNang" readonly></div><div><label>Pis</label><input id="spPis" readonly></div></div><div id="splitPartsArea"></div><h3>ભાગ:</h3><table><thead><tr><th>Carat</th><th>Nang</th><th>Pis</th><th>Tag</th><th>Label</th><th>વિગત</th><th>Office</th><th>—</th></tr></thead><tbody id="partsBody"></tbody></table><button class="addp" onclick="addPartRow()">➕ બીજો ભાગ</button><div class="sumline" id="splitSum"></div><button onclick="doSplit()">✂️ ભાગ પાડી મોકલો</button></div>
+    <div class="box splitbox" id="splitBox"><h2>✂️ કાપણ ના ભાગ પાડો</h2><div class="row"><div><label>🔍 Kapan શોધો</label><input id="spSearch" oninput="fillSplitPick()" placeholder="Kapan"></div><div><label>કયું Kapan</label><select id="splitPick" onchange="fillSplit()"></select></div>        <div><label>Carat</label><input id="spCarat" readonly></div><div><label>Nang</label><input id="spNang" readonly></div><div><label>Pis</label><input id="spPis" readonly></div></div><div id="splitPartsArea"></div><h3>ભાગ:</h3><table><thead><tr><th>Carat</th><th>Nang</th><th>Pis</th><th>Tag</th><th>Label</th><th>વિગત</th><th>Office</th><th>—</th></tr></thead><tbody id="partsBody"></tbody></table><button class="addp" onclick="addPartRow()">➕ બીજો ભાગ</button><div class="sumline" id="splitSum"></div><button onclick="doSplit()">✂️ ભાગ પાડી મોકલો</button> <button class="del" onclick="clearPendingSplitParts()" style="background:#e74c3c" title="જૂના Pending ભાગ ની entry દૂર કરો">🧹 Pending ભાગ Clear</button></div>
   </div>
 
   <!-- PAGE: STOCK -->
@@ -876,7 +876,7 @@
     <div class="box">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:10px">
         <h2 style="margin:0">4️⃣ 4P Panel — Stock Kapans Send to 4P</h2>
-        <div class="dlbar"><button class="xls" onclick="dl4PStockExcel()">📊 Excel</button><button class="pdf" onclick="dl4PStockPDF()">📄 PDF</button><span style="font-size:12px;color:#555" id="fourPTotal"></span></div>
+        <div class="dlbar"><button class="set" onclick="sendSelected4P()">📤 Send Selected to 4P</button><button class="xls" onclick="dl4PStockExcel()">📊 Excel</button><button class="pdf" onclick="dl4PStockPDF()">📄 PDF</button><span style="font-size:12px;color:#555" id="fourPTotal"></span></div>
       </div>
       <div class="row" style="margin-bottom:10px">
         <div style="flex:2"><label>🔍 Kapan શોધો</label><input id="fpKapanSearch" placeholder="Kapan નંબર લખો..." style="width:100%"></div>
@@ -1533,6 +1533,16 @@ function stockForward(){ let checks=[...document.querySelectorAll(".sfChk:checke
 
 let partRows=[];
 function isSplitPart(d){ return !!(d&&(d.splitDone||String(d.item||"").indexOf("(ભાગ ")>=0)); }
+function clearPendingSplitParts(){
+  let pend=data.map((d,idx)=>({...d,idx})).filter(d=>d.status==="Pending"&&isSplitPart(d));
+  if(!pend.length){ toast("કોઈ Pending ભાગ entry નથી!","warning"); return; }
+  if(!confirm("🧹 "+pend.length+" Pending ભાગ ની entry clear કરવી છે?\n(આ entries Stock અને History બંનેમાંથી દૂર થશે)")) return;
+  let ids=new Set(pend.map(d=>d.id));
+  data=data.filter(d=>!ids.has(d.id));
+  hist=hist.filter(h=>!ids.has(h.id));
+  save(); refresh(); addNotif("del","Pending Split Parts Clear",pend.length+" pending ભાગ entry દૂર થઈ");
+  toast("✅ "+pend.length+" Pending ભાગ entry clear!","success");
+}
 function isSplitBase(bn){ return data.some(x=>isSplitPart(x)&&baseName(x.item)===bn); }
 function fillSplitPick(){ let s=normKapan(document.getElementById("spSearch").value); let list=data.map((d,idx)=>({...d,idx})).filter(d=>d.status==="Received"&&(d.to===STOCK_DEPT)&&(!s||normKapan(d.item).includes(s))&&!isSplitPart(d)&&!isSplitBase(baseName(d.item))); document.getElementById("splitPick").innerHTML=list.map(d=>`<option value="${d.idx}">${d.item} — ${d.carat}ct</option>`).join("")||`<option value="">— કોઈ નથી —</option>`; fillSplit(); }
 function fillSplit(){ let area=document.getElementById("splitPartsArea"); let i=document.getElementById("splitPick").value; let d=i!==""?data[i]:null; if(!d){ ["spCarat","spNang","spPis"].forEach(x=>{let e=document.getElementById(x);if(e)e.value="";}); updateSplitSum(); } else { document.getElementById("spCarat").value=d.carat; document.getElementById("spNang").value=d.nang; document.getElementById("spPis").value=d.pis; updateSplitSum(); } if(area){ let search=(document.getElementById("spSearch")?.value||"").trim(); let key=d?baseName(d.item):(search?normKapan(search):""); let html=""; if(key){ let parts=data.map((x,idx)=>({...x,idx})).filter(x=>isSplitPart(x)&&baseName(x.item)===key); if(parts.length){ html=`<div style="border:1px solid #d5b8e8;background:#f9f4fc;border-radius:6px;padding:8px;margin:6px 0"><div style="font-weight:700;color:#8e44ad;margin-bottom:4px">આ કાપણના પહેલેથી પડેલા ભાગ (${parts.length}):</div><table style="margin:0;font-size:12px"><thead><tr><th>ભાગ</th><th>Carat</th><th>Nang</th><th>Pis</th><th>Label</th><th>ક્યાં છે</th></tr></thead><tbody>${parts.map(x=>`<tr><td>${x.item}</td><td>${x.carat}</td><td>${x.nang}</td><td>${x.pis}</td><td>${x.label||"—"}</td><td><b>${x.to}</b></td></tr>`).join("")}</tbody></table></div>`; } else { html=`<div style="border:1px solid #c8e6c9;background:#f1f9f1;border-radius:6px;padding:6px 10px;margin:6px 0;color:#2e7d32;font-size:12px">✅ આ કાપણના હજી કોઈ ભાગ પડ્યા નથી.</div>`; } } area.innerHTML=html; } }
@@ -1580,6 +1590,19 @@ function doRecvSend(idx){
   toast("✅ "+to+" માં મોકલાઈ ગયું!","success");
 }
 function del(idx){ if(cur.role!=="admin"){ toast("⚠️ Delete ફક્ત Admin!","error"); return; } if(!verifyKapanPass("🔒 Kapan Delete કરવા માટે Password નાખો:")) return; let item={...data[idx]}; data.splice(idx,1); pushUndo({undo:()=>{ data.splice(idx,0,item); save(); refresh(); },redo:()=>{ data.splice(idx,1); save(); refresh(); }}); save(); refresh(); toast("🗑️ Deleted","info"); }
+function delStatusKapan(name){
+  if(cur.role!=="admin"){ toast("⚠️ Delete ફક્ત Admin!","error"); return; }
+  if(!confirm("🗑️ '"+name+"' નું પૂરું record (Stock/History/4P/Repairing) delete કરવું છે?")) return;
+  if(!verifyKapanPass("🔒 Kapan Delete કરવા માટે Password નાખો:")) return;
+  let base=baseName(name);
+  let n1=data.length,n2=hist.length;
+  data=data.filter(d=>baseName(d.item)!==base);
+  hist=hist.filter(h=>!h.item||baseName(h.item)!==base);
+  fourP=fourP.filter(f=>!f.item||baseName(f.item)!==base);
+  reps=reps.filter(r=>!r.kapan||baseName(r.kapan)!==base);
+  save(); refresh();
+  toast("🗑️ '"+name+"' Delete! (Stock "+n1+"→"+data.length+", Hist "+n2+"→"+hist.length+")","info");
+}
 function setFinal(idx,val){ if(val==="4P"){ let d=data[idx]; fourP.push({item:d.item,carat:d.carat,nang:d.nang,pis:d.pis,from:d.to,movedAt:now(),movedMs:Date.now()}); hist.push({...d,action:"4P",sentAt:now(),sentMs:Date.now()}); data.splice(idx,1); save(); refresh(); toast("✅ 4P માં ગયું!","success"); return; } data[idx].fin=val; save(); refresh(); }
 
 function myStatuses(){ let lbl=(cur.role==="dept")?myLbl():STOCK_DEPT; return dstatus[lbl]||[]; }
@@ -1659,7 +1682,7 @@ function fillSmDstatFilter(){
 function clearStatusMaster(){
   ["smSearch","smStatus","smTag","smDstat"].forEach(x=>{let e=document.getElementById(x);if(e)e.value="";});
   let d=document.getElementById("smDept"); if(d) d.value="";
-  document.getElementById("statusMasterBody").innerHTML='<tr><td colspan="10" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr>';
+  document.getElementById("statusMasterBody").innerHTML='<tr><td colspan="11" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr>';
   let s=document.getElementById("smSummary"); if(s) s.style.display="none";
 }
 function showStatusMaster(){
@@ -1689,14 +1712,6 @@ function showStatusMaster(){
     let key=statusKey(h.item);
     if(!kmap[key]) kmap[key]={name:h.item,carat:h.carat||0,nang:h.nang||0,pis:h.pis||0,tag:h.tag||"regular",items:[]};
     kmap[key].items.push({src:"hist",item:h,dept:h.to||h.from||"—",arrivedMs:h.recvTime||h.sentMs,status:h.action,tag:h.tag||"regular"});
-  });
-
-  // Repairing
-  reps.forEach(r=>{
-    if(!r.kapan) return;
-    let key=statusKey(r.kapan);
-    if(!kmap[key]) kmap[key]={name:r.kapan,carat:r.carat||0,nang:r.nang||0,pis:r.pis||0,tag:r.tag||"regular",items:[]};
-    kmap[key].items.push({src:"rep",item:r,dept:r.to||r.from||"—",arrivedMs:r.sentMs,status:r.status,tag:r.tag||"regular"});
   });
 
   // 4P
@@ -1766,6 +1781,7 @@ function showStatusMaster(){
     if(in4P){
       statusLabel="📦 4P"; currentDept="4P"; currentSince=in4P.arrivedMs; sortTime=8; isActive=false;
     }
+    if(in4P) return; // 4P માં મોકલેલી કાપણ Status Master માં નથી દેખાતી
 
     if(!in4P){
       let stockEntries=k.items.filter(it=>it.src==="stock");
@@ -1852,10 +1868,11 @@ function showStatusMaster(){
       <td class="hrs">${r.totalTime}</td>
       <td>${ds}</td>
       <td><span class="tag ${r.tag}">${tagBadge}</span></td>
+      <td>${cur.role==="admin"?`<button class="del" onclick="delStatusKapan('${String(r.name).replace(/'/g,"\\'")}')" style="padding:3px 8px;font-size:11px">🗑 Del</button>`:"—"}</td>
     </tr>`;
   }).join("");
 
-  document.getElementById("statusMasterBody").innerHTML=html||`<tr><td colspan="10" style="text-align:center;color:#999">કોઈ record નથી</td></tr>`;
+  document.getElementById("statusMasterBody").innerHTML=html||`<tr><td colspan="11" style="text-align:center;color:#999">કોઈ record નથી</td></tr>`;
 
   // Summary
   let sm=document.getElementById("smSummary");
@@ -1876,7 +1893,6 @@ function statusMasterData(){
   let kmap={};
   data.forEach(d=>{let key=normKapan(d.item);if(!kmap[key])kmap[key]={name:d.item,carat:d.carat,nang:d.nang,pis:d.pis,tag:d.tag||"regular",items:[]};kmap[key].items.push({src:"stock",item:d,dept:d.to,arrivedMs:d.recvTime||d.sentMs,status:d.status});});
   hist.forEach(h=>{if(!h.item)return;let key=normKapan(h.item);if(!kmap[key])kmap[key]={name:h.item,carat:h.carat||0,nang:h.nang||0,pis:h.pis||0,tag:h.tag||"regular",items:[]};kmap[key].items.push({src:"hist",item:h,dept:h.to||h.from,arrivedMs:h.recvTime||h.sentMs,status:h.action});});
-  reps.forEach(r=>{if(!r.kapan)return;let key=normKapan(r.kapan);if(!kmap[key])kmap[key]={name:r.kapan,carat:r.carat||0,nang:r.nang||0,pis:r.pis||0,tag:r.tag||"regular",items:[]};kmap[key].items.push({src:"rep",item:r,dept:r.to||r.from,arrivedMs:r.sentMs,status:r.status});});
   fourP.forEach(f=>{if(!f.item)return;let key=normKapan(f.item);if(!kmap[key])kmap[key]={name:f.item,carat:f.carat||0,nang:f.nang||0,pis:f.pis||0,tag:"regular",items:[]};kmap[key].items.push({src:"4p",item:f,dept:"4P",arrivedMs:f.movedMs,status:"4P"});});
   let out=[];
   Object.keys(kmap).sort().forEach(key=>{
@@ -1939,28 +1955,37 @@ function show4PPanel(){
       totalK++; totalC+=Number(d.carat); totalN+=Number(d.nang); totalP+=Number(d.pis);
       let lb=d.label?`<span class="lblbadge">${d.label}</span> `:"";
       return `<tr>
+        <td><input type="checkbox" class="fpChk" value="${d.idx}" style="width:auto"></td>
         <td>${lb}${d.item}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td>
         <td>${d.from}</td><td class="small">${d.sentAt||""}</td>
-        <td><button class="set" onclick="sendKapanTo4P(${d.idx})" style="padding:3px 10px;font-size:11px">📤 Send to 4P</button></td>
+        <td><button class="set" onclick="sendKapanTo4P(${d.idx})" style="padding:3px 10px;font-size:11px">📤 Send</button></td>
       </tr>`;
     }).join("");
     let bd=(items[0]?.item||"").replace(/\s*\(ભાગ.*?\)/g,"").trim();
     return `<div style="margin-bottom:12px;border:1px solid #d5e8d0;border-radius:8px;overflow:hidden">
       <div style="background:#27ae60;color:#fff;padding:6px 12px;font-size:13px;font-weight:700">📦 ${bd} (${items.length} ભાગ/કાપણ)</div>
-      <table style="margin:0"><thead><tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>From</th><th>Date</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table>
+      <table style="margin:0"><thead><tr><th style="width:30px"><input type="checkbox" class="fpChkAll" style="width:auto"></th><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>From</th><th>Date</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table>
     </div>`;
   }).join("");
   document.getElementById("fourPTotal").innerHTML=`📦 ${totalK} Kapan | 💎 ${totalC.toFixed(2)}ct | 📏 ${totalN} નાંગ | 🔢 ${totalP} પીસ`;
   el.innerHTML=html||`<p style="text-align:center;color:#999;padding:20px">Stock માં કોઈ Kapan નથી</p>`;
+  document.querySelectorAll(".fpChkAll").forEach(a=>{ a.onchange=function(){ let g=this.closest("table"); g.querySelectorAll(".fpChk").forEach(c=>c.checked=this.checked); }; });
 }
-function sendKapanTo4P(idx){
+function sendKapanTo4P(idx,noAsk){
   let d=data[idx]; if(!d) return;
-  if(!confirm(`📤 ${d.item} — ${d.carat}ct / ${d.nang}નાંગ / ${d.pis}પીસ\nઆ Kapan 4P માં મોકલવી છે?\nહા — History માં save થઈ Stock માંથી દૂર થશે.`)) return;
+  if(!noAsk && !confirm(`📤 ${d.item} — ${d.carat}ct / ${d.nang}નાંગ / ${d.pis}પીસ\nઆ Kapan 4P માં મોકલવી છે?\nહા — History માં save થઈ Stock માંથી દૂર થશે.`)) return;
   fourP.push({item:d.item,carat:d.carat,nang:d.nang,pis:d.pis,label:d.label,from:d.to,movedAt:now(),movedMs:Date.now()});
   hist.push({item:d.item,carat:d.carat,nang:d.nang,pis:d.pis,from:d.from,to:d.to,label:d.label,action:"4P-Send",sentAt:now(),sentMs:Date.now()});
   data.splice(idx,1);
   save(); show4PPanel(); show4PHistory(); refresh();
   toast("✅ 4P માં મોકલાઈ ગયું! History માં જુઓ.","success");
+}
+function sendSelected4P(){
+  let checks=[...document.querySelectorAll(".fpChk:checked")].map(c=>Number(c.value));
+  if(!checks.length){ toast("કાપણ પસંદ કરો!","error"); return; }
+  if(!confirm("📤 "+checks.length+" કાપણ સીધી 4P માં મોકલવી છે?")) return;
+  [...checks].sort((a,b)=>b-a).forEach(i=>sendKapanTo4P(i,true));
+  toast("✅ "+checks.length+" કાપણ 4P માં મોકલાઈ!","success");
 }
 function show4PHistory(){
   let el=document.getElementById("fourPHistBody"); if(!el) return;
@@ -2012,7 +2037,7 @@ function showReport(){
   document.getElementById("repRecv").innerHTML=okRows||`<tr><td colspan="9">કોઈ OK કાપણ નથી</td></tr>`;
 }
 function showKapan(){ if(!(cur.role==="admin"||cur.role==="stock")) return; let s=normKapan(document.getElementById("kbSearch")?document.getElementById("kbSearch").value:""); let list=data.map((d,idx)=>({...d,idx})).filter(d=>d.status==="Pending"); if(s) list=list.filter(d=>normKapan(d.item).includes(s)); list=applyFilters(list); list.sort(kapanSort); document.getElementById("kapanList").innerHTML=list.map(d=>{ let toShow=d.toPart&&d.toPart!=="Main"?`${d.to} <span class="partbadge">${d.toPart}</span>`:d.to; let lb=d.label?`<span class="lblbadge">${d.label}</span> `:"";     return `<tr class="${d.tag==='urgent'?'urgent-row':''}"><td>${lb}${d.item}${hopBadge(d)} ${noteHTML(d.note)}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td><td><span class="tag ${d.tag}">${tagName(d.tag)}</span></td><td><b>${d.from}</b></td><td>${toShow}</td><td>${d.manager?`<span class="mgr">${d.manager}</span>`:"—"}</td><td class="small">${d.sentAt||""}</td><td><button class="edit" onclick="showEditForm(${d.idx})" style="padding:3px 7px;font-size:11px">✏</button></td></tr>`; }).join("")||`<tr><td colspan="10">કોઈ transit નથી</td></tr>`; }
-function showInbox(){ let list=data.map((d,idx)=>({...d,idx})).filter(d=>d.status==="Pending"); if(cur.role==="dept"){ let lbl=myLbl(); list=list.filter(d=>d.to===lbl); } else if(cur.role==="stock") list=list.filter(d=>d.to===STOCK_DEPT); if(cur.role!=="dept") list=applyFilters(list); list.sort(kapanSort); document.getElementById("inbox").innerHTML=list.map(d=>{ let lb=d.label?`<span class="lblbadge">${d.label}</span> `:"";     return `<tr class="${d.tag==='urgent'?'urgent-row':''}"><td>${lb}${d.item}${hopBadge(d)}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td><td>${noteHTML(d.note)||"—"}</td><td><span class="tag ${d.tag}">${tagName(d.tag)}</span></td><td>${d.from}</td><td class="small">${d.sentAt||""}</td><td><button class="edit" onclick="showEditForm(${d.idx})" style="padding:3px 7px;font-size:11px">✏</button> <button class="recv" onclick="receive(${d.idx})">✔ Receive</button> <button class="set" onclick="showRecvSendBox(${d.idx})" style="padding:3px 7px;font-size:11px" title="Receive કરીને બીજા Department માં મોકલો">📤 Received & Send</button></td></tr>`; }).join("")||`<tr><td colspan="9">કોઈ માલ નથી</td></tr>`; }
+function showInbox(){ let list=data.map((d,idx)=>({...d,idx})).filter(d=>d.status==="Pending"); let fp4=new Set(fourP.map(f=>f.item)); list=list.filter(d=>!fp4.has(d.item)); if(cur.role==="dept"){ let lbl=myLbl(); list=list.filter(d=>d.to===lbl); } else if(cur.role==="stock") list=list.filter(d=>d.to===STOCK_DEPT); if(cur.role!=="dept") list=applyFilters(list); list.sort(kapanSort); document.getElementById("inbox").innerHTML=list.map(d=>{ let lb=d.label?`<span class="lblbadge">${d.label}</span> `:"";     return `<tr class="${d.tag==='urgent'?'urgent-row':''}"><td>${lb}${d.item}${hopBadge(d)}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td><td>${noteHTML(d.note)||"—"}</td><td><span class="tag ${d.tag}">${tagName(d.tag)}</span></td><td>${d.from}</td><td class="small">${d.sentAt||""}</td><td><button class="edit" onclick="showEditForm(${d.idx})" style="padding:3px 7px;font-size:11px">✏</button> <button class="recv" onclick="receive(${d.idx})">✔ Receive</button> <button class="set" onclick="showRecvSendBox(${d.idx})" style="padding:3px 7px;font-size:11px" title="Receive કરીને બીજા Department માં મોકલો">📤 Received & Send</button></td></tr>`; }).join("")||`<tr><td colspan="9">કોઈ માલ નથી</td></tr>`; }
 function populateStockDeptFilter(){ let sel=document.getElementById("stockDeptFilter"); if(!sel) return; let v=sel.value; sel.innerHTML='<option value="">— બધા —</option>'; let seen={}; sel.appendChild(new Option(STOCK_DEPT,STOCK_DEPT)); users.filter(u=>u.role==="dept").forEach(u=>{ if(!seen[u.dept]){ seen[u.dept]=true; sel.appendChild(new Option(u.dept,u.dept)); } }); sel.value=v; }
 function showStock(){
   let list=data.map((d,idx)=>({...d,idx})).filter(d=>d.status==="Received"||(d.status==="Pending"&&cur.role!=="dept"));
