@@ -1725,9 +1725,13 @@ function showStatusMaster(){
   // 2. For each kapan, determine current location and timing
   let rows=[];
   let totalC=0,totalN=0,totalP=0,rowCount=0;
+  let splitBases=new Set();
+  Object.keys(kmap).forEach(key=>{ if(isSplitPart({item:kmap[key].name})) splitBases.add(baseName(kmap[key].name)); });
 
   Object.keys(kmap).sort().forEach(key=>{
     let k=kmap[key];
+    // Original kapan whose parts are already split — hide (તેના ભાગ જ બાકી છે)
+    if(!isSplitPart({item:k.name}) && splitBases.has(baseName(k.name))) return;
     // Apply filters
     if(s&&!key.includes(s)) return;
     if(tgF&&k.tag!==tgF) return;
@@ -1895,8 +1899,11 @@ function statusMasterData(){
   hist.forEach(h=>{if(!h.item)return;let key=normKapan(h.item);if(!kmap[key])kmap[key]={name:h.item,carat:h.carat||0,nang:h.nang||0,pis:h.pis||0,tag:h.tag||"regular",items:[]};kmap[key].items.push({src:"hist",item:h,dept:h.to||h.from,arrivedMs:h.recvTime||h.sentMs,status:h.action});});
   fourP.forEach(f=>{if(!f.item)return;let key=normKapan(f.item);if(!kmap[key])kmap[key]={name:f.item,carat:f.carat||0,nang:f.nang||0,pis:f.pis||0,tag:"regular",items:[]};kmap[key].items.push({src:"4p",item:f,dept:"4P",arrivedMs:f.movedMs,status:"4P"});});
   let out=[];
+  let splitBases=new Set();
+  Object.keys(kmap).forEach(key=>{ if(isSplitPart({item:kmap[key].name})) splitBases.add(baseName(kmap[key].name)); });
   Object.keys(kmap).sort().forEach(key=>{
     let k=kmap[key];
+    if(!isSplitPart({item:k.name}) && splitBases.has(baseName(k.name))) return;
     if(s&&!key.includes(s))return;
     if(tgF&&k.tag!==tgF)return;
     let currentDept="—",currentSince=null,firstSeen=null,fourPSentMs=null,fourPRecvMs=null,isActive=false,statusLabel="",depStatus="—";
