@@ -137,6 +137,20 @@
   .partrow{ background:#f4fbf8; }
   .sumline{ font-weight:bold; padding:8px; background:#d1f2eb; border-radius:5px; margin-top:8px; }
   .datebar{ background:#f4f9fd; padding:10px; border-radius:6px; }
+  .smmsbox{ min-width:170px; width:100%; }
+  .smms{ position:relative; width:100%; }
+  .smms-btn{ width:100%; display:flex; justify-content:space-between; align-items:center; gap:8px; padding:7px 10px; border:1px solid #dcdcdc; border-radius:8px; background:#fff; font-size:13px; cursor:pointer; text-align:left; }
+  .smms-btn .caret{ opacity:.6; font-size:10px; }
+  .smms-menu{ display:none; position:absolute; top:100%; left:0; right:0; z-index:60; margin-top:4px; max-height:210px; overflow-y:auto; background:#fff; border:1px solid #dcdcdc; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,.18); padding:6px; }
+  .smms.open .smms-menu{ display:flex; flex-wrap:wrap; gap:4px; }
+  .smms-menu label{ display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border:1px solid #d0d7de; border-radius:14px; background:#f6f8fa; font-size:11px; cursor:pointer; white-space:nowrap; }
+  .smms-menu label:hover{ background:#f0f7ff; }
+  .smms-menu label.on{ background:#e8f8f5; border-color:#27ae60; font-weight:600; }
+  body.dark .smms-btn{ background:#1a1a2e; color:#e0e0e0; border-color:#333; }
+  body.dark .smms-menu{ background:#1a1a2e; color:#e0e0e0; border-color:#333; }
+  body.dark .smms-menu label{ background:#1e2a4a; border-color:#333; }
+  body.dark .smms-menu label.on{ background:#1e3a32; border-color:#27ae60; }
+  body.dark .smms-menu label:hover{ background:#16213e; }
   .sugchk{ display:flex; gap:8px; flex-wrap:wrap; }
   .sugchk label{ display:flex; align-items:center; gap:5px; background:#fff; border:1px solid #ddd; padding:6px 10px; border-radius:6px; font-weight:normal; margin:0; }
   .sugchk input{ width:auto; }
@@ -321,12 +335,12 @@
         <h2>📊 Status Master — દરેક Kapan ની સ્થિતિ, સમય અને મુસાફરી</h2>
         <div class="dlbar"><button class="xls" onclick="dlStatusMasterExcel()">📊 Excel</button><button class="pdf" onclick="dlStatusMasterPDF()">📄 PDF</button></div>
       </div>
-      <div class="row datebar" style="margin-bottom:10px">
+      <div class="row datebar" style="margin-bottom:10px;gap:10px;align-items:flex-end">
         <div><label>🔍 Kapan</label><input id="smSearch" placeholder="Kapan શોધો"></div>
-        <div><label>Department</label><select id="smDept"><option value="">— બધા —</option></select></div>
-        <div><label>Status</label><select id="smStatus"><option value="">— બધા —</option><option value="chalu">🔵 Chalu</option><option value="transit">⏳ Transit</option><option value="done">✅ Done / OK</option><option value="4p">📦 4P</option></select></div>
-        <div><label>⚙️ Dept Status</label><select id="smDstat"><option value="">— બધા —</option></select></div>
-        <div><label>Tag</label><select id="smTag"><option value="">— બધા —</option><option value="urgent">🔴 Urgent</option><option value="agal">🟡 Agal</option><option value="regular">🟢 Regular</option></select></div>
+        <div><label>Department</label><div id="smDeptWrap" class="smmsbox"></div></div>
+        <div><label>Status</label><div id="smStatusWrap" class="smmsbox"></div></div>
+        <div><label>⚙️ Dept Status</label><div id="smDstatWrap" class="smmsbox"></div></div>
+        <div><label>Tag</label><div id="smTagWrap" class="smmsbox"></div></div>
         <div style="display:flex;align-items:flex-end"><button onclick="showStatusMaster()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div>
         <div style="display:flex;align-items:flex-end"><button onclick="clearStatusMaster()" style="background:#7f8c8d;width:100%">🔄 Clear</button></div>
       </div>
@@ -1080,6 +1094,7 @@ function buildNav(){   let isFull=(cur.role==="admin"||cur.role==="stock");   le
 
 function startSession(u){ sessionStorage.setItem("curId",u.id); }
 function endSession(){ sessionStorage.removeItem("curId"); }
+document.addEventListener("click",(e)=>{ let t=e.target&&e.target.closest?e.target.closest(".smms"):null; if(!t) document.querySelectorAll(".smms.open").forEach(s=>s.classList.remove("open")); });
 window.addEventListener("load",()=>{ let savedId=localStorage.getItem("savedId"),savedPass=localStorage.getItem("savedPass"); if(savedId&&savedPass){ document.getElementById("uid").value=savedId; document.getElementById("upass").value=savedPass; document.getElementById("rememberMe").checked=true; } let vm=localStorage.getItem("viewMode")||"desktop"; applyView(vm); document.querySelectorAll('input[name="viewMode"]').forEach(r=>{ r.checked=(r.value===vm); }); applyDarkMode(); populateReqDept(); let sid=sessionStorage.getItem("curId"); if(sid){ let u=users.find(x=>x.id===sid); if(u){ cur=u; openApp(); } } });
 function login(){ let id=document.getElementById("uid").value.trim(),p=document.getElementById("upass").value.trim(); let maxAtt=parseInt(localStorage.getItem("adminMaxAttempts")||"5"); let lockDur=parseInt(localStorage.getItem("adminLockoutDuration")||"300"); let attData=JSON.parse(localStorage.getItem("loginAttempts")||'{"count":0,"lockedUntil":0}'); let nowMs=Date.now(); if(attData.lockedUntil&&nowMs<attData.lockedUntil){ let rem=Math.ceil((attData.lockedUntil-nowMs)/1000); document.getElementById("loginError").style.display="block"; document.getElementById("loginError").textContent="🔒 Locked! Try again in "+rem+"s"; return; } if(!id||!p){ document.getElementById("loginError").style.display="block"; document.getElementById("loginError").textContent="ID અને Password ભરો!"; return; } let u=users.find(x=>x.id===id&&x.pass===p&&x.id!==""); if(!u){ attData.count++; if(maxAtt>0&&attData.count>=maxAtt){ attData.lockedUntil=nowMs+(lockDur*1000); attData.count=0; localStorage.setItem("loginAttempts",JSON.stringify(attData)); document.getElementById("loginError").style.display="block"; document.getElementById("loginError").textContent="🔒 Too many attempts! Locked for "+lockDur+"s"; return; } localStorage.setItem("loginAttempts",JSON.stringify(attData)); let rem=maxAtt>0?" ("+(maxAtt-attData.count)+" left)":""; document.getElementById("loginError").style.display="block"; document.getElementById("loginError").textContent="ખોટો ID કે Password!"+rem; return; } attData.count=0; attData.lockedUntil=0; localStorage.setItem("loginAttempts",JSON.stringify(attData)); document.getElementById("loginError").style.display="none"; if(document.getElementById("rememberMe").checked){ localStorage.setItem("savedId",id); localStorage.setItem("savedPass",p); } else { localStorage.removeItem("savedId"); localStorage.removeItem("savedPass"); } cur=u; let lh=JSON.parse(localStorage.getItem("loginHistory")||"[]"); lh.unshift({id:u.id,dept:u.dept,role:u.role,ua:navigator.userAgent,at:now(),ts:Date.now()}); if(lh.length>50) lh=lh.slice(0,50); try{ localStorage.setItem("loginHistory",JSON.stringify(lh)); }catch(e){ lh=lh.slice(0,10); try{ localStorage.setItem("loginHistory",JSON.stringify(lh)); }catch(e2){ console.warn("loginHistory save failed",e2); } } startSession(u); openApp(); toast("✅ Login successful! Welcome "+u.dept,"success"); }
 function openApp(){
@@ -1681,192 +1696,37 @@ function clear4P(){ ["fpSearch","fpFrom","fpTo"].forEach(x=>{ if(document.getEle
 function clear4PHistory(){ ["fphSearch","fphFrom","fphTo"].forEach(x=>{ let el=document.getElementById(x); if(el) el.value=""; }); document.getElementById("fourPHistBody").innerHTML='<tr><td colspan="7" style="text-align:center;color:#999">કોઈ 4P record નથી</td></tr>'; }
 
 // === STATUS MASTER ===
-function fillSmDeptFilter(){
-  let el=document.getElementById("smDept"); if(!el) return;
-  let v=el.value;
-  el.innerHTML=deptOptsList(`<option value="">— બધા —</option>`);
-  if(v) el.value=v;
-}
-function fillSmDstatFilter(){
-  let el=document.getElementById("smDstat"); if(!el) return;
-  let v=el.value;
-  let set=new Set();
-  data.forEach(d=>{ if(d.dstat) set.add(d.dstat); });
-  el.innerHTML=`<option value="">— બધા —</option>`+[...set].sort().map(x=>`<option value="${x}">${x}</option>`).join("")+`<option value="__none">— Status વગર —</option>`;
-  if(v) el.value=v;
-}
+function smSel(wrapId){ let wrap=document.getElementById(wrapId); if(!wrap) return []; let all=wrap.querySelector('input[value="__all__"]'); let sel=[...wrap.querySelectorAll("input:checked")].map(c=>c.value).filter(v=>v!=="__all__"); if(all&&all.checked) return []; return sel; }
+function smEscA(s){ return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
+function smRenderWrap(wrapId, opts, sel, allLbl, lblMap){ let wrap=document.getElementById(wrapId); if(!wrap) return; let txt=v=>lblMap&&lblMap[v]?lblMap[v]:v; let all=sel.length===0; let map={}; opts.forEach(o=>{ map[o]=txt(o); }); let chip=(o,chk,t)=>`<label class="${chk?"on":""}"><input type="checkbox" value="${smEscA(o)}" ${chk?"checked":""}>${t}</label>`; let lbl=all?allLbl:(sel.length===1?txt(sel[0]):txt(sel[0])+" (+"+(sel.length-1)+")"); wrap.innerHTML=`<div class="smms" data-wrap="${wrapId}"><button type="button" class="smms-btn" data-all="${smEscA(allLbl)}" data-map='${smEscA(JSON.stringify(map))}' onclick="smmsToggle('${wrapId}')"><span class="smms-lbl">${smEscA(lbl)}</span><span class="caret">▼</span></button><div class="smms-menu">`+chip("__all__",all,allLbl)+opts.map(o=>chip(o,sel.includes(o),txt(o))).join("")+`</div></div>`; wrap.querySelectorAll("input").forEach(cb=>{ cb.addEventListener("change",()=>{ if(cb.value==="__all__"){ if(cb.checked) wrap.querySelectorAll(".smms-menu input").forEach(c=>{ if(c.value!=="__all__") c.checked=false; }); } else if(cb.checked){ let a=wrap.querySelector('input[value="__all__"]'); if(a) a.checked=false; } smmsRefreshBtn(wrapId); }); }); }
+function smmsToggle(wrapId){ document.querySelectorAll(".smms.open").forEach(s=>{ if(s.getAttribute("data-wrap")!==wrapId) s.classList.remove("open"); }); let wrap=document.getElementById(wrapId); if(!wrap) return; let b=wrap.querySelector(".smms"); if(b) b.classList.toggle("open"); }
+function smmsRefreshBtn(wrapId){ let wrap=document.getElementById(wrapId); if(!wrap) return; let btn=wrap.querySelector(".smms-btn"); if(!btn) return; let allLbl=btn.getAttribute("data-all")||"— બધા —"; let m={}; try{ m=JSON.parse(btn.getAttribute("data-map")||"{}"); }catch(e){ m={}; } let checked=smSel(wrapId); let txts=checked.map(v=>m[v]||v); let l=btn.querySelector(".smms-lbl"); if(l) l.textContent=checked.length===0?allLbl:(checked.length===1?txts[0]:txts[0]+" (+"+(checked.length-1)+")"); }
+function smBuildRows(){ let kmap={}; data.forEach((d,idx)=>{ let key=statusKey(d.item); if(!kmap[key]) kmap[key]={name:d.item,carat:d.carat,nang:d.nang,pis:d.pis,tag:d.tag||"regular",items:[]}; kmap[key].items.push({src:"stock",item:d,dept:d.to,arrivedMs:d.recvTime||d.sentMs,status:d.status,tag:d.tag||"regular",dataIdx:idx}); }); hist.forEach(h=>{ if(!h.item) return; let key=statusKey(h.item); if(!kmap[key]) kmap[key]={name:h.item,carat:h.carat||0,nang:h.nang||0,pis:h.pis||0,tag:h.tag||"regular",items:[]}; kmap[key].items.push({src:"hist",item:h,dept:h.to||h.from||"—",arrivedMs:h.recvTime||h.sentMs,status:h.action,tag:h.tag||"regular"}); }); fourP.forEach(f=>{ if(!f.item) return; let key=statusKey(f.item); if(!kmap[key]) kmap[key]={name:f.item,carat:f.carat||0,nang:f.nang||0,pis:f.pis||0,tag:"regular",items:[]}; kmap[key].items.push({src:"4p",item:f,dept:"4P",arrivedMs:f.movedMs,status:"4P",tag:"regular"}); }); let rows=[],splitBases=new Set(); Object.keys(kmap).forEach(key=>{ if(isSplitPart({item:kmap[key].name})) splitBases.add(baseName(kmap[key].name)); }); Object.keys(kmap).sort().forEach(key=>{ let k=kmap[key]; if(!isSplitPart({item:k.name}) && splitBases.has(baseName(k.name))) return; let currentDept="—",currentSince=null,statusLabel="",sortTime=0,firstSeen=null,lastSeen=null,fourPSentMs=null,fourPRecvMs=null,depStatus="—",isActive=false; k.items.sort((a,b)=>(a.arrivedMs||0)-(b.arrivedMs||0)); k.items.forEach(it=>{ if(it.arrivedMs){ if(firstSeen===null||it.arrivedMs<firstSeen) firstSeen=it.arrivedMs; if(lastSeen===null||it.arrivedMs>lastSeen) lastSeen=it.arrivedMs; } if(it.src==="stock"){ currentDept=it.dept; currentSince=it.arrivedMs; if(it.item.status==="Received"){ statusLabel="🔵 Chalu"; isActive=true; sortTime=1; depStatus=it.item.dstat||"—"; } else { statusLabel="⏳ Transit"; sortTime=2; } } if(it.src==="hist"){ if(it.item.action==="Send"||it.item.action==="Forward"||it.item.action==="Split-Send"){ currentDept=it.item.to; currentSince=it.arrivedMs; statusLabel="📤 Sent → "+it.item.to; sortTime=3; } if(it.item.action==="Receive"){ statusLabel="✅ Received"; sortTime=4; } if(it.item.action==="4P-Send"){ fourPSentMs=it.arrivedMs; } if(it.item.action==="4P-Restore"){ fourPRecvMs=it.arrivedMs; } if(it.item.action==="Uchak-Done"||it.item.action==="Edit"){} } if(it.src==="rep"){ if(it.item.status==="Sent"||it.item.status==="Pending"){ statusLabel="🔧 Rep: "+it.item.status; currentDept=it.item.to; currentSince=it.arrivedMs; isActive=true; sortTime=5; } else if(it.item.status==="Received"){ statusLabel="🔧 Rep: "+it.item.status; sortTime=6; } else if(it.item.status==="OK-Back"||it.item.status==="Closed"){ statusLabel="🔧 Rep: "+it.item.status; sortTime=7; } } if(it.src==="4p"){ statusLabel="📦 4P"; currentDept="4P"; currentSince=it.arrivedMs; sortTime=8; } }); let in4P=k.items.find(it=>it.src==="4p"); if(in4P){ statusLabel="📦 4P"; currentDept="4P"; currentSince=in4P.arrivedMs; sortTime=8; isActive=false; } if(in4P) return; if(!in4P){ let stockEntries=k.items.filter(it=>it.src==="stock"); if(stockEntries.length){ let latest=stockEntries[stockEntries.length-1]; currentDept=latest.dept; currentSince=latest.arrivedMs; if(latest.item.status==="Received"){ statusLabel="🔵 Chalu"; isActive=true; depStatus=latest.item.dstat||"—"; } else if(latest.item.status==="Pending"){ statusLabel="⏳ Transit"; } } } if(!isActive){ let hasDone=k.items.some(it=>it.src==="hist"&&(it.item.action==="Receive"||it.item.action==="4P-Restore")); if(hasDone) statusLabel="✅ Done"; } let deptDuration=currentSince?(Date.now()-currentSince):0; let totalDuration=firstSeen?(Date.now()-firstSeen):0; let stockEntries2=k.items.filter(it=>it.src==="stock"&&it.dataIdx!=null); let dataIdx=stockEntries2.length?stockEntries2[stockEntries2.length-1].dataIdx:undefined; let cat=statusLabel.includes("🔵")?"chalu":(statusLabel.includes("⏳")||statusLabel.includes("📤"))?"transit":statusLabel.includes("✅")?"done":statusLabel.includes("📦")?"4p":statusLabel.includes("🔧")?"rep":"other"; rows.push({name:k.name,carat:k.carat,nang:k.nang,pis:k.pis,dept:currentDept,since:currentSince?shortDate(currentSince):"—",deptTime:deptDuration?diffHrs(Date.now()-deptDuration,Date.now()):"—",totalTime:totalDuration?Math.floor(totalDuration/86400000)+" દિવસ":"—",depStatus:depStatus,tag:k.tag,statusLabel:statusLabel,sortTime:sortTime||9,hrs:(isActive||statusLabel.includes("⏳")||statusLabel.includes("📤"))?(deptDuration/3600000):0,dataIdx:dataIdx,cat:cat,key:key}); }); return rows; }
+function renderSmFilters(){ let rows=smBuildRows(); let dp=smSel("smDeptWrap"),stF=smSel("smStatusWrap"),dsF=smSel("smDstatWrap"),tgF=smSel("smTagWrap"); let s=normKapan(document.getElementById("smSearch")?.value||""); let match=(r,except)=>{ if(s&&!statusKey(r.name).includes(s)) return false; if(except!=="dp"&&dp.length&&!dp.some(x=>String(r.dept).toLowerCase().includes(String(x).toLowerCase()))) return false; if(except!=="st"&&stF.length&&!stF.includes(r.cat)) return false; if(except!=="ds"&&dsF.length&&(dsF.includes("__none")?(r.depStatus!=="—"):!dsF.includes(r.depStatus))) return false; if(except!=="tg"&&tgF.length&&!tgF.includes(r.tag)) return false; return true; }; let deptOpts=[STOCK_DEPT]; users.filter(u=>u.role==="dept").forEach(u=>{ let l=unitLabel(u.dept,u.office); if(!deptOpts.includes(l)) deptOpts.push(l); }); let cats=[]; ["chalu","transit","done","4p"].forEach(c=>{ if(rows.some(r=>match(r,"st")&&r.cat===c)) cats.push(c); }); let dsOpts=[],tgOpts=[],hasNone=false; rows.forEach(r=>{ if(match(r,"ds")){ if(r.depStatus!=="—"){ if(!dsOpts.includes(r.depStatus)) dsOpts.push(r.depStatus); } else hasNone=true; } if(match(r,"tg")&&!tgOpts.includes(r.tag)) tgOpts.push(r.tag); }); dsOpts.sort(); tgOpts.sort(); let dsLbl={"__none":"— Status વગર —"}; let stLbl={chalu:"🔵 Chalu",transit:"⏳ Transit",done:"✅ Done / OK","4p":"📦 4P"}; let tgLbl={urgent:"🔴 Urgent",agal:"🟡 Agal",regular:"🟢 Regular"}; smRenderWrap("smDeptWrap",deptOpts,dp,"— બધા —"); smRenderWrap("smStatusWrap",cats,stF,"— બધા —",stLbl); smRenderWrap("smDstatWrap",(hasNone?["__none"]:[]).concat(dsOpts),dsF,"— બધા —",dsLbl); smRenderWrap("smTagWrap",tgOpts,tgF,"— બધા —",tgLbl); }
 function clearStatusMaster(){
-  ["smSearch","smStatus","smTag","smDstat"].forEach(x=>{let e=document.getElementById(x);if(e)e.value="";});
-  let d=document.getElementById("smDept"); if(d) d.value="";
+  let se=document.getElementById("smSearch"); if(se) se.value="";
+  ["smDeptWrap","smStatusWrap","smDstatWrap","smTagWrap"].forEach(id=>{ let w=document.getElementById(id); if(w) w.innerHTML=""; });
   document.getElementById("statusMasterBody").innerHTML='<tr><td colspan="11" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr>';
   let s=document.getElementById("smSummary"); if(s) s.style.display="none";
 }
 function showStatusMaster(){
   if(!(cur.role==="admin"||cur.role==="stock")) return;
-  fillSmDeptFilter();
-  let nowMs=Date.now();
+  renderSmFilters();
   let s=normKapan(document.getElementById("smSearch")?.value||"");
-  let dp=document.getElementById("smDept")?.value||"";
-  let stF=document.getElementById("smStatus")?.value||"";
-  let dsF=document.getElementById("smDstat")?.value||"";
-  let tgF=document.getElementById("smTag")?.value||"";
-  fillSmDstatFilter();
-
-  // 1. Build a map of every unique kapan from all sources
-  let kmap={}; // key -> {name, carat, nang, pis, tag, items:[]}
-
-  // Stock data (current)
-  data.forEach((d,idx)=>{
-    let key=statusKey(d.item);
-    if(!kmap[key]) kmap[key]={name:d.item,carat:d.carat,nang:d.nang,pis:d.pis,tag:d.tag||"regular",items:[]};
-    kmap[key].items.push({src:"stock",item:d,dept:d.to,arrivedMs:d.recvTime||d.sentMs,status:d.status,tag:d.tag||"regular",dataIdx:idx});
+  let dp=smSel("smDeptWrap"),stF=smSel("smStatusWrap"),dsF=smSel("smDstatWrap"),tgF=smSel("smTagWrap");
+  let rows=smBuildRows().filter(r=>{
+    if(s&&!statusKey(r.name).includes(s)) return false;
+    if(dp.length&&!dp.some(x=>String(r.dept).toLowerCase().includes(String(x).toLowerCase()))) return false;
+    if(stF.length&&!stF.includes(r.cat)) return false;
+    if(dsF.length){ if(dsF.includes("__none")){ if(r.depStatus!=="—") return false; } else if(!dsF.includes(r.depStatus)) return false; }
+    if(tgF.length&&!tgF.includes(r.tag)) return false;
+    return true;
   });
-
-  // History (completed transactions)
-  hist.forEach(h=>{
-    if(!h.item) return;
-    let key=statusKey(h.item);
-    if(!kmap[key]) kmap[key]={name:h.item,carat:h.carat||0,nang:h.nang||0,pis:h.pis||0,tag:h.tag||"regular",items:[]};
-    kmap[key].items.push({src:"hist",item:h,dept:h.to||h.from||"—",arrivedMs:h.recvTime||h.sentMs,status:h.action,tag:h.tag||"regular"});
-  });
-
-  // 4P
-  fourP.forEach(f=>{
-    if(!f.item) return;
-    let key=statusKey(f.item);
-    if(!kmap[key]) kmap[key]={name:f.item,carat:f.carat||0,nang:f.nang||0,pis:f.pis||0,tag:"regular",items:[]};
-    kmap[key].items.push({src:"4p",item:f,dept:"4P",arrivedMs:f.movedMs,status:"4P",tag:"regular"});
-  });
-
-  // 2. For each kapan, determine current location and timing
-  let rows=[];
-  let totalC=0,totalN=0,totalP=0,rowCount=0;
-  let splitBases=new Set();
-  Object.keys(kmap).forEach(key=>{ if(isSplitPart({item:kmap[key].name})) splitBases.add(baseName(kmap[key].name)); });
-
-  Object.keys(kmap).sort().forEach(key=>{
-    let k=kmap[key];
-    // Original kapan whose parts are already split — hide (તેના ભાગ જ બાકી છે)
-    if(!isSplitPart({item:k.name}) && splitBases.has(baseName(k.name))) return;
-    // Apply filters
-    if(s&&!key.includes(s)) return;
-    if(tgF&&k.tag!==tgF) return;
-
-    // Determine current state
-    let currentDept="—",currentSince=null,statusLabel="",sortTime=0;
-    let firstSeen=null,lastSeen=null;
-    let fourPSentMs=null,fourPRecvMs=null;
-    let depStatus="—";
-    let isActive=false;
-
-    // Sort items by time
-    k.items.sort((a,b)=>(a.arrivedMs||0)-(b.arrivedMs||0));
-
-    k.items.forEach(it=>{
-      if(it.arrivedMs){
-        if(firstSeen===null||it.arrivedMs<firstSeen) firstSeen=it.arrivedMs;
-        if(lastSeen===null||it.arrivedMs>lastSeen) lastSeen=it.arrivedMs;
-      }
-      if(it.src==="stock"){
-        currentDept=it.dept;
-        currentSince=it.arrivedMs;
-        if(it.item.status==="Received"){ statusLabel="🔵 Chalu"; isActive=true; sortTime=1; depStatus=it.item.dstat||"—"; }
-        else { statusLabel="⏳ Transit"; sortTime=2; }
-      }
-      if(it.src==="hist"){
-        if(it.item.action==="Send"||it.item.action==="Forward"||it.item.action==="Split-Send"){
-          currentDept=it.item.to;
-          currentSince=it.arrivedMs;
-          statusLabel="📤 Sent → "+it.item.to;
-          sortTime=3;
-        }
-        if(it.item.action==="Receive"){
-          statusLabel="✅ Received";
-          sortTime=4;
-        }
-        if(it.item.action==="4P-Send"){ fourPSentMs=it.arrivedMs; }
-        if(it.item.action==="4P-Restore"){ fourPRecvMs=it.arrivedMs; }
-        if(it.item.action==="Uchak-Done"||it.item.action==="Edit"){}
-      }
-      if(it.src==="rep"){
-        if(it.item.status==="Sent"||it.item.status==="Pending"){ statusLabel="🔧 Rep: "+it.item.status; currentDept=it.item.to; currentSince=it.arrivedMs; isActive=true; sortTime=5; }
-        else if(it.item.status==="Received"){ statusLabel="🔧 Rep: "+it.item.status; sortTime=6; }
-        else if(it.item.status==="OK-Back"||it.item.status==="Closed"){ statusLabel="🔧 Rep: "+it.item.status; sortTime=7; }
-      }
-      if(it.src==="4p"){ statusLabel="📦 4P"; currentDept="4P"; currentSince=it.arrivedMs; sortTime=8; }
-    });
-
-    // If currently in 4P, prioritize 4P status
-    let in4P=k.items.find(it=>it.src==="4p");
-    if(in4P){
-      statusLabel="📦 4P"; currentDept="4P"; currentSince=in4P.arrivedMs; sortTime=8; isActive=false;
-    }
-    if(in4P) return; // 4P માં મોકલેલી કાપણ Status Master માં નથી દેખાતી
-
-    if(!in4P){
-      let stockEntries=k.items.filter(it=>it.src==="stock");
-      if(stockEntries.length){
-        let latest=stockEntries[stockEntries.length-1];
-        currentDept=latest.dept;
-        currentSince=latest.arrivedMs;
-        if(latest.item.status==="Received"){ statusLabel="🔵 Chalu"; isActive=true; depStatus=latest.item.dstat||"—"; }
-        else if(latest.item.status==="Pending"){ statusLabel="⏳ Transit"; }
-      }
-    }
-
-    // If no active, check if done via history
-    if(!isActive){
-      let hasDone=k.items.some(it=>it.src==="hist"&&(it.item.action==="Receive"||it.item.action==="4P-Restore"));
-      if(hasDone) statusLabel="✅ Done";
-    }
-
-    if(dp&&!currentDept.includes(dp)) return;
-    if(stF==="chalu"&&!isActive) return;
-    if(stF==="transit"&&!(statusLabel.includes("⏳")||statusLabel.includes("📤"))) return;
-    if(stF==="done"&&!statusLabel.includes("✅")) return;
-    if(stF==="4p"&&!statusLabel.includes("📦")) return;
-    if(dsF){ if(dsF==="__none"){ if(depStatus!=="—") return; } else if(depStatus!==dsF) return; }
-
-    // Calculate times
-    let deptDuration=currentSince?(nowMs-currentSince):0;
-    let totalDuration=firstSeen?(nowMs-firstSeen):0;
-    let fourPDuration=null;
-    if(fourPSentMs&&fourPRecvMs) fourPDuration=fourPRecvMs-fourPSentMs;
-
-    let deptTimeStr=deptDuration?diffHrs(nowMs-deptDuration,nowMs):"—";
-    let totalTimeStr=totalDuration?Math.floor(totalDuration/86400000)+" દિવસ":"—";
-
-    rowCount++;
-    totalC+=Number(k.carat);
-    totalN+=Number(k.nang);
-    totalP+=Number(k.pis);
-
-    let stockEntries=k.items.filter(it=>it.src==="stock"&&it.dataIdx!=null); let dataIdx=stockEntries.length?stockEntries[stockEntries.length-1].dataIdx:undefined;
-
-    rows.push({
-      name:k.name,
-      carat:k.carat,
-      nang:k.nang,
-      pis:k.pis,
-      dept:currentDept,
-      since:currentSince?shortDate(currentSince):"—",
-      deptTime:deptTimeStr,
-      totalTime:totalTimeStr,
-      depStatus:depStatus,
-      tag:k.tag,
-      statusLabel:statusLabel,
-      sortTime:sortTime||9,
-      hrs:(isActive||statusLabel.includes("⏳")||statusLabel.includes("📤"))?(deptDuration/3600000):0,
-      dataIdx:dataIdx
-    });
-  });
-
-  // Sort: urgent first, then most hours, then name
   rows.sort((a,b)=>{ let ta=kapanTagN(a),tb=kapanTagN(b); if(ta!==tb) return ta-tb; let ha=a.hrs||0,hb=b.hrs||0; if(ha!==hb) return hb-ha; return (a.name||"").localeCompare(b.name||""); });
-
+  let totalC=0,totalN=0,totalP=0,rowCount=rows.length;
+  rows.forEach(r=>{ totalC+=Number(r.carat); totalN+=Number(r.nang); totalP+=Number(r.pis); });
   let statusOpts=myStatuses();
   let soHtml=`<option value="">— Status —</option>`+statusOpts.map(x=>`<option value="${x}">${x}</option>`).join("");
-
   let html=rows.map(r=>{
     let tagBadge=r.tag==="urgent"?"🔴 Urgent":r.tag==="agal"?"🟡 Agal":"🟢 Regular";
     let rowCls=r.tag==="urgent"?"urgent-row":"";
@@ -1891,59 +1751,22 @@ function showStatusMaster(){
       <td>${cur.role==="admin"?`<button class="del" onclick="delStatusKapan('${String(r.name).replace(/'/g,"\\'")}')" style="padding:3px 8px;font-size:11px">🗑 Del</button>`:"—"}</td>
     </tr>`;
   }).join("");
-
   document.getElementById("statusMasterBody").innerHTML=html||`<tr><td colspan="11" style="text-align:center;color:#999">કોઈ record નથી</td></tr>`;
-
-  // Summary
   let sm=document.getElementById("smSummary");
-  if(rowCount){
-    sm.style.display="";
-    sm.innerHTML=`🧮 કુલ: ${rowCount} Kapan | 💎 ${totalC.toFixed(2)}ct | 📏 ${totalN} નાંગ | 🔢 ${totalP} પીસ`;
-  } else {
-    sm.style.display="none";
-  }
+  if(rowCount){ sm.style.display=""; sm.innerHTML=`🧮 કુલ: ${rowCount} Kapan | 💎 ${totalC.toFixed(2)}ct | 📏 ${totalN} નાંગ | 🔢 ${totalP} પીસ`; }
+  else { sm.style.display="none"; }
 }
 function statusMasterData(){
-  let nowMs=Date.now();
   let s=normKapan(document.getElementById("smSearch")?.value||"");
-  let dp=document.getElementById("smDept")?.value||"";
-  let stF=document.getElementById("smStatus")?.value||"";
-  let dsF=document.getElementById("smDstat")?.value||"";
-  let tgF=document.getElementById("smTag")?.value||"";
-  let kmap={};
-  data.forEach(d=>{let key=normKapan(d.item);if(!kmap[key])kmap[key]={name:d.item,carat:d.carat,nang:d.nang,pis:d.pis,tag:d.tag||"regular",items:[]};kmap[key].items.push({src:"stock",item:d,dept:d.to,arrivedMs:d.recvTime||d.sentMs,status:d.status});});
-  hist.forEach(h=>{if(!h.item)return;let key=normKapan(h.item);if(!kmap[key])kmap[key]={name:h.item,carat:h.carat||0,nang:h.nang||0,pis:h.pis||0,tag:h.tag||"regular",items:[]};kmap[key].items.push({src:"hist",item:h,dept:h.to||h.from,arrivedMs:h.recvTime||h.sentMs,status:h.action});});
-  fourP.forEach(f=>{if(!f.item)return;let key=normKapan(f.item);if(!kmap[key])kmap[key]={name:f.item,carat:f.carat||0,nang:f.nang||0,pis:f.pis||0,tag:"regular",items:[]};kmap[key].items.push({src:"4p",item:f,dept:"4P",arrivedMs:f.movedMs,status:"4P"});});
-  let out=[];
-  let splitBases=new Set();
-  Object.keys(kmap).forEach(key=>{ if(isSplitPart({item:kmap[key].name})) splitBases.add(baseName(kmap[key].name)); });
-  Object.keys(kmap).sort().forEach(key=>{
-    let k=kmap[key];
-    if(!isSplitPart({item:k.name}) && splitBases.has(baseName(k.name))) return;
-    if(s&&!key.includes(s))return;
-    if(tgF&&k.tag!==tgF)return;
-    let currentDept="—",currentSince=null,firstSeen=null,fourPSentMs=null,fourPRecvMs=null,isActive=false,statusLabel="",depStatus="—";
-    k.items.sort((a,b)=>(a.arrivedMs||0)-(b.arrivedMs||0));
-    k.items.forEach(it=>{
-      if(it.arrivedMs){if(firstSeen===null||it.arrivedMs<firstSeen)firstSeen=it.arrivedMs;}
-      if(it.src==="stock"){currentDept=it.dept;currentSince=it.arrivedMs;if(it.item.status==="Received"){statusLabel="🔵 Chalu";isActive=true;depStatus=it.item.dstat||"—";}else{statusLabel="⏳ Transit";}}
-      if(it.src==="hist"){if(it.item.action==="Send"||it.item.action==="Forward"||it.item.action==="Split-Send"){currentDept=it.item.to;currentSince=it.arrivedMs;statusLabel="📤 Sent";}if(it.item.action==="Receive")statusLabel="✅ Received";if(it.item.action==="4P-Send")fourPSentMs=it.arrivedMs;if(it.item.action==="4P-Restore")fourPRecvMs=it.arrivedMs;}
-      if(it.src==="rep"){if(it.item.status==="Sent"||it.item.status==="Pending"){statusLabel="🔧Rep "+it.item.status;currentDept=it.item.to;currentSince=it.arrivedMs;isActive=true;}else statusLabel="🔧Rep "+it.item.status;}
-      if(it.src==="4p"){statusLabel="📦4P";currentDept="4P";currentSince=it.arrivedMs;}
-    });
-    let in4P=k.items.find(it=>it.src==="4p");
-    if(in4P&&fourPRecvMs===null){statusLabel="📦4P";currentDept="4P";currentSince=in4P.arrivedMs;isActive=false;}
-    if(stF==="chalu"&&!isActive)return;
-    if(stF==="transit"&&!(statusLabel.includes("⏳")||statusLabel.includes("📤")))return;
-    if(stF==="done"&&!statusLabel.includes("✅"))return;
-    if(stF==="4p"&&!statusLabel.includes("📦"))return;
-    if(dsF){ if(dsF==="__none"){ if(depStatus!=="—")return; } else if(depStatus!==dsF)return; }
-    let deptDuration=currentSince?(nowMs-currentSince):0;
-    let totalDuration=firstSeen?(nowMs-firstSeen):0;
-    let fourPDuration=null;
-    out.push([k.name,k.carat,k.nang,k.pis,currentDept,currentSince?shortDate(currentSince):"—",deptDuration?diffHrs(nowMs-deptDuration,nowMs):"—",totalDuration?Math.floor(totalDuration/86400000)+" દિવસ":"—",depStatus,k.tag,statusLabel]);
-  });
-  return out;
+  let dp=smSel("smDeptWrap"),stF=smSel("smStatusWrap"),dsF=smSel("smDstatWrap"),tgF=smSel("smTagWrap");
+  return smBuildRows().filter(r=>{
+    if(s&&!statusKey(r.name).includes(s)) return false;
+    if(dp.length&&!dp.some(x=>String(r.dept).toLowerCase().includes(String(x).toLowerCase()))) return false;
+    if(stF.length&&!stF.includes(r.cat)) return false;
+    if(dsF.length){ if(dsF.includes("__none")){ if(r.depStatus!=="—") return false; } else if(!dsF.includes(r.depStatus)) return false; }
+    if(tgF.length&&!tgF.includes(r.tag)) return false;
+    return true;
+  }).map(r=>[r.name,r.carat,r.nang,r.pis,r.dept,r.since,r.deptTime,r.totalTime,r.depStatus,r.tag,r.statusLabel]);
 }
 function dlStatusMasterExcel(){
   let data=statusMasterData();
