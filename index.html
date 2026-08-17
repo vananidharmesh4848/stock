@@ -1914,6 +1914,25 @@ function cancelRepSend(id){
   save(); refresh();
   toast("❌ Repairing Cancel થઈ!","info");
 }
+function returnToStock(idx){
+  let d=data[idx]; if(!d) return;
+  if(d.status!=="Received"){ toast("⚠️ ફક્ત Received (Dept પાસે) કાપણ Stock માં પાછી મોકલાય!","error"); return; }
+  if(d.to===STOCK_DEPT){ toast("કાપણ પહેલેથી Stock પાસે છે!","warning"); return; }
+  let can=cur.role==="admin"||cur.role==="stock"||(cur.role==="dept"&&(d.to===myLbl()||deptMatches(d.to,cur)));
+  if(!can){ toast("⚠️ આ કાપણ Stock માં પાછી મોકલવાની મંજૂરી નથી!","error"); return; }
+  if(!confirm("🏠 "+d.item+" — '"+d.to+"' પાસેથી Stock માં પાછી લેવી/મોકલવી છે?\n\n(ભૂલથી મોકલેલ/ઉમેરેલ હોય તો પાછી Stock માં આવશે.\nપછી ફરી મોકલવા પર નવો સમય ગણાશે.)")) return;
+  let snapBefore=JSON.stringify({data,hist});
+  let returnedFrom=d.to;
+  d.to=STOCK_DEPT; d.toPart="Main";
+  d.status="Received";
+  d.recvAt=now(); d.recvTime=Date.now();
+  d.sentAt=""; d.sentMs=0;
+  hist.push({...d,action:"Return-Stock",returnedFrom});
+  let snapAfter=JSON.stringify({data,hist});
+  pushUndo({undo:()=>{ let x=JSON.parse(snapBefore); data=x.data; hist=x.hist; save(); refresh(); },redo:()=>{ let y=JSON.parse(snapAfter); data=y.data; hist=y.hist; save(); refresh(); }});
+  save(); refresh();
+  toast("🏠 "+d.item+" — Stock માં પાછી મોકલાઈ!","success");
+}
 function showInbox(){ let list=data.map((d,idx)=>({...d,idx})).filter(d=>d.status==="Pending"); let fp4=new Set(fourP.map(f=>f.item)); list=list.filter(d=>!fp4.has(d.item)); if(cur.role==="dept"){ let lbl=myLbl(); list=list.filter(d=>d.to===lbl||deptMatches(d.to,cur)); } else if(cur.role==="stock") list=list.filter(d=>d.to===STOCK_DEPT); if(cur.role!=="dept") list=applyFilters(list); list.sort(kapanSort); document.getElementById("inbox").innerHTML=list.map(d=>{ let lb=d.label?`<span class="lblbadge">${d.label}</span> `:"";     return `<tr class="${d.tag==='urgent'?'urgent-row':''}"><td>${lb}${d.item}${hopBadge(d)}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td><td>${noteHTML(d.note)||"—"}</td><td><span class="tag ${d.tag}">${tagName(d.tag)}</span></td><td>${d.from}</td><td class="small">${d.sentAt||""}</td><td><button class="edit" onclick="showEditForm(${d.idx})" style="padding:3px 7px;font-size:11px">✏</button> <button class="recv" onclick="receive(${d.idx})">✔ Receive</button> <button class="set" onclick="showRecvSendBox(${d.idx})" style="padding:3px 7px;font-size:11px" title="Receive કરીને બીજા Department માં મોકલો">📤 Received & Send</button></td></tr>`; }).join("")||`<tr><td colspan="9">કોઈ માલ નથી</td></tr>`; }
 function populateStockDeptFilter(){ let sel=document.getElementById("stockDeptFilter"); if(!sel) return; let v=sel.value; sel.innerHTML='<option value="">— બધા —</option>'; let seen={}; sel.appendChild(new Option(STOCK_DEPT,STOCK_DEPT)); users.filter(u=>u.role==="dept").forEach(u=>{ if(!seen[u.dept]){ seen[u.dept]=true; sel.appendChild(new Option(u.dept,u.dept)); } }); sel.value=v; }
 function showStock(){
@@ -1932,7 +1951,7 @@ function showStock(){
     let statOpts=`<option value="">— Status —</option>`+stats.map(x=>`<option value="${x}">${x}</option>`).join("");
     let tt={}; stats.forEach(x=>tt[x]={c:0,n:0,p:0,cnt:0}); tt["__none"]={c:0,n:0,p:0,cnt:0};
     let tC=0,tN=0,tP=0,cnt=0;
-    let rows=list.map(d=>{ let lb=d.label?`<span class="lblbadge">${d.label}</span> `:""; let isT=d.status==="Pending"&&d.from===lbl; let so=isT?`<span class="chalu">⏳ Transit → ${d.to}</span>`:`<select class="ssel" onchange="setKapanStatus(${d.idx},this.value)">${statOpts.replace(`value="${d.dstat}"`,`value="${d.dstat}" selected`)}</select>`; let sk=d.dstat||"__none"; if(!tt[sk]) tt[sk]={c:0,n:0,p:0,cnt:0}; tt[sk].c+=Number(d.carat); tt[sk].n+=Number(d.nang); tt[sk].p+=Number(d.pis); tt[sk].cnt++; tC+=Number(d.carat);tN+=Number(d.nang);tP+=Number(d.pis);cnt++; let act=isT?`<button class="del" onclick="cancelTransit(${d.idx})" style="padding:3px 7px;font-size:11px" title="ભૂલથી મોકલેલ Transit Cancel કરો">✖ Cancel</button>`:`<button class="edit" onclick="showEditForm(${d.idx})" style="padding:3px 7px;font-size:11px">✏</button>`; return `<tr class="${d.tag==='urgent'?'urgent-row':''}"><td>${lb}${d.item}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td><td>${noteHTML(d.note)||"—"}</td><td><span class="tag ${d.tag}">${tagName(d.tag)}</span></td><td>${so}</td><td class="hrs">${isT?hoursSince(d.sentMs):hoursSince(d.recvTime)}</td><td>${act}</td></tr>`; }).join("");
+    let rows=list.map(d=>{ let lb=d.label?`<span class="lblbadge">${d.label}</span> `:""; let isT=d.status==="Pending"&&d.from===lbl; let so=isT?`<span class="chalu">⏳ Transit → ${d.to}</span>`:`<select class="ssel" onchange="setKapanStatus(${d.idx},this.value)">${statOpts.replace(`value="${d.dstat}"`,`value="${d.dstat}" selected`)}</select>`; let sk=d.dstat||"__none"; if(!tt[sk]) tt[sk]={c:0,n:0,p:0,cnt:0}; tt[sk].c+=Number(d.carat); tt[sk].n+=Number(d.nang); tt[sk].p+=Number(d.pis); tt[sk].cnt++; tC+=Number(d.carat);tN+=Number(d.nang);tP+=Number(d.pis);cnt++; let act=isT?`<button class="del" onclick="cancelTransit(${d.idx})" style="padding:3px 7px;font-size:11px" title="ભૂલથી મોકલેલ Transit Cancel કરો">✖ Cancel</button>`:(`<button class="recv" onclick="returnToStock(${d.idx})" style="padding:3px 7px;font-size:11px" title="ભૂલથી આવેલ કાપણ Stock માં પાછી મોકલો">🏠 Stock</button> `+`<button class="edit" onclick="showEditForm(${d.idx})" style="padding:3px 7px;font-size:11px">✏</button>`); return `<tr class="${d.tag==='urgent'?'urgent-row':''}"><td>${lb}${d.item}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td><td>${noteHTML(d.note)||"—"}</td><td><span class="tag ${d.tag}">${tagName(d.tag)}</span></td><td>${so}</td><td class="hrs">${isT?hoursSince(d.sentMs):hoursSince(d.recvTime)}</td><td>${act}</td></tr>`; }).join("");
     let tot=list.length?`<tr class="totrow"><td>🧮 કુલ Total (${cnt})</td><td>${tC.toFixed(2)}</td><td>${tN}</td><td>${tP}</td><td colspan="6">⬆ વિગત</td></tr>`:"";
     let stRows=""; for(let s2 in tt){ let x=tt[s2]; if(x.cnt===0) continue; let nm=s2==="__none"?"— Status વગર —":s2; stRows+=`<tr style="background:#eaf4fb"><td colspan="2"><b>📊 ${nm}</b></td><td>${x.cnt} કાપણ</td><td>${x.c.toFixed(2)}ct</td><td>${x.n}</td><td colspan="3">${x.p} pis</td></tr>`; }
     document.getElementById("list").innerHTML=(rows||`<tr><td colspan="9">કોઈ માલ નથી</td></tr>`)+tot+stRows; return;
@@ -1963,7 +1982,8 @@ function showStock(){
     let delBtn=cur.role==="admin"?`<button class="del" onclick="del(${d.idx})">Del</button>`:`<span class="small">—</span>`;
     let hrs=d.status==="Pending"?hoursSince(d.sentMs):hoursSince(d.recvTime);
     let cancelBtn=(d.status==="Pending"&&(cur.role==="admin"||d.from===STOCK_DEPT))?`<button class="del" onclick="cancelTransit(${d.idx})" style="padding:3px 7px;font-size:11px" title="ભૂલથી મોકલેલ Transit Cancel કરો">✖</button> `:"";
-    html+=`<tr class="${d.tag==='urgent'?'urgent-row':''}"><td>${lb}${d.item}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td><td>${noteHTML(d.note)||"—"}</td><td><span class="tag ${d.tag}">${tagName(d.tag)}</span></td><td>${d.from}</td><td>${toShow}</td><td>${stateBadge}</td><td>${st}</td><td class="hrs">${hrs}</td><td>${cancelBtn}<button class="edit" onclick="showEditForm(${d.idx})" style="padding:3px 7px;font-size:11px">✏</button> ${delBtn}</td></tr>`;
+    let rtStock=(d.status==="Received"&&d.to!==STOCK_DEPT&&(cur.role==="admin"||cur.role==="stock"))?`<button class="recv" onclick="returnToStock(${d.idx})" style="padding:3px 7px;font-size:11px" title="ભૂલથી મોકલેલ/ઉમેરેલ — Stock માં પાછી મોકલો">🏠 Stock</button> `:"";
+    html+=`<tr class="${d.tag==='urgent'?'urgent-row':''}"><td>${lb}${d.item}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td><td>${noteHTML(d.note)||"—"}</td><td><span class="tag ${d.tag}">${tagName(d.tag)}</span></td><td>${d.from}</td><td>${toShow}</td><td>${stateBadge}</td><td>${st}</td><td class="hrs">${hrs}</td><td>${rtStock}${cancelBtn}<button class="edit" onclick="showEditForm(${d.idx})" style="padding:3px 7px;font-size:11px">✏</button> ${delBtn}</td></tr>`;
   });
   document.getElementById("list").innerHTML=html||`<tr><td colspan="12">કોઈ માલ નથી</td></tr>`;
 }
