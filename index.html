@@ -1632,7 +1632,7 @@ function doRecvSend(idx){
   closeRsdBox(idx);
   if(!checkDest(to,d.item)) return;
   if(!deptConfirm("📤 "+d.item+" — "+to+" માં મોકલવું છે?")) return;
-  d.to=to; d.toPart="Main"; d.from=STOCK_DEPT; d.status="Pending"; d.sentAt=now(); d.sentMs=Date.now(); d.recvAt=""; d.recvTime=0; d.manager=""; d.dataentry=""; d.fin=""; d.dstat=""; d.hops=nextHops(d);
+  d.to=to; d.toPart="Main"; d.from=STOCK_DEPT; d.status="Received"; d.sentAt=now(); d.sentMs=Date.now(); d.recvAt=now(); d.recvTime=Date.now(); d.manager=""; d.dataentry=""; d.fin=""; d.dstat=""; d.hops=nextHops(d);
   hist.push({...d, action:"Send"});
   save(); refresh(); addNotif("send","Recv & Send",STOCK_DEPT+" → "+to+" · "+d.item);
   toast("✅ "+to+" માં મોકલાઈ ગયું!","success");
