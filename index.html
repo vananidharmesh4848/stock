@@ -349,9 +349,9 @@
       <div class="sumline" id="smSummary" style="margin-bottom:10px;display:none"></div>
       <div style="overflow-x:auto">
       <table><thead>
-        <tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>હાલ ક્યાં છે</th><th>ત્યાં પહોંચ્યો</th><th>ત્યાંનો સમય ⏱</th><th id="smTotalTimeTh">કુલ સમય (દિવસ) ⏱</th><th>⚙️ Dept Status</th><th>Tag</th><th>Action</th></tr>
+        <tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>હાલ ક્યાં છે</th><th>ત્યાં પહોંચ્યો</th><th>ત્યાંનો સમય ⏱</th><th id="smTotalTimeTh">કુલ સમય (દિવસ) ⏱</th><th>⚙️ Dept Status</th><th>Tag</th><th>📝 વિગત</th><th>Action</th></tr>
       </thead><tbody id="statusMasterBody">
-        <tr><td colspan="11" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr>
+        <tr><td colspan="12" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr>
       </tbody></table>
       </div>
     </div>
@@ -1002,6 +1002,7 @@ if(!dataentrys || Array.isArray(dataentrys)){
   localStorage.setItem("dataentrys",JSON.stringify(dataentrys));
 }
 let dstatus = JSON.parse(localStorage.getItem("dstatus") || "{}");
+let deptVigats = JSON.parse(localStorage.getItem("deptVigats") || "{}");
 let fourP = JSON.parse(localStorage.getItem("fourP") || "[]");
 let cur=null, reportKey=null;
 const STOCK_DEPT="Stock", STOCK_HOLD="Stock";
@@ -1087,6 +1088,78 @@ function nextHops(src){ return (src&&src.hops)?src.hops+1:1; }
 function checkHopWarn(hops,item){ if(hops>10){ toast("⚠️ "+item+" — "+hops+" વાર આગળ-પાછળ થઈ ગયું છે (10 થી વધારે)!","warning"); } }
 function hopBadge(d){ if(!d.hops||d.hops<=1) return ""; let over=d.hops>10; return `<span class="${over?'urgent':'offbadge'}" style="font-size:10px;padding:2px 6px;border-radius:8px;color:#fff;margin-left:4px" title="${d.hops} વાર આગળ-પાછળ થયું">🔁${d.hops}</span>`; }
 function noteHTML(n){ return n?`<span class="notebox">📝 ${sanitize(n)}</span>`:""; }
+// === DEPT VIGAT (વિગત) ===
+function vigatKey(kapanItem, deptLabel){ return (kapanItem||"")+"|"+(deptLabel||""); }
+function getDeptVigat(kapanItem, deptLabel){ return deptVigats[vigatKey(kapanItem, deptLabel)] || null; }
+function setDeptVigat(kapanItem, deptLabel, text, userId){
+  let key=vigatKey(kapanItem, deptLabel);
+  if(!text||!text.trim()){ delete deptVigats[key]; } else {
+    let existing=deptVigats[key];
+    deptVigats[key]={ text:text.trim(), updatedAt:now(), updatedMs:Date.now(), updatedBy:userId||"", createdAt: existing?existing.createdAt:now(), createdMs: existing?existing.createdMs:Date.now() };
+  }
+  save();
+}
+function delDeptVigat(kapanItem, deptLabel){ let key=vigatKey(kapanItem, deptLabel); if(deptVigats[key]){ delete deptVigats[key]; save(); } }
+function vigatBadge(kapanItem, deptLabel){ let v=getDeptVigat(kapanItem, deptLabel); if(!v) return ""; return `<span style="background:#f39c12;color:#fff;font-size:10px;padding:1px 6px;border-radius:8px;cursor:pointer" title="${sanitize(v.text)}">📝 વિગત</span> `; }
+let _vigatCellId=0;
+let _vigatMap={};
+function vigatCell(kapanItem, deptLabel, canEdit){
+  let v=getDeptVigat(kapanItem, deptLabel);
+  let cid="vc"+(++_vigatCellId);
+  _vigatMap[cid]={item:kapanItem,dept:deptLabel};
+  if(!canEdit) { if(!v) return "—"; let t=v.text.length>30?v.text.substring(0,30)+"…":v.text; return `<span title="${sanitize(v.text)}" style="font-size:11px;background:#fff3cd;padding:1px 4px;border-radius:3px">📝 ${sanitize(t)}</span>`; }
+  let val=v?v.text:"";
+  let html="<div style='display:flex;flex-direction:column;gap:2px;min-width:120px;max-width:200px'>";
+  html+="<textarea id='"+cid+"' rows='2' style='width:100%;padding:2px 4px;font-size:11px;border:1px solid #ddd;border-radius:3px;resize:vertical;background:#fffcf0' placeholder='📝 vigat lakho...' onblur='saveVigatCell(\""+cid+"\")'>"+sanitize(val)+"</textarea>";
+  html+="<div style='display:flex;gap:3px;justify-content:flex-end'>";
+  html+="<button onclick='saveVigatCell(\""+cid+"\")' style='background:#27ae60;color:#fff;border:none;padding:1px 6px;border-radius:3px;font-size:10px;cursor:pointer'>Save</button>";
+  html+="<button onclick='delVigatById(\""+cid+"\")' style='background:#e74c3c;color:#fff;border:none;padding:1px 6px;border-radius:3px;font-size:10px;cursor:pointer'>Del</button>";
+  html+="</div></div>";
+  return html;
+}
+let _vigatEditCtx={item:"",dept:""};
+function openVigatBox(el, kapanItem, deptLabel){
+  if(!deptLabel) deptLabel=myLbl();
+  _vigatEditCtx={item:kapanItem, dept:deptLabel};
+  let v=getDeptVigat(kapanItem, deptLabel);
+  let existing=v?v.text:"";
+  let tid="vigatBox_"+(++_vigatCellId);
+  let parent=(typeof el==="string")?null:(el.closest?el.closest("td")||el:null);
+  if(!parent) return;
+  parent.innerHTML="<div style='background:#fff;border:2px solid #f39c12;border-radius:6px;padding:4px;display:flex;flex-direction:column;gap:4px;min-width:160px'>"
+    +"<textarea id='"+tid+"' rows='3' style='width:100%;padding:4px;font-size:12px;border:1px solid #ddd;border-radius:3px;resize:vertical' placeholder='વિગત લખો...'>"+sanitize(existing)+"</textarea>"
+    +"<div style='display:flex;gap:4px;justify-content:flex-end'>"
+    +"<button onclick='saveVigatInline()' style='background:#27ae60;color:#fff;border:none;padding:3px 10px;border-radius:3px;font-size:11px;cursor:pointer'>💾 સેવ</button>"
+    +"<button onclick='delVigatInline()' style='background:#e74c3c;color:#fff;border:none;padding:3px 10px;border-radius:3px;font-size:11px;cursor:pointer'>🗑 ડિલીટ</button>"
+    +"<button onclick='cancelVigatInline()' style='background:#7f8c8d;color:#fff;border:none;padding:3px 10px;border-radius:3px;font-size:11px;cursor:pointer'>✖ રદ</button>"
+    +"</div></div>";
+  document.getElementById(tid).focus();
+}
+function saveVigatInline(){
+  let c=_vigatEditCtx;
+  let ta=document.getElementById("vigatBox_"+_vigatCellId);
+  if(!ta) return;
+  setDeptVigat(c.item, c.dept, ta.value, cur.id);
+  refresh();
+  toast("✅ વિગત સેવ થઈ!","success");
+}
+function delVigatInline(){
+  let c=_vigatEditCtx;
+  delDeptVigat(c.item, c.dept);
+  refresh();
+  toast("🗑 વિગત ડિલીટ થઈ!","info");
+}
+function cancelVigatInline(){ refresh(); }
+function openVigatBoxById(cid){ let ctx=_vigatMap[cid]; if(!ctx) return; openVigatBox(document.getElementById(cid)||null, ctx.item, ctx.dept); }
+function saveVigatCell(cid){ let ctx=_vigatMap[cid]; if(!ctx) return; let ta=document.getElementById(cid); if(!ta) return; setDeptVigat(ctx.item, ctx.dept, ta.value, cur.id); refresh(); toast("✅ વિગત સેવ થઈ!","success"); }
+function delVigatById(cid){ let ctx=_vigatMap[cid]; if(!ctx) return; delVigatConfirm(ctx.item, ctx.dept); }
+function delVigatConfirm(kapanItem, deptLabel){
+  if(!deptLabel) deptLabel=myLbl();
+  if(!confirm("'"+kapanItem+"' ની વિગત ડિલીટ કરવી છે?")) return;
+  delDeptVigat(kapanItem, deptLabel);
+  refresh();
+  toast("🗑 વિગત ડિલીટ થઈ!","info");
+}
 function deptColorIndex(name){ let s=0; for(let i=0;i<name.length;i++) s=(s*31+name.charCodeAt(i))>>>0; return s%8; }
 
 let lastLocalUpdate = Number(localStorage.getItem("lastLocalUpdate") || "0");
@@ -1100,10 +1173,10 @@ function save(){
     localStorage.setItem("hist",JSON.stringify(hist)); localStorage.setItem("reps",JSON.stringify(reps));
     localStorage.setItem("sugs",JSON.stringify(sugs)); localStorage.setItem("labels",JSON.stringify(labels));
     localStorage.setItem("managers",JSON.stringify(managers)); localStorage.setItem("dataentrys",JSON.stringify(dataentrys));
-    localStorage.setItem("dstatus",JSON.stringify(dstatus)); localStorage.setItem("fourP",JSON.stringify(fourP));
+    localStorage.setItem("dstatus",JSON.stringify(dstatus)); localStorage.setItem("deptVigats",JSON.stringify(deptVigats)); localStorage.setItem("fourP",JSON.stringify(fourP));
     localStorage.setItem("uchak",JSON.stringify(uchak)); localStorage.setItem("uchakProcesses",JSON.stringify(uchakProcesses)); localStorage.setItem("uchakRates",JSON.stringify(uchakRates)); localStorage.setItem("deptProcesses",JSON.stringify(deptProcesses)); localStorage.setItem("deptRates",JSON.stringify(deptRates)); localStorage.setItem("jangads",JSON.stringify(jangads)); localStorage.setItem("jangadCounter",String(jangadCounter)); if(jangadEditPass) localStorage.setItem("jangadEditPass",jangadEditPass); if(kapanEditPass) localStorage.setItem("kapanEditPass",kapanEditPass);
   }catch(e){ console.warn("localStorage quota exceeded",e); toast("⚠️ Local storage full — Firebase backup only.","warning"); }
-  if(window.cloudSave){ window.cloudSave({users,stock:data,hist,reps,sugs,labels,managers,dataentrys,dstatus,fourP,uchak,uchakProcesses,uchakRates,deptProcesses,deptRates,jangads,jangadCounter,updated:nowMs,sugAll,loginHistory:JSON.parse(localStorage.getItem("loginHistory")||"[]")}); }
+  if(window.cloudSave){ window.cloudSave({users,stock:data,hist,reps,sugs,labels,managers,dataentrys,dstatus,deptVigats,fourP,uchak,uchakProcesses,uchakRates,deptProcesses,deptRates,jangads,jangadCounter,updated:nowMs,sugAll,loginHistory:JSON.parse(localStorage.getItem("loginHistory")||"[]")}); }
 }
 
 let curPage="";
@@ -1724,7 +1797,7 @@ function clearStatusMaster(){
   if(thEl) thEl.style.display="";
   let se=document.getElementById("smSearch"); if(se) se.value="";
   ["smDeptWrap","smStatusWrap","smDstatWrap","smTagWrap"].forEach(id=>{ let w=document.getElementById(id); if(w) w.innerHTML=""; });
-  document.getElementById("statusMasterBody").innerHTML='<tr><td colspan="11" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr>';
+  document.getElementById("statusMasterBody").innerHTML='<tr><td colspan="12" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr>';
   let s=document.getElementById("smSummary"); if(s) s.style.display="none";
 }
 let smCountdownTimer=null;
@@ -1766,6 +1839,7 @@ function showStatusMaster(){
       :(r.depStatus!=="—"?`<span class="statbadge">${r.depStatus}</span>`:"—");
     let deptTimeH=r.deptTime||"—";
     let totalCell=isDept?"":`<td class="hrs">${r.totalTime}</td>`;
+    let smVigat=""; if(r.dept&&r.dept!=="—"){ smVigat=vigatCell(r.name,r.dept,cur.role==="admin"||r.dept===myLbl()); } else { let allV=Object.keys(deptVigats).filter(k=>k.startsWith(r.name+"|")).map(k=>{let vt=deptVigats[k]; let deptNm=k.split("|")[1]; return vt?`<span title="${sanitize(vt.text)}" style="background:#fff3cd;padding:1px 4px;border-radius:3px;font-size:10px;margin:1px;display:inline-block">📝 ${sanitize(deptNm)}</span>`:"";}).join(""); smVigat=allV||"—"; }
     return `<tr class="${rowCls}">
       <td><b>${r.name}</b></td>
       <td>${r.carat}</td><td>${r.nang}</td><td>${r.pis}</td>
@@ -1775,11 +1849,12 @@ function showStatusMaster(){
       ${totalCell}
       <td>${ds}</td>
       <td><span class="tag ${r.tag}">${tagBadge}</span></td>
+      <td>${smVigat}</td>
       <td>${cur.role==="admin"?`<button class="del" onclick="delStatusKapan('${String(r.name).replace(/'/g,"\\'")}')" style="padding:3px 8px;font-size:11px">🗑 Del</button>`:"—"}</td>
     </tr>`;
   }).join("");
   let isDeptFlag=isDept;
-  let colSpan=isDeptFlag?10:11;
+  let colSpan=isDeptFlag?11:12;
   document.getElementById("statusMasterBody").innerHTML=html||`<tr><td colspan="${colSpan}" style="text-align:center;color:#999">કોઈ record નથી</td></tr>`;
   let sm=document.getElementById("smSummary");
   if(rowCount){ sm.style.display=""; sm.innerHTML=`🧮 કુલ: ${rowCount} Kapan | 💎 ${totalC.toFixed(2)}ct | 📏 ${totalN} નાંગ | 🔢 ${totalP} પીસ`; }
@@ -2067,15 +2142,15 @@ function showStock(){
     document.getElementById("statFiltRow").style.display="flex";
     let dft=document.getElementById("stockDeptFilter"); if(dft) dft.closest(".row").style.display="none";
     document.getElementById("title").innerText="📋 My Chalu Stock ("+lbl+")";
-    document.getElementById("stockHead").innerHTML=`<tr><th>Item / Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>📝</th><th>Tag</th><th>⚙️ Status</th><th>🕒</th><th>✏</th></tr>`;
+    document.getElementById("stockHead").innerHTML=`<tr><th>Item / Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>📝</th><th>Tag</th><th>⚙️ Status</th><th>📝 વિગત</th><th>🕒</th><th>✏</th></tr>`;
     list.sort(kapanSort);
     let statOpts=`<option value="">— Status —</option>`+stats.map(x=>`<option value="${x}">${x}</option>`).join("");
     let tt={}; stats.forEach(x=>tt[x]={c:0,n:0,p:0,cnt:0}); tt["__none"]={c:0,n:0,p:0,cnt:0};
     let tC=0,tN=0,tP=0,cnt=0;
-    let rows=list.map(d=>{ let lb=d.label?`<span class="lblbadge">${d.label}</span> `:""; let isT=d.status==="Pending"&&d.from===lbl; let so=isT?`<span class="chalu">⏳ Transit → ${d.to}</span>`:`<select class="ssel" onchange="setKapanStatus(${d.idx},this.value)">${statOpts.replace(`value="${d.dstat}"`,`value="${d.dstat}" selected`)}</select>`; let sk=d.dstat||"__none"; if(!tt[sk]) tt[sk]={c:0,n:0,p:0,cnt:0}; tt[sk].c+=Number(d.carat); tt[sk].n+=Number(d.nang); tt[sk].p+=Number(d.pis); tt[sk].cnt++; tC+=Number(d.carat);tN+=Number(d.nang);tP+=Number(d.pis);cnt++; let act=isT?`<button class="del" onclick="cancelTransit(${d.idx})" style="padding:3px 7px;font-size:11px" title="ભૂલથી મોકલેલ Transit Cancel કરો">✖ Cancel</button>`:(cur.role==="dept"?"":`<button class="recv" onclick="returnToStock(${d.idx})" style="padding:3px 7px;font-size:11px" title="ભૂલથી આવેલ — પાછલી જગ્યાએ (OK) પાછી મોકલો">🏠 Stock</button> `+`<button class="edit" onclick="showEditForm(${d.idx})" style="padding:3px 7px;font-size:11px">✏</button>`); return `<tr class="${d.tag==='urgent'?'urgent-row':caratBandCls(d.carat)}"><td>${lb}${d.item}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td><td>${noteHTML(d.note)||"—"}</td><td><span class="tag ${d.tag}">${tagName(d.tag)}</span></td><td>${so}</td><td class="hrs">${isT?hoursSince(d.sentMs):hoursSince(d.recvTime)}</td><td>${act}</td></tr>`; }).join("");
-    let tot=list.length?`<tr class="totrow"><td>🧮 કુલ Total (${cnt})</td><td>${tC.toFixed(2)}</td><td>${tN}</td><td>${tP}</td><td colspan="6">⬆ વિગત</td></tr>`:"";
-    let stRows=""; for(let s2 in tt){ let x=tt[s2]; if(x.cnt===0) continue; let nm=s2==="__none"?"— Status વગર —":s2; stRows+=`<tr style="background:#eaf4fb"><td colspan="2"><b>📊 ${nm}</b></td><td>${x.cnt} કાપણ</td><td>${x.c.toFixed(2)}ct</td><td>${x.n}</td><td colspan="3">${x.p} pis</td></tr>`; }
-    document.getElementById("list").innerHTML=(rows||`<tr><td colspan="9">કોઈ માલ નથી</td></tr>`)+tot+stRows; return;
+    let rows=list.map(d=>{ let lb=d.label?`<span class="lblbadge">${d.label}</span> `:""; let isT=d.status==="Pending"&&d.from===lbl; let so=isT?`<span class="chalu">⏳ Transit → ${d.to}</span>`:`<select class="ssel" onchange="setKapanStatus(${d.idx},this.value)">${statOpts.replace(`value="${d.dstat}"`,`value="${d.dstat}" selected`)}</select>`; let sk=d.dstat||"__none"; if(!tt[sk]) tt[sk]={c:0,n:0,p:0,cnt:0}; tt[sk].c+=Number(d.carat); tt[sk].n+=Number(d.nang); tt[sk].p+=Number(d.pis); tt[sk].cnt++; tC+=Number(d.carat);tN+=Number(d.nang);tP+=Number(d.pis);cnt++; let act=isT?`<button class="del" onclick="cancelTransit(${d.idx})" style="padding:3px 7px;font-size:11px" title="ભૂલથી મોકલેલ Transit Cancel કરો">✖ Cancel</button>`:(cur.role==="dept"?"":`<button class="recv" onclick="returnToStock(${d.idx})" style="padding:3px 7px;font-size:11px" title="ભૂલથી આવેલ — પાછલી જગ્યાએ (OK) પાછી મોકલો">🏠 Stock</button> `+`<button class="edit" onclick="showEditForm(${d.idx})" style="padding:3px 7px;font-size:11px">✏</button>`); let isOwnDept=d.to===lbl||deptMatches(d.to,cur); let vCell=isOwnDept?vigatCell(d.item,lbl,true):"—"; return `<tr class="${d.tag==='urgent'?'urgent-row':caratBandCls(d.carat)}"><td>${lb}${d.item}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td><td>${noteHTML(d.note)||"—"}</td><td><span class="tag ${d.tag}">${tagName(d.tag)}</span></td><td>${so}</td><td>${vCell}</td><td class="hrs">${isT?hoursSince(d.sentMs):hoursSince(d.recvTime)}</td><td>${act}</td></tr>`; }).join("");
+    let tot=list.length?`<tr class="totrow"><td>🧮 કુલ Total (${cnt})</td><td>${tC.toFixed(2)}</td><td>${tN}</td><td>${tP}</td><td colspan="7">⬆ વિગત</td></tr>`:"";
+    let stRows=""; for(let s2 in tt){ let x=tt[s2]; if(x.cnt===0) continue; let nm=s2==="__none"?"— Status વગર —":s2; stRows+=`<tr style="background:#eaf4fb"><td colspan="2"><b>📊 ${nm}</b></td><td>${x.cnt} કાપણ</td><td>${x.c.toFixed(2)}ct</td><td>${x.n}</td><td colspan="4">${x.p} pis</td></tr>`; }
+    document.getElementById("list").innerHTML=(rows||`<tr><td colspan="10">કોઈ માલ નથી</td></tr>`)+tot+stRows; return;
   }
   document.getElementById("statFiltRow").style.display="none";
   let dft=document.getElementById("stockDeptFilter"); if(dft) dft.closest(".row").style.display="";
@@ -2087,13 +2162,13 @@ function showStock(){
     return (a.item||"").localeCompare(b.item||"");
   });
   document.getElementById("title").innerText=(cur.role==="admin")?"📋 Admin Master View":"📋 Stock Master View";
-   document.getElementById("stockHead").innerHTML=`<tr><th>Item</th><th>Carat</th><th>Nang</th><th>Pis</th><th>📝</th><th>Tag</th><th>From</th><th>To</th><th>🚦 State</th><th>⚙️ Status</th><th>🕒</th><th>Action</th></tr>`;
+   document.getElementById("stockHead").innerHTML=`<tr><th>Item</th><th>Carat</th><th>Nang</th><th>Pis</th><th>📝</th><th>Tag</th><th>From</th><th>To</th><th>🚦 State</th><th>⚙️ Status</th><th>📝 વિગત</th><th>🕒</th><th>Action</th></tr>`;
   let stats=myStatuses();
   let statOpts=`<option value="">— Status —</option>`+stats.map(x=>`<option value="${x}">${x}</option>`).join("");
   let html="",lastDept="";
   list.forEach(d=>{
     let dk=d.to+(d.toPart&&d.toPart!=="Main"?" — "+d.toPart:"");
-    if(dk!==lastDept){ html+=`<tr class="deptgrp-${deptColorIndex(dk)}" style="font-weight:bold;font-size:15px"><td colspan="11">🏢 ${dk}</td><td style="text-align:right"><button class="addp" onclick="showAddStockModal('${d.to.replace(/'/g,"\\'")}','${(d.toPart||"Main").replace(/'/g,"\\'")}')" title="આ Department માં Stock ઉમેરો">➕ Add</button></td></tr>`; lastDept=dk; }
+    if(dk!==lastDept){ html+=`<tr class="deptgrp-${deptColorIndex(dk)}" style="font-weight:bold;font-size:15px"><td colspan="12">🏢 ${dk}</td><td style="text-align:right"><button class="addp" onclick="showAddStockModal('${d.to.replace(/'/g,"\\'")}','${(d.toPart||"Main").replace(/'/g,"\\'")}')" title="આ Department માં Stock ઉમેરો">➕ Add</button></td></tr>`; lastDept=dk; }
     let toShow=d.toPart&&d.toPart!=="Main"?`${d.to} <span class="partbadge">${d.toPart}</span>`:d.to;
     let lb=d.label?`<span class="lblbadge">${d.label}</span> `:"";
     let st=(d.to===STOCK_DEPT)
@@ -2104,9 +2179,9 @@ function showStock(){
     let hrs=d.status==="Pending"?hoursSince(d.sentMs):hoursSince(d.recvTime);
     let cancelBtn=(d.status==="Pending"&&(cur.role==="admin"||d.from===STOCK_DEPT))?`<button class="del" onclick="cancelTransit(${d.idx})" style="padding:3px 7px;font-size:11px" title="ભૂલથી મોકલેલ Transit Cancel કરો">✖</button> `:"";
     let rtStock=(d.status==="Received"&&d.to!==STOCK_DEPT&&(cur.role==="admin"||cur.role==="stock"))?`<button class="recv" onclick="returnToStock(${d.idx})" style="padding:3px 7px;font-size:11px" title="ભૂલથી મોકલેલ/ઉમેરેલ — પાછલી જગ્યાએ (OK) પાછી મોકલો">🏠 Stock</button> `:"";
-    html+=`<tr class="${d.tag==='urgent'?'urgent-row':''}"><td>${lb}${d.item}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td><td>${noteHTML(d.note)||"—"}</td><td><span class="tag ${d.tag}">${tagName(d.tag)}</span></td><td>${d.from}</td><td>${toShow}</td><td>${stateBadge}</td><td>${st}</td><td class="hrs">${hrs}</td><td>${rtStock}${cancelBtn}<button class="edit" onclick="showEditForm(${d.idx})" style="padding:3px 7px;font-size:11px">✏</button> ${delBtn}</td></tr>`;
+    let allVigats=Object.keys(deptVigats).filter(k=>k.startsWith(d.item+"|")).map(k=>{let parts=k.split("|");let vt=deptVigats[k];let deptNm=parts[1];if(!vt) return"";let acid="vc"+(++_vigatCellId);_vigatMap[acid]={item:d.item,dept:deptNm};return `<span onclick="openVigatBoxById('${acid}')" title="${sanitize(vt.text)}\n[${sanitize(deptNm)}]" style="background:#fff3cd;padding:1px 4px;border-radius:3px;font-size:10px;margin:1px;display:inline-block;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer">📝 ${sanitize(deptNm)}</span>`;}).join("");html+=`<tr class="${d.tag==='urgent'?'urgent-row':''}"><td>${lb}${d.item}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td><td>${noteHTML(d.note)||"—"}</td><td><span class="tag ${d.tag}">${tagName(d.tag)}</span></td><td>${d.from}</td><td>${toShow}</td><td>${stateBadge}</td><td>${st}</td><td>${allVigats||"—"}</td><td class="hrs">${hrs}</td><td>${rtStock}${cancelBtn}<button class="edit" onclick="showEditForm(${d.idx})" style="padding:3px 7px;font-size:11px">✏</button> ${delBtn}</td></tr>`;
   });
-  document.getElementById("list").innerHTML=html||`<tr><td colspan="12">કોઈ માલ નથી</td></tr>`;
+  document.getElementById("list").innerHTML=html||`<tr><td colspan="13">કોઈ માલ નથી</td></tr>`;
 }
 function showDeptHist(){ if(cur.role!=="dept") return; let lbl=myLbl(); let s=normKapan(document.getElementById("dhSearch").value),from=document.getElementById("dhFrom").value,to=document.getElementById("dhTo").value; let il=hist.filter(h=>(h.to===lbl||deptMatches(h.to,cur))&&(h.action==="Send"||h.action==="Forward"||h.action==="Split-Send")); let dl=il.filter(h=>{ if(s&&!normKapan(h.item).includes(s)) return false; if(h.sentMs){ let iso=todayISO(h.sentMs); if(from&&iso<from) return false; if(to&&iso>to) return false; } return true; }); dl.sort(kapanSort); document.getElementById("deptHist").innerHTML=dl.map(h=>{ let recH=hist.find(x=>x.id===h.id&&x.action==="Receive"); let iDT=recH?recH.recvAt:"⏳ બાકી"; let fwd=hist.find(x=>x.from===lbl&&x.action==="Forward"&&baseName(x.item)===baseName(h.item)&&x.sentMs>=h.sentMs); let rT=recH?recH.recvTime:null,sT=fwd?fwd.sentMs:null; let rsCount=rT?(sT?diffHrs(rT,sT):diffHrs(rT,Date.now())+" (ચાલુ)"):"—"; return `<tr><td>${h.item}</td><td>${h.nang}</td><td>${h.pis}</td><td>${fwd?`<span class="mgr">${fwd.manager}</span>`:"—"}</td><td>${fwd?fwd.dataentry:"—"}</td><td class="small">${iDT}</td><td class="small">${fwd?fwd.sentAt:"🔵 પાસે"}</td><td class="hrs">${rsCount}</td></tr>`; }).join("")||`<tr><td colspan="8">કોઈ record નથી</td></tr>`; }
 function pairedHistory(){ let out=[]; hist.forEach(h=>{ if(["Send","Forward","Split-Send","Split-Hold"].includes(h.action)){ let recH=hist.find(x=>x.id===h.id&&x.action==="Receive"); let iMs=h.sentMs,rMs=recH?recH.recvTime:(h.action==="Split-Hold"?h.recvTime:null); let recvSend="—"; if(rMs){ let fwds=hist.filter(x=>["Send","Forward","Split-Send"].includes(x.action)&&baseName(x.from)===baseName(h.to)&&x.sentMs>=rMs); recvSend=fwds.length?diffHrs(rMs,Math.min(...fwds.map(x=>x.sentMs))):diffHrs(rMs,Date.now())+" (ચાલુ)"; } out.push({item:h.item,carat:h.carat,nang:h.nang,pis:h.pis,from:h.from,to:(h.toPart&&h.toPart!=="Main"?h.to+" — "+h.toPart:h.to),issueAt:h.sentAt,recvAt:recH?recH.recvAt:(h.action==="Split-Hold"?h.recvAt:"⏳ બાકી"),total:(iMs&&rMs)?diffHrs(iMs,rMs):"—",issueMs:iMs,recvTime:rMs||0,sentMs:iMs||0,tag:h.tag||"",manager:h.manager||"",dataentry:h.dataentry||"",recvSend:recvSend}); } }); return out; }
@@ -2459,6 +2534,7 @@ function applyCloudData(d){
   sugs=d.sugs || [];
   fourP=(d.fourP||[]).filter(Boolean);
   dstatus=d.dstatus || {};
+  if(d.deptVigats) deptVigats=d.deptVigats;
   if(d.labels) labels=d.labels;
   if(d.managers){ managers=d.managers; if(Array.isArray(managers)){ let old=managers; managers={}; if(old.length) managers["Admin"]=old; } }
   if(d.dataentrys){ dataentrys=d.dataentrys; if(Array.isArray(dataentrys)){ let old=dataentrys; dataentrys={}; if(old.length) dataentrys["Admin"]=old; } }
@@ -2490,7 +2566,7 @@ function applyCloudData(d){
   localStorage.setItem("hist",JSON.stringify(hist)); localStorage.setItem("reps",JSON.stringify(reps));
   localStorage.setItem("sugs",JSON.stringify(sugs)); localStorage.setItem("labels",JSON.stringify(labels));
   localStorage.setItem("managers",JSON.stringify(managers)); localStorage.setItem("dataentrys",JSON.stringify(dataentrys));
-  localStorage.setItem("dstatus",JSON.stringify(dstatus)); localStorage.setItem("fourP",JSON.stringify(fourP));
+  localStorage.setItem("dstatus",JSON.stringify(dstatus)); localStorage.setItem("deptVigats",JSON.stringify(deptVigats)); localStorage.setItem("fourP",JSON.stringify(fourP));
   if(cur){
     refresh();
     fillDeptDropdown();
