@@ -1042,6 +1042,16 @@ let jangads = JSON.parse(localStorage.getItem("jangads") || "[]");
 let jangadCounter = parseInt(localStorage.getItem("jangadCounter") || "0");
 let jangadEditPass = localStorage.getItem("jangadEditPass") || "";
 let kapanEditPass = localStorage.getItem("kapanEditPass") || "";
+// === TRADERS SYSTEM ===
+let traders = JSON.parse(localStorage.getItem("traders") || "[]");
+let traderItems = JSON.parse(localStorage.getItem("traderItems") || "[]");
+let traderIncoming = JSON.parse(localStorage.getItem("traderIncoming") || "[]");
+let traderSells = JSON.parse(localStorage.getItem("traderSells") || "[]");
+let traderRequests = JSON.parse(localStorage.getItem("traderRequests") || "[]");
+let storeManager = JSON.parse(localStorage.getItem("storeManager") || "null") || {id:"NGSTOR", pass:"NGSTOR"};
+let storeMgrLoggedIn = false;
+let extraItems = JSON.parse(localStorage.getItem("extraItems") || "[]");
+let extraStock = JSON.parse(localStorage.getItem("extraStock") || "{}");
 // Migration: ensure all jangads have depts, deptIndex, tag, and entryId
 jangads.forEach(j=>{
   if(!j.depts){ j.depts=[j.dept||"ઉચક"]; j.deptIndex=0; }
@@ -1105,17 +1115,12 @@ let _vigatCellId=0;
 let _vigatMap={};
 function vigatCell(kapanItem, deptLabel, canEdit){
   let v=getDeptVigat(kapanItem, deptLabel);
-  let cid="vc"+(++_vigatCellId);
-  _vigatMap[cid]={item:kapanItem,dept:deptLabel};
-  if(!canEdit) { if(!v) return "—"; let t=v.text.length>30?v.text.substring(0,30)+"…":v.text; return `<span title="${sanitize(v.text)}" style="font-size:11px;background:#fff3cd;padding:1px 4px;border-radius:3px">📝 ${sanitize(t)}</span>`; }
-  let val=v?v.text:"";
-  let html="<div style='display:flex;flex-direction:column;gap:2px;min-width:120px;max-width:200px'>";
-  html+="<textarea id='"+cid+"' rows='2' style='width:100%;padding:2px 4px;font-size:11px;border:1px solid #ddd;border-radius:3px;resize:vertical;background:#fffcf0' placeholder='📝 vigat lakho...' onblur='saveVigatCell(\""+cid+"\")'>"+sanitize(val)+"</textarea>";
-  html+="<div style='display:flex;gap:3px;justify-content:flex-end'>";
-  html+="<button onclick='saveVigatCell(\""+cid+"\")' style='background:#27ae60;color:#fff;border:none;padding:1px 6px;border-radius:3px;font-size:10px;cursor:pointer'>Save</button>";
-  html+="<button onclick='delVigatById(\""+cid+"\")' style='background:#e74c3c;color:#fff;border:none;padding:1px 6px;border-radius:3px;font-size:10px;cursor:pointer'>Del</button>";
-  html+="</div></div>";
-  return html;
+  let safeItem=sanitize(kapanItem).replace(/'/g,"\\'");
+  let safeDept=sanitize(deptLabel).replace(/'/g,"\\'");
+  if(!v) return canEdit?`<button class="addp" onclick="openVigatBox(this,'${safeItem}','${safeDept}');return false;" style="font-size:10px;padding:2px 6px">📝 ઉમેરો</button>`:"—";
+  let txt=v.text.length>40?v.text.substring(0,40)+"…":v.text;
+  let editBtns=canEdit?` <span onclick="openVigatBox(this.closest('td'),'${safeItem}','${safeDept}');" style="cursor:pointer;font-size:10px;color:#2980b9" title="Edit">✏</span> <span onclick="delVigatConfirm('${safeItem}','${safeDept}');" style="cursor:pointer;font-size:10px;color:#e74c3c" title="Delete">🗑</span>`:"";
+  return `<div style="font-size:12px;background:#fff3cd;padding:2px 6px;border-radius:4px;max-width:180px" title="${sanitize(v.text)}\n[${v.updatedBy||""} — ${v.updatedAt||""}]">📝 ${sanitize(txt)}${editBtns}</div>`;
 }
 let _vigatEditCtx={item:"",dept:""};
 function openVigatBox(el, kapanItem, deptLabel){
@@ -1174,14 +1179,14 @@ function save(){
     localStorage.setItem("sugs",JSON.stringify(sugs)); localStorage.setItem("labels",JSON.stringify(labels));
     localStorage.setItem("managers",JSON.stringify(managers)); localStorage.setItem("dataentrys",JSON.stringify(dataentrys));
     localStorage.setItem("dstatus",JSON.stringify(dstatus)); localStorage.setItem("deptVigats",JSON.stringify(deptVigats)); localStorage.setItem("fourP",JSON.stringify(fourP));
-    localStorage.setItem("uchak",JSON.stringify(uchak)); localStorage.setItem("uchakProcesses",JSON.stringify(uchakProcesses)); localStorage.setItem("uchakRates",JSON.stringify(uchakRates)); localStorage.setItem("deptProcesses",JSON.stringify(deptProcesses)); localStorage.setItem("deptRates",JSON.stringify(deptRates)); localStorage.setItem("jangads",JSON.stringify(jangads)); localStorage.setItem("jangadCounter",String(jangadCounter)); if(jangadEditPass) localStorage.setItem("jangadEditPass",jangadEditPass); if(kapanEditPass) localStorage.setItem("kapanEditPass",kapanEditPass);
+    localStorage.setItem("uchak",JSON.stringify(uchak)); localStorage.setItem("uchakProcesses",JSON.stringify(uchakProcesses)); localStorage.setItem("uchakRates",JSON.stringify(uchakRates)); localStorage.setItem("deptProcesses",JSON.stringify(deptProcesses)); localStorage.setItem("deptRates",JSON.stringify(deptRates)); localStorage.setItem("jangads",JSON.stringify(jangads)); localStorage.setItem("jangadCounter",String(jangadCounter)); if(jangadEditPass) localStorage.setItem("jangadEditPass",jangadEditPass); if(kapanEditPass) localStorage.setItem("kapanEditPass",kapanEditPass); localStorage.setItem("traders",JSON.stringify(traders)); localStorage.setItem("traderItems",JSON.stringify(traderItems)); localStorage.setItem("traderIncoming",JSON.stringify(traderIncoming)); localStorage.setItem("traderSells",JSON.stringify(traderSells)); localStorage.setItem("traderRequests",JSON.stringify(traderRequests)); localStorage.setItem("storeManager",JSON.stringify(storeManager)); localStorage.setItem("extraItems",JSON.stringify(extraItems)); localStorage.setItem("extraStock",JSON.stringify(extraStock));
   }catch(e){ console.warn("localStorage quota exceeded",e); toast("⚠️ Local storage full — Firebase backup only.","warning"); }
-  if(window.cloudSave){ window.cloudSave({users,stock:data,hist,reps,sugs,labels,managers,dataentrys,dstatus,deptVigats,fourP,uchak,uchakProcesses,uchakRates,deptProcesses,deptRates,jangads,jangadCounter,updated:nowMs,sugAll,loginHistory:JSON.parse(localStorage.getItem("loginHistory")||"[]")}); }
+  if(window.cloudSave){ window.cloudSave({users,stock:data,hist,reps,sugs,labels,managers,dataentrys,dstatus,deptVigats,fourP,uchak,uchakProcesses,uchakRates,deptProcesses,deptRates,jangads,jangadCounter,traders,traderItems,traderIncoming,traderSells,traderRequests,storeManager,extraItems,extraStock,updated:nowMs,sugAll,loginHistory:JSON.parse(localStorage.getItem("loginHistory")||"[]")}); }
 }
 
 let curPage="";
 function showPage(pg){ curPage=pg; document.querySelectorAll(".page").forEach(p=>p.classList.remove("show")); let el=document.getElementById("pg_"+pg); if(el) el.classList.add("show"); document.querySelectorAll(".navbar button").forEach(b=>b.classList.toggle("active", b.dataset.pg===pg)); let sb=document.querySelector(".schbox"); if(sb) sb.style.display=pg==="admin"?"none":""; refresh(); }
-function buildNav(){   let isFull=(cur.role==="admin"||cur.role==="stock");   let items=[]; if(isFull) items.push(["dash","📊 Dashboard"]); items.push(["status","📊 Status Master"]); if(isFull) items.push(["send","📤 કાપણ મોકલો"]); items.push(["stock","📥 Stock & Inbox"]); items.push(["urgent","🔴 Urgent"]); if(isFull) items.push(["4p","4️⃣ 4P"]); items.push(["rep","🔧 Repairing"]); items.push(["sug","💡 Suggestion"]); items.push(["notif","🔔 Notifications"]); items.push(["anal","📊 Analysis"]); items.push(["hist","🕒 History"]); items.push(["uchak","🔀 ઉચક"]); if(cur.role==="admin") items.push(["admin","👑 Admin"]); if(cur.role==="admin") items.push(["lhist","🔐 Login History"]); document.getElementById("navbar").innerHTML=items.map(it=>`<button data-pg="${it[0]}" onclick="showPage('${it[0]}')">${it[1]}</button>`).join(""); showPage("urgent"); }
+function buildNav(){   let isFull=(cur.role==="admin"||cur.role==="stock");   let isTrader=(cur.role==="trader");   let items=[]; if(isTrader){ items.push(["traders","🏪 Traders"]); } else { if(isFull) items.push(["dash","📊 Dashboard"]); items.push(["status","📊 Status Master"]); if(isFull) items.push(["send","📤 કાપણ મોકલો"]); items.push(["stock","📥 Stock & Inbox"]); items.push(["urgent","🔴 Urgent"]); if(isFull) items.push(["4p","4️⃣ 4P"]); items.push(["rep","🔧 Repairing"]); items.push(["sug","💡 Suggestion"]); items.push(["notif","🔔 Notifications"]); items.push(["anal","📊 Analysis"]); items.push(["hist","🕒 History"]); items.push(["uchak","🔀 ઉચક"]); items.push(["traders","🏪 Traders"]); if(cur.role==="admin"){ items.push(["admin","👑 Admin"]); items.push(["lhist","🔐 Login History"]); } } document.getElementById("navbar").innerHTML=items.map(it=>`<button data-pg="${it[0]}" onclick="showPage('${it[0]}')">${it[1]}</button>`).join(""); showPage(isTrader?"traders":"urgent"); }
 
 function startSession(u){ sessionStorage.setItem("curId",u.id); }
 function endSession(){ sessionStorage.removeItem("curId"); }
@@ -1604,7 +1609,7 @@ function showKapanLog(kapan){
   document.getElementById("kapanLogBox").classList.remove("hide");
   document.getElementById("kapanLogBox").scrollIntoView({behavior:"smooth",block:"start"});
 }
-function clearHist(){ ["hSearch","hFrom","hTo"].forEach(x=>document.getElementById(x).value=""); document.getElementById("hDept").value=""; document.getElementById("history").innerHTML='<tr><td colspan="11" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr>'; }
+function clearHist(){ ["hSearch","hFrom","hTo"].forEach(x=>document.getElementById(x).value=""); document.getElementById("hDept").value=""; document.getElementById("history").innerHTML='<tr><td colspan="12" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr>'; }
 function clearDeptHist(){ ["dhSearch","dhFrom","dhTo"].forEach(x=>document.getElementById(x).value=""); document.getElementById("deptHist").innerHTML='<tr><td colspan="7" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr>'; }
 function clearRepHist(){ ["rhSearch","rhFrom","rhTo"].forEach(x=>document.getElementById(x).value=""); document.getElementById("rhDept").value=""; let rt=document.getElementById("rhType"); if(rt) rt.value=""; document.getElementById("repHist").innerHTML='<tr><td colspan="16" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr>'; }
 function clearSugHist(){ ["sgFiltFrom","sgFiltTo"].forEach(x=>document.getElementById(x).value=""); if(document.getElementById("sgFiltDept")) document.getElementById("sgFiltDept").value=""; document.getElementById("sugHist").innerHTML='<tr><td colspan="6" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr>'; }
@@ -1768,7 +1773,9 @@ function saveEdit(){
 function closeEdit(){ document.getElementById("editModal").classList.add("hide"); document.getElementById("editOverlay").classList.add("hide"); }
 
 function applyFilters(list){ let s=normKapan(document.getElementById("fSearch").value),tg=document.getElementById("fTag").value,stt=document.getElementById("fStatus").value,dp=document.getElementById("fDept")?document.getElementById("fDept").value:""; return list.filter(d=>{ if(s&&!normKapan(d.item).includes(s)) return false; if(tg&&d.tag!==tg) return false; if(stt&&d.status!==stt) return false; if(dp&&d.from!==dp&&d.to!==dp) return false; return true; }); }
-function refresh(){ if(!cur) return; updateUndoRedoTopBar(); if(smCountdownTimer&&curPage!=="status"){ clearInterval(smCountdownTimer); smCountdownTimer=null; } switch(curPage){ case"urgent":showUrgentPanel();break; case"dash":showUchakReadyList();showUchakHistory();showCards();showKapan();showInbox();showMyStatusList();fillPickDropdown();fillDashStatDept();fillHistDept();if(cur.role==="admin"||cur.role==="stock"){fillSplitPick();sfSearchList();}break; case"status":showStatusMaster();break; case"uchak":showUchakReadyList();showUchakHistory();showUchakInbox();showActiveUchakEntries();initJangadEntry();if(cur.role==="admin"||cur.role==="stock"){showUchakProcessesAdmin();showUchakRatesAdmin();}break;     case"stock":showStock();showInbox();showMyStatusList();fillPickDropdown();break; case"rep":showRepInbox();showRepSent();resetRepHist();break; case"sug":showSugInbox();showSugHist();showSugAllHist();break; case"analysis":showAnalysis();break; case"report":showReport();break; case"admin":showSugAdminInbox();break; case"4p":show4PPanel();show4PHistory();break; case"lhist":break; case"notif":break; case"send":if(cur.role==="admin"||cur.role==="stock"){fillSplitPick();sfSearchList();}break; default:showUchakReadyList();showUchakHistory();showCards();showKapan();showInbox();showStock();showRepInbox();showRepSent();resetRepHist();showSugInbox();showSugHist();showSugAllHist();showAnalysis();showMyStatusList();fillPickDropdown();reportKey=null;showReport();showSugAdminInbox();showUchakInbox();showActiveUchakEntries();initJangadEntry();showUrgentPanel();fillDashStatDept();fillHistDept();if(cur.role==="admin"||cur.role==="stock"){fillSplitPick();sfSearchList();showUchakProcessesAdmin();showUchakRatesAdmin();}} }
+function refresh(){ if(!cur) return; updateUndoRedoTopBar(); if(smCountdownTimer&&curPage!=="status"){ clearInterval(smCountdownTimer); smCountdownTimer=null; } switch(curPage){ case"urgent":showUrgentPanel();break; case"dash":showUchakReadyList();showUchakHistory();showCards();showKapan();showInbox();showMyStatusList();fillPickDropdown();fillDashStatDept();fillHistDept();if(cur.role==="admin"||cur.role==="stock"){fillSplitPick();sfSearchList();}break; case"status":showStatusMaster();break; case"uchak":showUchakReadyList();showUchakHistory();showUchakInbox();showActiveUchakEntries();initJangadEntry();if(cur.role==="admin"||cur.role==="stock"){showUchakProcessesAdmin();showUchakRatesAdmin();}break;     case"stock":showStock();showInbox();showMyStatusList();fillPickDropdown();break; case"rep":showRepInbox();showRepSent();resetRepHist();break; case"sug":showSugInbox();showSugHist();showSugAllHist();break; case"analysis":showAnalysis();break; case"report":showReport();break; case"admin":showSugAdminInbox();break; case"4p":show4PPanel();show4PHistory();break; case"lhist":break; case"notif":break;
+  case"traders":showTradersPage();break;
+  case"send":if(cur.role==="admin"||cur.role==="stock"){fillSplitPick();sfSearchList();}break; default:showUchakReadyList();showUchakHistory();showCards();showKapan();showInbox();showStock();showRepInbox();showRepSent();resetRepHist();showSugInbox();showSugHist();showSugAllHist();showAnalysis();showMyStatusList();fillPickDropdown();reportKey=null;showReport();showSugAdminInbox();showUchakInbox();showActiveUchakEntries();initJangadEntry();showUrgentPanel();fillDashStatDept();fillHistDept();if(cur.role==="admin"||cur.role==="stock"){fillSplitPick();sfSearchList();showUchakProcessesAdmin();showUchakRatesAdmin();}} }
 
 function partsOf(lbl){ let u=users.find(x=>x.role==="dept"&&unitLabel(x.dept,x.office)===lbl); return u?getParts(u):["Main"]; }
 function resolvePart(lbl,toPart){ let ps=partsOf(lbl); let p=toPart||"Main"; return ps.includes(p)?p:(ps[0]||"Main"); }
@@ -2149,7 +2156,7 @@ function showStock(){
     let tC=0,tN=0,tP=0,cnt=0;
     let rows=list.map(d=>{ let lb=d.label?`<span class="lblbadge">${d.label}</span> `:""; let isT=d.status==="Pending"&&d.from===lbl; let so=isT?`<span class="chalu">⏳ Transit → ${d.to}</span>`:`<select class="ssel" onchange="setKapanStatus(${d.idx},this.value)">${statOpts.replace(`value="${d.dstat}"`,`value="${d.dstat}" selected`)}</select>`; let sk=d.dstat||"__none"; if(!tt[sk]) tt[sk]={c:0,n:0,p:0,cnt:0}; tt[sk].c+=Number(d.carat); tt[sk].n+=Number(d.nang); tt[sk].p+=Number(d.pis); tt[sk].cnt++; tC+=Number(d.carat);tN+=Number(d.nang);tP+=Number(d.pis);cnt++; let act=isT?`<button class="del" onclick="cancelTransit(${d.idx})" style="padding:3px 7px;font-size:11px" title="ભૂલથી મોકલેલ Transit Cancel કરો">✖ Cancel</button>`:(cur.role==="dept"?"":`<button class="recv" onclick="returnToStock(${d.idx})" style="padding:3px 7px;font-size:11px" title="ભૂલથી આવેલ — પાછલી જગ્યાએ (OK) પાછી મોકલો">🏠 Stock</button> `+`<button class="edit" onclick="showEditForm(${d.idx})" style="padding:3px 7px;font-size:11px">✏</button>`); let isOwnDept=d.to===lbl||deptMatches(d.to,cur); let vCell=isOwnDept?vigatCell(d.item,lbl,true):"—"; return `<tr class="${d.tag==='urgent'?'urgent-row':caratBandCls(d.carat)}"><td>${lb}${d.item}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td><td>${noteHTML(d.note)||"—"}</td><td><span class="tag ${d.tag}">${tagName(d.tag)}</span></td><td>${so}</td><td>${vCell}</td><td class="hrs">${isT?hoursSince(d.sentMs):hoursSince(d.recvTime)}</td><td>${act}</td></tr>`; }).join("");
     let tot=list.length?`<tr class="totrow"><td>🧮 કુલ Total (${cnt})</td><td>${tC.toFixed(2)}</td><td>${tN}</td><td>${tP}</td><td colspan="7">⬆ વિગત</td></tr>`:"";
-    let stRows=""; for(let s2 in tt){ let x=tt[s2]; if(x.cnt===0) continue; let nm=s2==="__none"?"— Status વગર —":s2; stRows+=`<tr style="background:#eaf4fb"><td colspan="2"><b>📊 ${nm}</b></td><td>${x.cnt} કાપણ</td><td>${x.c.toFixed(2)}ct</td><td>${x.n}</td><td colspan="4">${x.p} pis</td></tr>`; }
+    let stRows=""; for(let s2 in tt){ let x=tt[s2]; if(x.cnt===0) continue; let nm=s2==="__none"?"— Status વગર —":s2; stRows+=`<tr style="background:#eaf4fb"><td colspan="2"><b>📊 ${nm}</b></td><td>${x.cnt} કાપણ</td><td>${x.c.toFixed(2)}ct</td><td>${x.n}</td><td colspan="5">${x.p} pis</td></tr>`; }
     document.getElementById("list").innerHTML=(rows||`<tr><td colspan="10">કોઈ માલ નથી</td></tr>`)+tot+stRows; return;
   }
   document.getElementById("statFiltRow").style.display="none";
@@ -2168,7 +2175,7 @@ function showStock(){
   let html="",lastDept="";
   list.forEach(d=>{
     let dk=d.to+(d.toPart&&d.toPart!=="Main"?" — "+d.toPart:"");
-    if(dk!==lastDept){ html+=`<tr class="deptgrp-${deptColorIndex(dk)}" style="font-weight:bold;font-size:15px"><td colspan="12">🏢 ${dk}</td><td style="text-align:right"><button class="addp" onclick="showAddStockModal('${d.to.replace(/'/g,"\\'")}','${(d.toPart||"Main").replace(/'/g,"\\'")}')" title="આ Department માં Stock ઉમેરો">➕ Add</button></td></tr>`; lastDept=dk; }
+    if(dk!==lastDept){ html+=`<tr class="deptgrp-${deptColorIndex(dk)}" style="font-weight:bold;font-size:15px"><td colspan="13">🏢 ${dk}</td><td style="text-align:right"><button class="addp" onclick="showAddStockModal('${d.to.replace(/'/g,"\\'")}','${(d.toPart||"Main").replace(/'/g,"\\'")}')" title="આ Department માં Stock ઉમેરો">➕ Add</button></td></tr>`; lastDept=dk; }
     let toShow=d.toPart&&d.toPart!=="Main"?`${d.to} <span class="partbadge">${d.toPart}</span>`:d.to;
     let lb=d.label?`<span class="lblbadge">${d.label}</span> `:"";
     let st=(d.to===STOCK_DEPT)
@@ -2562,6 +2569,14 @@ function applyCloudData(d){
   uchak.forEach(u=>{ if(!u.dept) u.dept="ઉચક"; if(!u.nextOpts) u.nextOpts=[]; });
   if(d.jangads) { jangads=d.jangads; jangads.forEach(j=>{ if(!j.depts){ j.depts=[j.dept||"ઉચક"]; j.deptIndex=0; } if(!j.tag) j.tag="Regular"; }); localStorage.setItem("jangads",JSON.stringify(jangads)); }
   jangadCounter=d.jangadCounter||parseInt(localStorage.getItem("jangadCounter")||"0"); localStorage.setItem("jangadCounter",String(jangadCounter));
+  if(d.traders){traders=d.traders;localStorage.setItem("traders",JSON.stringify(traders));}
+  if(d.traderItems){traderItems=d.traderItems;localStorage.setItem("traderItems",JSON.stringify(traderItems));}
+  if(d.traderIncoming){traderIncoming=d.traderIncoming;localStorage.setItem("traderIncoming",JSON.stringify(traderIncoming));}
+  if(d.traderSells){traderSells=d.traderSells;localStorage.setItem("traderSells",JSON.stringify(traderSells));}
+  if(d.traderRequests){traderRequests=d.traderRequests;localStorage.setItem("traderRequests",JSON.stringify(traderRequests));}
+  if(d.extraItems){extraItems=d.extraItems;localStorage.setItem("extraItems",JSON.stringify(extraItems));}
+  if(d.extraStock){extraStock=d.extraStock;localStorage.setItem("extraStock",JSON.stringify(extraStock));}
+  if(d.storeManager){storeManager=d.storeManager;localStorage.setItem("storeManager",JSON.stringify(storeManager));}
   localStorage.setItem("users",JSON.stringify(users)); localStorage.setItem("stock",JSON.stringify(data));
   localStorage.setItem("hist",JSON.stringify(hist)); localStorage.setItem("reps",JSON.stringify(reps));
   localStorage.setItem("sugs",JSON.stringify(sugs)); localStorage.setItem("labels",JSON.stringify(labels));
@@ -3929,9 +3944,2369 @@ function sendToUchak(){
   save(); refresh(); showUchakInbox(); addNotif("send","Old Uchak Send",src.item+" → "+d); toast("✅ "+d+" ને મોકલાઈ ગયું!","success");
 }
 function showUchakInbox(){ showJangadInbox(); }
+function addTraderPersonRow(){
+  let wrap=document.getElementById("trdPersonsWrap");
+  if(!wrap) return;
+  let div=document.createElement("div");
+  div.className="row trd-person-row";
+  div.style.cssText="align-items:flex-end";
+  div.innerHTML=`<div><label>Person Name (વ્યક્તિ નામ)</label><input class="trdPerson" placeholder="Person Name"></div><div><label>Mobile Number</label><input class="trdMobile" placeholder="Mobile Number"></div><button class="del" onclick="removeTraderPersonRow(this)" style="margin:0">🗑</button>`;
+  wrap.appendChild(div);
+}
+function removeTraderPersonRow(btn){
+  let rows=document.querySelectorAll("#trdPersonsWrap .trd-person-row");
+  if(rows.length<=1){ toast("ઓછામાં ઓછી એક વ્યક્તિ રાખો!","warning"); return; }
+  btn.closest(".trd-person-row").remove();
+}
+function traderPersons(t){
+  if(Array.isArray(t.persons)&&t.persons.length) return t.persons;
+  return (t.person||t.mobile)?[{person:t.person||"",mobile:t.mobile||""}]:[];
+}
+function addTrader(){
+  let name=document.getElementById("trdName").value.trim();
+  if(!name){ toast("Trader / Company Name ભરો!","error"); return; }
+  let persons=[];
+  document.querySelectorAll("#trdPersonsWrap .trd-person-row").forEach(r=>{
+    let p=r.querySelector(".trdPerson").value.trim();
+    let m=r.querySelector(".trdMobile").value.trim();
+    if(p||m) persons.push({person:p,mobile:m});
+  });
+  if(traders.find(t=>t.name===name)){ toast("પહેલેથી છે!","warning"); return; }
+  traders.push({id:Date.now(),name,persons,createdAt:now()});
+  save();
+  document.getElementById("trdName").value="";
+  document.querySelectorAll("#trdPersonsWrap .trd-person-row").forEach(r=>{
+    r.querySelector(".trdPerson").value="";
+    r.querySelector(".trdMobile").value="";
+  });
+  showTraderList();
+  fillTraderDropdowns();
+  toast("✅ Trader ઉમેરાયો!","success");
+}
+function delTrader(id){
+  if(!confirm("Delete trader?")) return;
+  traders=traders.filter(t=>t.id!==id);
+  save(); showTraderList(); fillTraderDropdowns();
+}
+function showTraderList(){
+  let el=document.getElementById("traderListBody");
+  if(!el) return;
+  el.innerHTML=traders.map((t,i)=>{
+    let ps=traderPersons(t);
+    let rows=ps.map(p=>`<b>${sanitize(p.person||"—")}</b>${p.mobile?` <span class="small">📞 ${sanitize(p.mobile)}</span>`:""}`).join("<br>");
+    return `<tr><td>${i+1}</td><td><b>${sanitize(t.name)}</b></td><td>${rows||'<span style="color:#999">—</span>'}</td><td style="white-space:nowrap"><button class="edit" onclick="editTrader(${t.id})" style="padding:3px 8px;font-size:11px">✏ Edit</button> <button class="del" onclick="delTrader(${t.id})">🗑</button></td></tr>`;
+  }).join("")||`<tr><td colspan="4" style="text-align:center;color:#999">કોઈ Trader નથી</td></tr>`;
+}
+
+// --- Item Master CRUD ---
+function addItemMaster(){
+  let name=document.getElementById("itmName").value.trim();
+  let qtyType=document.getElementById("itmQtyType").value;
+  let price=parseFloat(document.getElementById("itmPrice").value)||0;
+  if(!name){ toast("Item Name ભરો!","error"); return; }
+  if(price<0){ toast("Price નegative ન હોઈ શકે!","error"); return; }
+  let existing=traderItems.find(it=>it.name===name);
+  if(existing){
+    existing.price=price;
+    existing.qtyType=qtyType;
+    existing.updatedAt=now();
+    existing.updatedMs=Date.now();
+    save();
+    document.getElementById("itmName").value="";
+    document.getElementById("itmPrice").value="0";
+    showItemMasterList();
+    fillItemDropdowns();
+    toast("✅ Item price updated!","success");
+    return;
+  }
+  let lowLimit=parseFloat(document.getElementById('itmLowLimit')?.value)||10;
+  traderItems.push({id:Date.now(),name,qtyType,price,stock:0,lowStockLimit:lowLimit,createdAt:now(),createdMs:Date.now(),updatedAt:now(),updatedMs:Date.now()});
+  save();
+  document.getElementById("itmName").value="";
+  document.getElementById("itmPrice").value="0";
+  showItemMasterList();
+  fillItemDropdowns();
+  toast("✅ Item ઉમેરાયો!","success");
+}
+function delItemMaster(id){
+  if(!confirm("Delete item? Stock also will be removed.")) return;
+  traderItems=traderItems.filter(it=>it.id!==id);
+  save(); showItemMasterList(); fillItemDropdowns();
+}
+function editItemPrice(id){
+  let item=traderItems.find(it=>it.id===id);
+  if(!item) return;
+  let np=prompt("New Price for "+item.name+":",item.price);
+  if(np===null) return;
+  np=parseFloat(np);
+  if(isNaN(np)||np<0){ toast("Valid price ભરો!","error"); return; }
+  item.price=np;
+  item.updatedAt=now();
+  item.updatedMs=Date.now();
+  save(); showItemMasterList(); fillItemDropdowns();
+  toast("✅ Price updated!","success");
+}
+function qtyTypeLabel(t){ return t==='liter'?'📏 Liter':t==='nanga'?'🔢 Nanga':t==='box'?'📦 Box':t==='kg'?'⚖️ KG':'🔢 Number'; }
+function qtyUnit(t){ return t==='liter'?'L':t==='nanga'?'Nanga':t==='box'?'Box':t==='kg'?'KG':'pcs'; }
+function updateItmQtyHint(){
+  let t=document.getElementById("itmQtyType").value;
+  let el=document.getElementById("itmQtyHint");
+  if(!el) return;
+  if(t==='liter') el.textContent="📏 આ unit માં quantity લખાશે — દા.ત. 10 Liter";
+  else if(t==='nanga') el.textContent="🔢 આ unit માં quantity લખાશે — દા.ત. 5 Nanga";
+  else if(t==='box') el.textContent="📦 આ unit માં quantity લખાશે — દા.ત. 3 Box";
+  else if(t==='kg') el.textContent="⚖️ આ unit માં quantity લખાશે — દા.ત. 25 KG";
+  else el.textContent="🔢 આ unit માં quantity લખાશે — દા.ત. 10 pcs";
+}
+function showItemMasterList(){
+  let el=document.getElementById("itemMasterBody");
+  if(!el) return;
+  el.innerHTML=traderItems.map((it,i)=>{let isLow=it.stock<=getItemLowLimit(it); return `<tr style="${isLow?'background:#fdecea':''}"><td>${i+1}</td><td>${sanitize(it.name)} ${isLow?'<span style="background:#e74c3c;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">⚠️ Low</span>':''}</td><td>${qtyTypeLabel(it.qtyType)}</td><td>₹${it.price.toFixed(2)}</td><td>${it.stock.toFixed(2)} ${qtyUnit(it.qtyType)}</td><td style="font-size:11px;color:#888">⚠️ ≤${getItemLowLimit(it)}</td><td style="white-space:nowrap"><button class="edit" onclick="editItemMasterFull(${it.id})" style="padding:3px 8px;font-size:11px">✏ Edit</button> <button class="del" onclick="delItemMaster(${it.id})">🗑</button></td></tr>`;}).join("")||`<tr><td colspan="7" style="text-align:center;color:#999">કોઈ Item નથી</td></tr>`;
+}
+
+// --- TRADER EDIT (Modal) ---
+let _editTraderId=null;
+function editTrader(id){
+  let t=traders.find(x=>x.id===id);
+  if(!t) return;
+  _editTraderId=id;
+  document.getElementById('etName').value=t.name;
+  let wrap=document.getElementById('etPersonsWrap');
+  wrap.innerHTML='';
+  let ps=traderPersons(t);
+  ps.forEach(p=>addEtPersonRow(p.person||'',p.mobile||''));
+  if(!ps.length) addEtPersonRow('','');
+  document.getElementById('etTraderModal').style.display='';
+  document.getElementById('etTraderOverlay').style.display='';
+}
+function addEtPersonRow(name,mobile){
+  let wrap=document.getElementById('etPersonsWrap');
+  let div=document.createElement('div');
+  div.className='row';
+  div.style.cssText='align-items:flex-end;margin-bottom:6px';
+  div.innerHTML=`<div style="flex:1"><label>Person Name</label><input class="etPerson" value="${sanitize(name)}" placeholder="Name"></div><div style="flex:1"><label>Mobile</label><input class="etMobile" value="${sanitize(mobile)}" placeholder="Mobile"></div><button onclick="this.closest('.row').remove()" style="background:#e74c3c;padding:6px 10px;margin:0;font-size:12px">🗑</button>`;
+  wrap.appendChild(div);
+}
+function addEtPerson(){ addEtPersonRow('',''); }
+function closeEtTraderModal(){
+  document.getElementById('etTraderModal').style.display='none';
+  document.getElementById('etTraderOverlay').style.display='none';
+  _editTraderId=null;
+}
+function saveEtTrader(){
+  if(!_editTraderId) return;
+  let t=traders.find(x=>x.id===_editTraderId);
+  if(!t) return;
+  let name=document.getElementById('etName').value.trim();
+  if(!name){ toast('Trader Name ભરો!','error'); return; }
+  // Check duplicate name (excluding self)
+  if(traders.find(x=>x.name===name&&x.id!==_editTraderId)){ toast('આ નામ પહેલેથી છે!','warning'); return; }
+  let persons=[];
+  document.querySelectorAll('#etPersonsWrap .row').forEach(r=>{
+    let p=r.querySelector('.etPerson').value.trim();
+    let m=r.querySelector('.etMobile').value.trim();
+    if(p||m) persons.push({person:p,mobile:m});
+  });
+  t.name=name;
+  t.persons=persons;
+  save();
+  closeEtTraderModal();
+  showTraderList();
+  fillTraderDropdowns();
+  toast('✅ Trader updated!','success');
+}
+
+// --- ITEM MASTER FULL EDIT (Modal) ---
+let _editItemId=null;
+function editItemMasterFull(id){
+  let it=traderItems.find(x=>x.id===id);
+  if(!it) return;
+  _editItemId=id;
+  document.getElementById('eiName').value=it.name;
+  document.getElementById('eiQtyType').value=it.qtyType;
+  document.getElementById('eiPrice').value=it.price;
+  document.getElementById('eiStock').value=it.stock;
+  document.getElementById('eiLowLimit').value=(it.lowStockLimit!=null)?it.lowStockLimit:10;
+  document.getElementById('eiItemModal').style.display='';
+  document.getElementById('eiItemOverlay').style.display='';
+}
+function closeEiItemModal(){
+  document.getElementById('eiItemModal').style.display='none';
+  document.getElementById('eiItemOverlay').style.display='none';
+  _editItemId=null;
+}
+function saveEiItem(){
+  if(!_editItemId) return;
+  let it=traderItems.find(x=>x.id===_editItemId);
+  if(!it) return;
+  let name=document.getElementById('eiName').value.trim();
+  let qtyType=document.getElementById('eiQtyType').value;
+  let price=parseFloat(document.getElementById('eiPrice').value)||0;
+  let stock=parseFloat(document.getElementById('eiStock').value)||0;
+  if(!name){ toast('Item Name ભરો!','error'); return; }
+  if(price<0){ toast('Price negative ન હોઈ શકે!','error'); return; }
+  if(stock<0){ toast('Stock negative ન હોઈ શકે!','error'); return; }
+  // Check duplicate name (excluding self)
+  if(traderItems.find(x=>x.name===name&&x.id!==_editItemId)){ toast('આ નામ પહેલેથી છે!','warning'); return; }
+  let lowLimit=parseFloat(document.getElementById('eiLowLimit').value)||10;
+  it.name=name;
+  it.qtyType=qtyType;
+  it.price=price;
+  it.stock=stock;
+  it.lowStockLimit=lowLimit;
+  it.updatedAt=now();
+  it.updatedMs=Date.now();
+  save();
+  closeEiItemModal();
+  showItemMasterList();
+  fillItemDropdowns();
+  toast('✅ Item updated!','success');
+}
+
+// --- STOCK PANEL EDIT (Modal) ---
+let _editStockId=null;
+function editStockItem(id){
+  let it=traderItems.find(x=>x.id===id);
+  if(!it) return;
+  _editStockId=id;
+  document.getElementById('esName').textContent=it.name;
+  document.getElementById('esQtyType').textContent=qtyTypeLabel(it.qtyType);
+  document.getElementById('esStock').value=it.stock;
+  document.getElementById('esPrice').value=it.price;
+  document.getElementById('esStockModal').style.display='';
+  document.getElementById('esStockOverlay').style.display='';
+}
+function closeEsStockModal(){
+  document.getElementById('esStockModal').style.display='none';
+  document.getElementById('esStockOverlay').style.display='none';
+  _editStockId=null;
+}
+function saveEsStock(){
+  if(!_editStockId) return;
+  let it=traderItems.find(x=>x.id===_editStockId);
+  if(!it) return;
+  let stock=parseFloat(document.getElementById('esStock').value);
+  let price=parseFloat(document.getElementById('esPrice').value);
+  if(isNaN(stock)||stock<0){ toast('Valid stock ભરો!','error'); return; }
+  if(isNaN(price)||price<0){ toast('Valid price ભરો!','error'); return; }
+  it.stock=stock;
+  it.price=price;
+  it.updatedAt=now();
+  it.updatedMs=Date.now();
+  save();
+  closeEsStockModal();
+  showTraderStockPanel();
+  showItemMasterList();
+  fillItemDropdowns();
+  toast('✅ Stock updated!','success');
+}
+
+// --- EXTRA ITEMS STOCK EDIT (Modal) ---
+let _editExName='';
+function editExStockItem(itemName){
+  _editExName=itemName;
+  document.getElementById('exEdName').value=itemName;
+  let stock=extraStock[itemName];
+  document.getElementById('exEdLocation').value=stock?stock.location:'';
+  document.getElementById('exEdModal').style.display='';
+  document.getElementById('exEdOverlay').style.display='';
+}
+function closeExEdModal(){
+  document.getElementById('exEdModal').style.display='none';
+  document.getElementById('exEdOverlay').style.display='none';
+  _editExName='';
+}
+function saveExEd(){
+  if(!_editExName) return;
+  let newName=document.getElementById('exEdName').value.trim();
+  let newLocation=document.getElementById('exEdLocation').value.trim();
+  if(!newName){ toast('Item Name ભરો!','error'); return; }
+  if(!newLocation){ toast('Location ભરો!','error'); return; }
+  let stock=extraStock[_editExName];
+  if(!stock){ toast('Item not found!','error'); return; }
+  // If name changed, migrate stock and history
+  if(newName!==_editExName){
+    if(extraStock[newName]){ toast('આ નામ પહેલેથી છે!','warning'); return; }
+    extraStock[newName]=stock;
+    delete extraStock[_editExName];
+    extraItems.forEach(i=>{ if(i.itemName===_editExName) i.itemName=newName; });
+  }
+  stock.location=newLocation;
+  stock.updatedAt=now();
+  stock.updatedMs=Date.now();
+  localStorage.setItem('extraItems',JSON.stringify(extraItems));
+  localStorage.setItem('extraStock',JSON.stringify(extraStock));
+  if(typeof _saveExtraToMainData==='function') _saveExtraToMainData();
+  closeExEdModal();
+  showExtraStockPanel();
+  showExtraItemsHistory();
+  toast('✅ Item updated!','success');
+}
+
+// --- Fill Dropdowns ---
+function fillTraderDropdowns(){
+  let opts=traders.map(t=>`<option value="${t.id}">${sanitize(t.name)}</option>`).join("");
+  let el=document.getElementById("incTrader");
+  if(el) el.innerHTML=`<option value="">— વેપારી પસંદ કરો —</option>`+opts;
+}
+function fillItemDropdowns(){
+  let opts=traderItems.map(it=>`<option value="${it.id}">${sanitize(it.name)} (₹${it.price.toFixed(2)} / ${qtyUnit(it.qtyType)})</option>`).join("");
+  let el=document.getElementById("incItem");
+  if(el) el.innerHTML=`<option value="">— વસ્તુ પસંદ કરો —</option>`+opts;
+  let el2=document.getElementById("issItem");
+  if(el2) el2.innerHTML=`<option value="">— વસ્તુ પસંદ કરો —</option>`+traderItems.map(it=>`<option value="${it.id}">${sanitize(it.name)} (Avail: ${it.stock.toFixed(2)} ${qtyUnit(it.qtyType)})</option>`).join("");
+}
+function fillDeptDropdownTraders(){
+  let depts=[...new Set(users.filter(u=>u.role==="dept").map(u=>unitLabel(u.dept,u.office)))];
+  let el=document.getElementById("issDept");
+  if(el) el.innerHTML=`<option value="">— Department પસંદ કરો —</option><option value="Admin">👑 Admin</option><option value="${STOCK_DEPT}">📦 ${STOCK_DEPT}</option>`+depts.sort().map(d=>`<option value="${d}">${d}</option>`).join("");
+}
+
+// --- Incoming Stock ---
+// --- Multi-Item Incoming Stock ---
+let _incItemCounter=0;
+function fillIncItemDropdowns(){
+  let opts=traderItems.map(it=>`<option value="${it.id}">${sanitize(it.name)} (₹${it.price.toFixed(2)} / ${qtyUnit(it.qtyType)})</option>`).join("");
+  let html=`<option value="">— Select —</option>`+opts;
+  document.querySelectorAll('.incItem').forEach(sel=>{ sel.innerHTML=html; });
+}
+function addIncItemRow(){
+  _incItemCounter++;
+  let wrap=document.getElementById('incItemsWrap');
+  let div=document.createElement('div');
+  div.className='inc-item-row';
+  div.style.cssText='display:flex;gap:8px;align-items:flex-end;margin-bottom:6px';
+  let opts=`<option value="">— Select —</option>`+traderItems.map(it=>`<option value="${it.id}">${sanitize(it.name)} (₹${it.price.toFixed(2)} / ${qtyUnit(it.qtyType)})</option>`).join("");
+  div.innerHTML=`<div style="flex:2"><select class="incItem sdd" onchange="onIncItemRowChange(this)">${opts}</select></div><div><input class="incQty" type="number" step="0.01" placeholder="Qty" oninput="updateIncRowTotal(this)" style="width:80px"></div><div><input class="incPrice" type="number" step="0.01" placeholder="Price" oninput="updateIncRowTotal(this)" style="width:80px"></div><div><input class="incRowTotal" oninput="updateIncRowTotal(this)" style="background:#fffcf0;width:90px"></div><button onclick="removeIncItemRow(this)" style="background:#e74c3c;padding:6px 10px;margin:0;font-size:12px">🗑</button>`;
+  wrap.appendChild(div);
+  initSearchableDropdowns();
+  updateIncGrandTotal();
+}
+function removeIncItemRow(btn){
+  let rows=document.querySelectorAll('.inc-item-row');
+  if(rows.length<=1){ toast('ઓછામાં ઓછી એક item રાખો!','warning'); return; }
+  btn.closest('.inc-item-row').remove();
+  updateIncGrandTotal();
+}
+function onIncItemRowChange(sel){
+  let id=parseInt(sel.value);
+  let item=traderItems.find(it=>it.id===id);
+  let row=sel.closest('.inc-item-row');
+  if(item&&row){
+    row.querySelector('.incPrice').value=item.price;
+    updateIncRowTotal(sel);
+  }
+}
+function updateIncRowTotal(el){
+  let row=el.closest('.inc-item-row');
+  if(!row) return;
+  let qtyEl=row.querySelector('.incQty');
+  let priceEl=row.querySelector('.incPrice');
+  let totalEl=row.querySelector('.incRowTotal');
+  let qty=parseFloat(qtyEl.value)||0;
+  let price=parseFloat(priceEl.value)||0;
+  let total=parseFloat(totalEl.value)||0;
+  if(el===priceEl||el===qtyEl){
+    totalEl.value=(qty*price).toFixed(2);
+  } else if(el===totalEl){
+    if(qty>0){ priceEl.value=(total/qty).toFixed(2); }
+    else if(price>0){ qtyEl.value=(total/price).toFixed(2); }
+  }
+  updateIncGrandTotal();
+}
+function updateIncGrandTotal(){
+  let total=0;
+  let count=0;
+  document.querySelectorAll('.inc-item-row').forEach(row=>{
+    let t=parseFloat(row.querySelector('.incRowTotal').value)||0;
+    let q=parseFloat(row.querySelector('.incQty').value)||0;
+    total+=t;
+    if(q>0) count++;
+  });
+  document.getElementById('incGrandTotal').textContent=total.toFixed(2);
+  document.getElementById('incItemCount').textContent=count+' item'+(count!==1?'s':'');
+}
+function addIncomingStockMulti(){
+  let traderId=parseInt(document.getElementById('incTrader').value);
+  let billNo=document.getElementById('incBillNo').value.trim();
+  if(!traderId){ toast('Trader પસંદ કરો!','error'); return; }
+  let trader=traders.find(t=>t.id===traderId);
+  if(!trader) return;
+  let added=0;
+  let skipped=0;
+  document.querySelectorAll('.inc-item-row').forEach(row=>{
+    let itemId=parseInt(row.querySelector('.incItem').value);
+    let qty=parseFloat(row.querySelector('.incQty').value)||0;
+    let price=parseFloat(row.querySelector('.incPrice').value)||0;
+    if(!itemId||qty<=0){ skipped++; return; }
+    let item=traderItems.find(it=>it.id===itemId);
+    if(!item) return;
+    if(price!==item.price){ item.price=price; item.updatedAt=now(); item.updatedMs=Date.now(); }
+    item.stock+=qty;
+    item.updatedAt=now();
+    item.updatedMs=Date.now();
+    traderIncoming.push({
+      id:Date.now()+added,
+      traderId,traderName:trader.name,
+      billNo:billNo||'',
+      itemId,itemName:item.name,
+      qty,price,total:qty*price,
+      qtyType:item.qtyType,
+      date:now(),dateMs:Date.now()
+    });
+    added++;
+  });
+  if(added===0){ toast('કોઈ valid item નથી! Item select કરી qty ભરો.','error'); return; }
+  save();
+  // Reset form
+  document.getElementById('incBillNo').value='';
+  let wrap=document.getElementById('incItemsWrap');
+  wrap.innerHTML='';
+  addIncItemRow();
+  showItemMasterList();
+  fillItemDropdowns();
+  showTradersPage();
+  let msg='✅ '+added+' item(s) આવક ઉમેરાઈ!';
+  if(billNo) msg+=' (Bill: '+billNo+')';
+  if(skipped>0) msg+=' | '+skipped+' skipped';
+  toast(msg,'success');
+}
+
+// --- Issue/Sell to Department ---
+function onIssItemChange(){
+  let id=parseInt(document.getElementById("issItem").value);
+  let item=traderItems.find(it=>it.id===id);
+  if(item){
+    document.getElementById("issAvail").value=item.stock.toFixed(2)+" "+qtyUnit(item.qtyType);
+    document.getElementById("issQtyType").textContent=qtyTypeLabel(item.qtyType);
+    let u2=document.getElementById("issQtyUnitLbl");
+    if(u2) u2.textContent="("+qtyUnit(item.qtyType)+")";
+    updateIssTotal();
+    checkIssStock();
+  } else {
+    document.getElementById("issAvail").value="";
+    document.getElementById("issQtyType").textContent="";
+    document.getElementById("issTotal").textContent="0";
+    document.getElementById("issStockWarn").style.display="none";
+  }
+}
+function updateIssTotal(){
+  let qty=parseFloat(document.getElementById("issQty").value)||0;
+  let itemId=parseInt(document.getElementById("issItem").value);
+  let item=traderItems.find(it=>it.id===itemId);
+  let price=item?item.price:0;
+  document.getElementById("issTotal").textContent=(qty*price).toFixed(2);
+  checkIssStock();
+}
+function checkIssStock(){
+  let qty=parseFloat(document.getElementById("issQty").value)||0;
+  let itemId=parseInt(document.getElementById("issItem").value);
+  let item=traderItems.find(it=>it.id===itemId);
+  let warn=document.getElementById("issStockWarn");
+  if(item&&qty>item.stock){
+    warn.style.display="block";
+    warn.textContent="⚠️ પૂરતો stock નથી! Available: "+item.stock.toFixed(2);
+  } else {
+    warn.style.display="none";
+  }
+}
+function issueToDept(){
+  let dept=document.getElementById("issDept").value;
+  let itemId=parseInt(document.getElementById("issItem").value);
+  let qty=parseFloat(document.getElementById("issQty").value)||0;
+  if(!dept){ toast("Department પસંદ કરો!","error"); return; }
+  if(!itemId){ toast("Item પસંદ કરો!","error"); return; }
+  if(qty<=0){ toast("Quantity ભરો!","error"); return; }
+  let item=traderItems.find(it=>it.id===itemId);
+  if(!item) return;
+  if(qty>item.stock){
+    toast("⚠️ પૂરતો stock નથી! Available: "+item.stock.toFixed(2),"error");
+    return;
+  }
+  // Reduce stock
+  item.stock-=qty;
+  item.updatedAt=now();
+  item.updatedMs=Date.now();
+  // Record sell
+  traderSells.push({
+    id:Date.now(),
+    dept,
+    itemId,itemName:item.name,
+    qty,price:item.price,total:qty*item.price,
+    qtyType:item.qtyType,
+    date:now(),dateMs:Date.now()
+  });
+  save();
+  document.getElementById("issQty").value="0";
+  showItemMasterList();
+  fillItemDropdowns();
+  showTradersPage();
+  toast("✅ Issue થયું! -"+qty+" "+item.name+" → "+dept,"success");
+}
+
+// --- Traders Dashboard (Store Manager / Admin) ---
 function uchakStepDone(id){ jangadStepDone(id); }
 function openUchakNextPanel(id){ openJangadNextPanel(id); }
+
+function showTradersDashboard(){
+  // Summary Cards
+  let totalItems=traderItems.length;
+  let totalStockValue=traderItems.reduce((s,it)=>s+(it.stock*it.price),0);
+  let totalIncoming=traderIncoming.reduce((s,i)=>s+i.total,0);
+  let totalSells=traderSells.reduce((s,i)=>s+i.total,0);
+  let cardsEl=document.getElementById("traderDashCards");
+  if(cardsEl){
+    cardsEl.innerHTML=`
+      <div class="card" style="border-left:4px solid #27ae60"><div class="cardt">📋 Total Items</div><div class="cardv">${totalItems}</div></div>
+      <div class="card" style="border-left:4px solid #2980b9"><div class="cardt">💰 Stock Value</div><div class="cardv">₹${totalStockValue.toFixed(2)}</div></div>
+      <div class="card" style="border-left:4px solid #e67e22"><div class="cardt">📥 Total Incoming</div><div class="cardv">₹${totalIncoming.toFixed(2)}</div></div>
+      <div class="card" style="border-left:4px solid #8e44ad"><div class="cardt">📤 Total Issued</div><div class="cardv">₹${totalSells.toFixed(2)}</div></div>
+    `;
+  }
+}
+
+// --- Analysis Panel: Low Stock & Pending Requests (shown in tabAnalysis tab only) ---
+function showTraderAnalysis(targetId){
+  let el=document.getElementById(targetId||"traderDashAnalysis");
+  if(!el) return;
+  let low=lowStockItems();
+  let pending=traderRequests.filter(r=>r.status==="pending");
+  let html=`<h3 style="color:#e74c3c;margin:0 0 10px">📊 Analysis — Low Stock & Pending Requests</h3>`;
+  // Low stock summary
+  if(low.length){
+    html+=`<div style="background:#fff;padding:10px;border-radius:6px;margin-bottom:10px">
+      <b style="color:#e74c3c">⚠️ ${low.length} Item(s) નો stock ઓછો છે / Request મુજબ પૂરતો નથી:</b>
+      <table style="margin-top:8px"><thead><tr><th>Item</th><th>Type</th><th>Stock</th><th>Pending Req</th><th>Need More</th></tr></thead><tbody>`;
+    low.forEach(x=>{
+      let need=x.pending>x.item.stock?(x.pending-x.item.stock).toFixed(2):"0";
+      html+=`<tr><td><b>${sanitize(x.item.name)}</b></td><td>${qtyTypeLabel(x.item.qtyType)}</td><td>${x.item.stock.toFixed(2)} ${qtyUnit(x.item.qtyType)}</td><td>${x.pending.toFixed(2)} ${qtyUnit(x.item.qtyType)}</td><td style="color:#e74c3c;font-weight:bold">+${need} ${qtyUnit(x.item.qtyType)}</td></tr>`;
+    });
+    html+=`</tbody></table></div>`;
+  } else {
+    html+=`<div style="background:#e8f8f5;padding:10px;border-radius:6px;margin-bottom:10px;color:#16a085">✅ બધા items નો stock પૂરતો છે</div>`;
+  }
+  // Pending requests list
+  if(pending.length){
+    html+=`<div style="background:#fff;padding:10px;border-radius:6px">
+      <b style="color:#f39c12">⏳ ${pending.length} Pending Request(s):</b>
+      <table style="margin-top:8px"><thead><tr><th>Date</th><th>Dept</th><th>Item</th><th>Qty</th><th>Manager</th><th>Action</th></tr></thead><tbody>`;
+    pending.forEach(r=>{
+      html+=`<tr><td class="small">${r.date}</td><td>${sanitize(r.dept)}</td><td>${sanitize(r.itemName)}</td><td>${r.qtyRequested} ${qtyUnit(traderItems.find(it=>it.id===r.itemId)?.qtyType||'number')}</td><td>${sanitize(r.mgrName||'—')}</td><td><button onclick="editTraderRequestQty(${r.id})" style="background:#f39c12;padding:3px 10px;font-size:11px;margin:0">✏ Edit</button> <button onclick="approveTraderRequest(${r.id})" style="background:#27ae60;padding:3px 10px;font-size:11px;margin:0">✅ Approve</button> <button onclick="rejectTraderRequest(${r.id})" style="background:#e74c3c;padding:3px 10px;font-size:11px;margin:0">❌</button></td></tr>`;
+    });
+    html+=`</tbody></table></div>`;
+  } else {
+    html+=`<div style="background:#e8f8f5;padding:10px;border-radius:6px;color:#16a085">✅ કોઈ pending request નથી</div>`;
+  }
+  el.innerHTML=html;
+}
+function fillTrdIncHistFilters(){
+  let trEl=document.getElementById("trdIncTrader");
+  if(trEl){
+    let trs=[...new Set(traderIncoming.map(i=>i.traderName))].filter(Boolean).sort();
+    trEl.innerHTML=`<option value="">— બધા Traders —</option>`+trs.map(t=>`<option value="${sanitize(t)}">${sanitize(t)}</option>`).join("");
+  }
+  let itEl=document.getElementById("trdIncItem");
+  if(itEl){
+    itEl.innerHTML=`<option value="">— બધા Items —</option>`+traderItems.map(it=>`<option value="${it.id}">${sanitize(it.name)}</option>`).join("");
+  }
+}
+function clearTrdIncHistFilters(){
+  ["trdIncFrom","trdIncTo","trdIncTrader","trdIncItem"].forEach(id=>{let el=document.getElementById(id); if(el) el.value="";});
+  showTraderIncomingHistory();
+}
+function showTraderIncomingHistory(){
+  let from=document.getElementById("trdIncFrom")?.value||"";
+  let to=document.getElementById("trdIncTo")?.value||"";
+  let traderF=document.getElementById("trdIncTrader")?.value||"";
+  let itemF=parseInt(document.getElementById("trdIncItem")?.value)||0;
+  let list=traderIncoming.slice();
+  if(from) list=list.filter(i=>i.dateMs>=new Date(from).getTime());
+  if(to) list=list.filter(i=>i.dateMs<=new Date(to).getTime()+86400000);
+  if(traderF) list=list.filter(i=>i.traderName===traderF);
+  if(itemF) list=list.filter(i=>i.itemId===itemF);
+  list.sort((a,b)=>b.dateMs-a.dateMs);
+  resetPagination('traderIncHistBody');
+  _pageRenders['traderIncHistBody']=showTraderIncomingHistory;
+  renderPaginatedTable('traderIncHistBody',list,i=>`<tr><td>${i.date}</td><td>${sanitize(i.traderName)}</td><td>${i.billNo?'<span style="color:#2980b9;font-size:11px">#'+sanitize(i.billNo)+'</span>':''}</td><td>${sanitize(i.itemName)}</td><td>${i.qty.toFixed(2)} ${qtyUnit(i.qtyType)}</td><td>₹${i.price.toFixed(2)}</td><td>₹${i.total.toFixed(2)}</td><td style="white-space:nowrap"><button onclick="editIncomingEntry(${i.id})" style="background:#f39c12;padding:3px 8px;font-size:11px;margin:0">✏ Edit</button> <button onclick="deleteIncomingEntry(${i.id})" style="background:#e74c3c;padding:3px 8px;font-size:11px;margin:0">🗑</button></td></tr>`);
+}
+function fillTrdSellHistFilters(){
+  let deptEl=document.getElementById("trdSellDept");
+  if(deptEl){
+    let depts=[...new Set(traderSells.map(s=>s.dept))].filter(Boolean).sort();
+    deptEl.innerHTML=`<option value="">— બધા Departments —</option>`+depts.map(d=>`<option value="${sanitize(d)}">${sanitize(d)}</option>`).join("");
+  }
+  let itEl=document.getElementById("trdSellItem");
+  if(itEl){
+    itEl.innerHTML=`<option value="">— બધા Items —</option>`+traderItems.map(it=>`<option value="${it.id}">${sanitize(it.name)}</option>`).join("");
+  }
+}
+function clearTrdSellHistFilters(){
+  ["trdSellFrom","trdSellTo","trdSellDept","trdSellItem"].forEach(id=>{let el=document.getElementById(id); if(el) el.value="";});
+  showTraderSellHistory();
+}
+function toggleSellHistory(){ let sec=document.getElementById('sellHistSection'); if(!sec) return; let show=sec.style.display==='none'; sec.style.display=show?'':'none'; if(show && typeof showTraderSellHistory==='function') showTraderSellHistory(); }
+function showTraderSellHistory(){
+  let from=document.getElementById("trdSellFrom")?.value||"";
+  let to=document.getElementById("trdSellTo")?.value||"";
+  let deptF=document.getElementById("trdSellDept")?.value||"";
+  let itemF=parseInt(document.getElementById("trdSellItem")?.value)||0;
+  let list=traderSells.slice();
+  if(from) list=list.filter(i=>i.dateMs>=new Date(from).getTime());
+  if(to) list=list.filter(i=>i.dateMs<=new Date(to).getTime()+86400000);
+  if(deptF) list=list.filter(i=>i.dept===deptF);
+  if(itemF) list=list.filter(i=>i.itemId===itemF);
+  list.sort((a,b)=>b.dateMs-a.dateMs);
+  resetPagination('traderSellHistBody');
+  _pageRenders['traderSellHistBody']=showTraderSellHistory;
+  renderPaginatedTable('traderSellHistBody',list,i=>`<tr><td>${i.date}</td><td>${sanitize(i.dept)}</td><td>${sanitize(i.itemName)}</td><td>${i.qty.toFixed(2)} ${qtyUnit(i.qtyType)}</td><td>₹${i.price.toFixed(2)}</td><td>₹${i.total.toFixed(2)}</td><td style="white-space:nowrap"><button onclick="editSellEntry(${i.id})" style="background:#f39c12;padding:3px 8px;font-size:11px;margin:0">✏ Edit</button> <button onclick="deleteSellEntry(${i.id})" style="background:#e74c3c;padding:3px 8px;font-size:11px;margin:0">🗑</button></td></tr>`);
+}
+function fillTrdUsageFilters(){
+  let deptEl=document.getElementById("trdUsageDept");
+  if(deptEl){
+    let depts=[...new Set(traderSells.map(s=>s.dept))].filter(Boolean).sort();
+    deptEl.innerHTML=`<option value="">— બધા Departments —</option>`+depts.map(d=>`<option value="${sanitize(d)}">${sanitize(d)}</option>`).join("");
+  }
+  let itEl=document.getElementById("trdUsageItem");
+  if(itEl){
+    itEl.innerHTML=`<option value="">— બધા Items —</option>`+traderItems.map(it=>`<option value="${it.id}">${sanitize(it.name)}</option>`).join("");
+  }
+}
+function clearTrdUsageFilters(){
+  ["trdUsageFrom","trdUsageTo","trdUsageDept","trdUsageItem"].forEach(id=>{let el=document.getElementById(id); if(el) el.value="";});
+  showTraderDeptUsage();
+}
+function showTraderDeptUsage(){
+  let from=document.getElementById("trdUsageFrom")?.value||"";
+  let to=document.getElementById("trdUsageTo")?.value||"";
+  let deptF=document.getElementById("trdUsageDept")?.value||"";
+  let itemF=parseInt(document.getElementById("trdUsageItem")?.value)||0;
+  let list=traderSells.slice();
+  if(from) list=list.filter(s=>s.dateMs>=new Date(from).getTime());
+  if(to) list=list.filter(s=>s.dateMs<=new Date(to).getTime()+86400000);
+  if(deptF) list=list.filter(s=>s.dept===deptF);
+  if(itemF) list=list.filter(s=>s.itemId===itemF);
+  let usage={};
+  list.forEach(s=>{
+    let key=s.dept+"|"+s.itemName;
+    if(!usage[key]) usage[key]={dept:s.dept,item:s.itemName,totalQty:0,totalValue:0,entries:0};
+    usage[key].totalQty+=s.qty;
+    usage[key].totalValue+=s.total;
+    usage[key].entries++;
+  });
+  let arr=Object.values(usage);
+  arr.sort((a,b)=>b.totalValue-a.totalValue);
+  resetPagination('traderDeptUsageBody');
+  _pageRenders['traderDeptUsageBody']=showTraderDeptUsage;
+  renderPaginatedTable('traderDeptUsageBody',arr,u=>`<tr><td><b>${sanitize(u.dept)}</b></td><td>${sanitize(u.item)}</td><td>${u.totalQty.toFixed(2)}</td><td>₹${u.totalValue.toFixed(2)}</td><td>${u.entries}</td></tr>`);
+}
+
+// --- Open Trader Tab (show one panel at a time) ---
+let currentTraderTab="";
+function openTraderTab(tabId){
+  // Hide all panels
+  document.querySelectorAll(".trd-panel").forEach(p=>p.style.display="none");
+  // Show selected panel
+  let el=document.getElementById(tabId);
+  if(el) el.style.display="";
+  currentTraderTab=tabId;
+  // Load data for the opened panel
+  switch(tabId){
+    case"tabMaster": showItemMasterList(); showTraderList(); updateItmQtyHint(); break;
+    // tabRequest removed (merged into tabIssue)
+    case"tabIncoming": fillTraderDropdowns(); fillItemDropdowns(); fillTrdIncHistFilters(); showTraderIncomingHistory(); break;
+    case"tabIssue": fillDeptDropdownTraders(); fillItemDropdowns(); fillTrdSellHistFilters(); showTraderSellHistory(); fillReqHistFilters(); showPendingRequests(); showRequestHistory(); fillReqItemDropdown(); break;
+    case"tabStockSummary": { let sel=document.getElementById('trdStockSearchSel'); if(sel){ sel.innerHTML='<option value="">— બધા Items —</option>'+traderItems.map(it=>'<option value="'+it.id+'">'+sanitize(it.name)+'</option>').join(''); } showTraderStockPanel(); showItemSummary(); } break;
+    // tabAnalysis removed (merged into tabReports)
+    case"tabIncHist": fillTrdIncHistFilters(); showTraderIncomingHistory(); break;
+    case"tabSellHist": fillTrdSellHistFilters(); showTraderSellHistory(); break;
+    // tabDeptUsage removed (merged into tabReports)
+    case"tabExtraItems": fillExHistItemFilter(); showExtraStockPanel(); showExtraItemsHistory(); updateExAutoDT(); initExItemAutocomplete(); break;
+    // tabItemSummary and tabDeptDetail removed (merged/removed)
+    case"tabReports": showReportSection('rptAnalysis'); break;
+    case"tabMovLog": fillMovLogFilters(); showStockMovementLog(); break;
+  }
+  initSearchableDropdowns();
+}
+
+// --- Show Traders Page (main entry point) ---
+function showTradersPage(){
+  showTraderList();
+  showItemMasterList();
+  fillTraderDropdowns();
+  fillItemDropdowns();
+  fillDeptDropdownTraders();
+  fillIncItemDropdowns();
+  let isAdmin=(cur&&cur.role==="admin");
+  let isStock=(cur&&cur.role==="stock");
+  let isDept=(cur&&cur.role==="dept");
+  let showAdmin=isAdmin||storeMgrLoggedIn;
+  // Hide all panels by default
+  document.querySelectorAll(".trd-panel").forEach(p=>p.style.display="none");
+  // Department role: show request panel only
+  if(isDept){
+    document.getElementById("storeMgrLoginBox").style.display="none";
+    document.getElementById("traderDashSection").style.display="none";
+    document.getElementById("traderTabMenu").style.display="none";
+    document.getElementById("tabDeptRequest").style.display="";
+    fillDeptReqItemDropdown();
+    fillDeptRepItemFilter();
+    showDeptMyRequests();
+    updateDeptReqAutoDT();
+    initSearchableDropdowns();
+    return;
+  }
+  // Show login box only for stock (non-admin, non-storeMgr)
+  document.getElementById("storeMgrLoginBox").style.display=(isStock&&!storeMgrLoggedIn)?"block":"none";
+  // Show dashboard cards for admin or logged-in store manager
+  document.getElementById("traderDashSection").style.display=showAdmin?"block":"none";
+  if(showAdmin){ showTradersDashboard(); }
+  // Show tab menu for admin or store manager
+  document.getElementById("traderTabMenu").style.display=showAdmin?"":'none';
+  // Auto-open first tab if admin/storeMgr
+  if(showAdmin&&!currentTraderTab){
+    openTraderTab("tabMaster");
+  }
+  if(isAdmin) loadStoreManagerCreds();
+  initSearchableDropdowns();
+}
+
+// --- Trader Stock Panel ---
+function getLowStockThreshold(){ return 10; } // default
+function getItemLowLimit(it){ return (it.lowStockLimit!=null)?it.lowStockLimit:10; }
+function lowStockItems(){
+  let pend={};
+  traderRequests.filter(r=>r.status==="pending").forEach(r=>{ pend[r.itemId]=(pend[r.itemId]||0)+r.qtyRequested; });
+  return traderItems.map(it=>({item:it,pending:pend[it.id]||0})).filter(x=>x.item.stock<=getLowStockThreshold()||(x.pending>0&&x.item.stock<x.pending));
+}
+function showTraderStockPanel(){
+  let el=document.getElementById("traderStockBody");
+  if(!el) return;
+  let sel=document.getElementById("trdStockSearchSel");
+  let searchVal=sel?sel.value:'';
+  let search=(document.getElementById("trdStockSearchText")?.value||"").trim().toLowerCase();
+  let list=traderItems.slice();
+  if(searchVal) list=list.filter(it=>it.id==searchVal);
+  else if(search) list=list.filter(it=>it.name.toLowerCase().includes(search));
+  // Low-stock items first, then by stock ascending
+  let pend={};
+  traderRequests.filter(r=>r.status==="pending").forEach(r=>{ pend[r.itemId]=(pend[r.itemId]||0)+r.qtyRequested; });
+  list.sort((a,b)=>{
+    let al=(a.stock<=getItemLowLimit(a)||(pend[a.id]||0)>a.stock)?0:1;
+    let bl=(b.stock<=getItemLowLimit(b)||(pend[b.id]||0)>b.stock)?0:1;
+    if(al!==bl) return al-bl;
+    return a.stock-b.stock;
+  });
+  let totalVal=0, lowCount=0;
+  el.innerHTML=list.map((it,i)=>{
+    let sv=it.stock*it.price;
+    totalVal+=sv;
+    let isLow=it.stock<=getItemLowLimit(it)||(pend[it.id]||0)>it.stock;
+    if(isLow) lowCount++;
+    let badge=isLow?`<span style="background:#e74c3c;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px">⚠️ Low</span>`:"";
+    let rowBg=isLow?"background:#fdecea":"";
+    let pendTxt=pend[it.id]?` <span style="color:#8e44ad;font-size:11px">⏳ ${pend[it.id].toFixed(2)} ${qtyUnit(it.qtyType)} pending</span>`:"";
+    return `<tr style="${rowBg}"><td>${i+1}</td><td><b>${sanitize(it.name)}</b> ${badge}</td><td>${qtyTypeLabel(it.qtyType)}</td><td><b>${it.stock.toFixed(2)}</b> ${qtyUnit(it.qtyType)}</td><td>₹${it.price.toFixed(2)}</td><td class="small">${it.updatedAt||'—'}${pendTxt}</td></tr>`;
+  }).join("")||`<tr><td colspan="6" style="text-align:center;color:#999">કોઈ Item નથી</td></tr>`;
+  let totEl=document.getElementById("traderStockTotal");
+  if(totEl) totEl.textContent="💰 Total Stock Value: ₹"+totalVal.toFixed(2)+" | Items: "+list.length+(lowCount?" | ⚠️ Low Stock: "+lowCount:"");
+}
+function filterTraderStock(){ showTraderStockPanel(); }
+
+// --- Request System ---
+function fillReqItemDropdown(){
+  let el=document.getElementById("reqItem");
+  if(!el) return;
+  el.innerHTML=`<option value="">— વસ્તુ પસંદ કરો —</option>`+traderItems.map(it=>`<option value="${it.id}">${sanitize(it.name)} (Avail: ${it.stock.toFixed(2)} ${qtyUnit(it.qtyType)})</option>`).join("");
+}
+function submitTraderRequest(){
+  let itemId=parseInt(document.getElementById("reqItem").value);
+  let qty=parseFloat(document.getElementById("reqQty").value)||0;
+  if(!itemId){ toast("Item પસંદ કરો!","error"); return; }
+  if(qty<=0){ toast("Quantity ભરો!","error"); return; }
+  let item=traderItems.find(it=>it.id===itemId);
+  if(!item) return;
+  let deptLabel=cur.role==="dept"?unitLabel(cur.dept,cur.office):"Admin";
+  traderRequests.push({
+    id:Date.now(),
+    dept:deptLabel,
+    itemId,itemName:item.name,
+    qtyRequested:qty,
+    available:item.stock,
+    status:"pending",
+    date:now(),dateMs:Date.now()
+  });
+  save();
+  document.getElementById("reqQty").value="0";
+  showPendingRequests();
+  showRequestHistory();
+  addNotif("send","Trader Request",deptLabel+" requested "+qty+" "+item.name);
+  toast("✅ Request મોકલાઈ!","success");
+}
+function approveTraderRequest(reqId){
+  let r=traderRequests.find(x=>x.id===reqId);
+  if(!r) return;
+  let item=traderItems.find(it=>it.id===r.itemId);
+  if(!item){ toast("Item not found!","error"); return; }
+  let approveQty=Math.min(r.qtyRequested, item.stock);
+  if(approveQty<=0){ toast("Stock નથી!","error"); return; }
+  // Reduce stock
+  item.stock-=approveQty;
+  item.updatedAt=now();
+  item.updatedMs=Date.now();
+  // Update request
+  r.status="approved";
+  r.qtyApproved=approveQty;
+  r.approvedAt=now();
+  r.approvedMs=Date.now();
+  // Create sell entry
+  traderSells.push({
+    id:Date.now(),
+    dept:r.dept,
+    itemId:r.itemId,itemName:r.itemName,
+    qty:approveQty,price:item.price,total:approveQty*item.price,
+    qtyType:item.qtyType,
+    date:now(),dateMs:Date.now()
+  });
+  save();
+  showPendingRequests();
+  showRequestHistory();
+  showTraderStockPanel();
+  showTraderDeptUsage();
+  showItemMasterList();
+  fillItemDropdowns();
+  toast("✅ Approved! " +approveQty+" "+r.itemName+" → "+r.dept,"success");
+}
+let _editReqId=null;
+function editTraderRequestQty(reqId){
+  let r=traderRequests.find(x=>x.id===reqId);
+  if(!r) return;
+  _editReqId=reqId;
+  let item=traderItems.find(it=>it.id===r.itemId);
+  let avail=item?item.stock:0;
+  let unit=item?qtyUnit(item.qtyType):"pcs";
+  document.getElementById('erDept').textContent=r.dept;
+  document.getElementById('erItem').textContent=r.itemName;
+  document.getElementById('erAvail').textContent=avail.toFixed(2)+' '+unit;
+  document.getElementById('erOldQty').textContent=r.qtyRequested+' '+unit;
+  document.getElementById('erNewQty').value=r.qtyRequested;
+  document.getElementById('erNewQty').max=avail;
+  document.getElementById('erQtyHint').textContent='Max: '+avail.toFixed(2)+' '+unit;
+  document.getElementById('erReqModal').style.display='';
+  document.getElementById('erReqOverlay').style.display='';
+  document.getElementById('erNewQty').focus();
+}
+function closeErReqModal(){
+  document.getElementById('erReqModal').style.display='none';
+  document.getElementById('erReqOverlay').style.display='none';
+  _editReqId=null;
+}
+function saveReqEdit(){
+  if(!_editReqId) return;
+  let r=traderRequests.find(x=>x.id===_editReqId);
+  if(!r) return;
+  let item=traderItems.find(it=>it.id===r.itemId);
+  let avail=item?item.stock:0;
+  let unit=item?qtyUnit(item.qtyType):"pcs";
+  let newQty=parseFloat(document.getElementById('erNewQty').value)||0;
+  if(newQty<=0){ toast('Quantity ભરો!','error'); return; }
+  if(newQty>avail){ toast('⚠️ Max: '+avail.toFixed(2)+' '+unit,'error'); return; }
+  if(newQty===r.qtyRequested){ toast('કઈ change નથી!','info'); closeErReqModal(); return; }
+  // Track edit history
+  if(!r.edits) r.edits=[];
+  r.edits.push({oldQty:r.qtyRequested,newQty:newQty,editedAt:now(),editedMs:Date.now()});
+  r.qtyRequested=newQty;
+  r.editedAt=now();
+  r.editedMs=Date.now();
+  save();
+  closeErReqModal();
+  showPendingRequests();
+  showRequestHistory();
+  let an=document.getElementById('traderAnalysisBody');
+  if(an) showTraderAnalysis('traderAnalysisBody');
+  toast('✅ Quantity બદલાઈ: '+newQty+' '+unit,'success');
+}
+function rejectTraderRequest(reqId){
+  let r=traderRequests.find(x=>x.id===reqId);
+  if(!r) return;
+  r.status="rejected";
+  r.rejectedAt=now();
+  save();
+  showPendingRequests();
+  showRequestHistory();
+  toast("❌ Request rejected.","info");
+}
+function showPendingRequests(){
+  let el=document.getElementById("pendingRequestsBody");
+  if(!el) return;
+  let pending=traderRequests.filter(r=>r.status==="pending");
+  el.innerHTML=pending.map(r=>{
+    let item=traderItems.find(it=>it.id===r.itemId);
+    let avail=item?item.stock:0;
+    return `<tr><td>${r.date}</td><td><b>${sanitize(r.dept)}</b></td><td>${sanitize(r.itemName)}</td><td>${r.qtyRequested}</td><td>${avail.toFixed(2)}</td><td>${sanitize(r.mgrName||'—')}</td><td><button onclick="editTraderRequestQty(${r.id})" style="background:#f39c12;padding:4px 10px;font-size:12px">✏ Edit</button> <button onclick="approveTraderRequest(${r.id})" style="background:#27ae60;padding:4px 10px;font-size:12px">✅ Approve</button> <button onclick="rejectTraderRequest(${r.id})" style="background:#e74c3c;padding:4px 10px;font-size:12px">❌ Reject</button></td></tr>`;
+  }).join("")||`<tr><td colspan="7" style="text-align:center;color:#999">કોઈ pending request નથી</td></tr>`;
+}
+function fillReqHistFilters(){
+  let deptEl=document.getElementById("reqHistDept");
+  if(deptEl){
+    let depts=[...new Set(traderRequests.map(r=>r.dept))].filter(Boolean).sort();
+    deptEl.innerHTML=`<option value="">— બધા Departments —</option>`+depts.map(d=>`<option value="${sanitize(d)}">${sanitize(d)}</option>`).join("");
+  }
+  let itEl=document.getElementById("reqHistItem");
+  if(itEl){
+    itEl.innerHTML=`<option value="">— બધા Items —</option>`+traderItems.map(it=>`<option value="${it.id}">${sanitize(it.name)}</option>`).join("");
+  }
+}
+function clearReqHistFilters(){
+  ["reqHistFrom","reqHistTo","reqHistDept","reqHistItem"].forEach(id=>{let el=document.getElementById(id); if(el) el.value="";});
+  showRequestHistory();
+}
+function showRequestHistory(){
+  let el=document.getElementById("requestHistBody");
+  if(!el) return;
+  let from=document.getElementById("reqHistFrom")?.value||"";
+  let to=document.getElementById("reqHistTo")?.value||"";
+  let deptF=document.getElementById("reqHistDept")?.value||"";
+  let itemF=parseInt(document.getElementById("reqHistItem")?.value)||0;
+  let list=traderRequests.slice().sort((a,b)=>b.dateMs-a.dateMs);
+  if(from) list=list.filter(r=>r.dateMs>=new Date(from).getTime());
+  if(to) list=list.filter(r=>r.dateMs<=new Date(to).getTime()+86400000);
+  if(deptF) list=list.filter(r=>r.dept===deptF);
+  if(itemF) list=list.filter(r=>r.itemId===itemF);
+  resetPagination('requestHistBody');
+  _pageRenders['requestHistBody']=showRequestHistory;
+  renderPaginatedTable('requestHistBody',list,r=>{
+    let stBadge=r.status==="approved"?"<span style='color:#27ae60;font-weight:bold'>✅ Approved</span>":r.status==="rejected"?"<span style='color:#e74c3c;font-weight:bold'>❌ Rejected</span>":"<span style='color:#f39c12;font-weight:bold'>⏳ Pending</span>";
+    let editInfo='—';
+    if(r.edits&&r.edits.length){
+      let last=r.edits[r.edits.length-1];
+      editInfo=`<span style='color:#8e44ad;font-size:11px'>✏ ${last.oldQty} → ${last.newQty}</span>`;
+    }
+    return `<tr><td>${r.date}</td><td>${sanitize(r.dept)}</td><td>${sanitize(r.itemName)}</td><td>${r.qtyRequested}</td><td>${stBadge}${r.qtyApproved?' ('+r.qtyApproved+' approved)':''}</td><td>${editInfo}</td></tr>`;
+  });
+}
+
+// --- Excel/PDF Export for Traders ---
+function dlTraderStockExcel(){
+  if(typeof dlExcel==='function'){ dlExcel('traderStockBody','Trader Stock','trader_stock'); }
+}
+function dlTraderStockPDF(){
+  if(typeof dlPDF==='function'){ dlPDF('traderStockBody','Trader Stock'); }
+}
+function dlTrdIncHistExcel(){
+  if(typeof dlExcel==='function'){ dlExcel('traderIncHistBody','Traders Incoming History','trader_incoming'); }
+}
+function dlTrdIncHistPDF(){
+  if(typeof dlPDF==='function'){ dlPDF('traderIncHistBody','Traders Incoming History'); }
+}
+function dlTrdSellHistExcel(){
+  if(typeof dlExcel==='function'){ dlExcel('traderSellHistBody','Traders Sell History','trader_sell'); }
+}
+function dlTrdSellHistPDF(){
+  if(typeof dlPDF==='function'){ dlPDF('traderSellHistBody','Traders Sell History'); }
+}
+
+// --- Request History Export ---
+function dlReqHistExcel(){ if(typeof dlExcel==='function'){ dlExcel('requestHistBody','Request History','request_history'); } }
+function dlReqHistPDF(){ if(typeof dlPDF==='function'){ dlPDF('requestHistBody','Request History'); } }
+// --- Dept Usage Export ---
+function dlDeptUsageExcel(){ if(typeof dlExcel==='function'){ dlExcel('traderDeptUsageBody','Dept Usage','dept_usage'); } }
+function dlDeptUsagePDF(){ if(typeof dlPDF==='function'){ dlPDF('traderDeptUsageBody','Dept Usage'); } }
+// --- Report Sub-sections ---
+function showReportSection(sectionId){
+  document.querySelectorAll('.rpt-section').forEach(s=>s.style.display='none');
+  let el=document.getElementById(sectionId);
+  if(el) el.style.display='';
+  if(sectionId==='rptAnalysis') showTraderAnalysis('traderAnalysisBody');
+  if(sectionId==='rptDeptUsage'){ fillTrdUsageFilters(); showTraderDeptUsage(); }
+  if(sectionId==='rptFinancial'){ fillFinFilters(); showFinancialSummary(); }
+}
+
+// --- Financial Export ---
+function dlFinExcel(){ if(typeof dlExcel==='function'){ dlExcel('finSummaryBody','Financial Summary','financial'); } }
+function dlFinPDF(){ if(typeof dlPDF==='function'){ dlPDF('finSummaryBody','Financial Summary'); } }
+// --- Movement Log Export ---
+function dlMovLogExcel(){ if(typeof dlExcel==='function'){ dlExcel('stockMovLogBody','Stock Movement Log','stock_movement'); } }
+function dlMovLogPDF(){ if(typeof dlPDF==='function'){ dlPDF('stockMovLogBody','Stock Movement Log'); } }
+
+// =====================================================
+// === STORE MANAGER EXTRA ITEMS ===
+// =====================================================
+let extraItems = JSON.parse(localStorage.getItem("extraItems") || "[]");
+let extraStock = JSON.parse(localStorage.getItem("extraStock") || "{}"); // {itemName: {qty, location, updatedAt}}
+
+// Add to save function
+function _origSave_extraItems(){
+  try{
+    localStorage.setItem("extraItems",JSON.stringify(extraItems));
+    localStorage.setItem("extraStock",JSON.stringify(extraStock));
+  }catch(e){}
+}
+
+// Update auto date/time display
+function updateExAutoDT(){
+  let el=document.getElementById("exAutoDT");
+  if(el) el.textContent=now();
+}
+setInterval(updateExAutoDT,1000);
+
+function addExtraItem(){
+  let itemName=document.getElementById("exItemName").value.trim();
+  let location=document.getElementById("exLocation").value.trim();
+  let qty=parseFloat(document.getElementById("exQty").value)||0;
+  let vigat=document.getElementById("exVigat").value.trim();
+  let type=document.getElementById("exType").value; // in or out
+  let person=document.getElementById("exPerson").value.trim();
+  if(!itemName){ toast("Item Name ભરો!","error"); return; }
+  if(!location){ toast("Location ભરો!","error"); return; }
+  if(qty<=0){ toast("Quantity ભરો!","error"); return; }
+  // Update stock
+  if(!extraStock[itemName]) extraStock[itemName]={qty:0,location:location,updatedAt:now(),updatedMs:Date.now()};
+  if(type==="in"){
+    extraStock[itemName].qty+=qty;
+  } else {
+    if(extraStock[itemName].qty<qty){ toast("⚠️ Stock ઓછો છે! Available: "+extraStock[itemName].qty,"error"); return; }
+    extraStock[itemName].qty-=qty;
+  }
+  extraStock[itemName].location=location;
+  extraStock[itemName].updatedAt=now();
+  extraStock[itemName].updatedMs=Date.now();
+  // Record entry
+  let stockAfter=extraStock[itemName].qty;
+  extraItems.push({
+    id:Date.now(),
+    itemName,location,qty,type,
+    vigat,person,
+    stockAfter,
+    date:now(),dateMs:Date.now()
+  });
+  // Save to localStorage
+  localStorage.setItem("extraItems",JSON.stringify(extraItems));
+  localStorage.setItem("extraStock",JSON.stringify(extraStock));
+  // Also save to main data for preservation
+  _saveExtraToMainData();
+  // Clear form
+  ["exItemName","exLocation","exQty","exVigat","exPerson"].forEach(id=>{
+    let el=document.getElementById(id);
+    if(el) el.value="";
+  });
+  showExtraStockPanel();
+  showExtraItemsHistory();
+  toast("✅ Item ઉમેરાયો! ("+type+"): "+itemName+" "+qty,"success");
+}
+
+// Save extra items to main data for preservation during updates
+function _saveExtraToMainData(){
+  // Store extra items data in a way that survives file updates
+  try{
+    localStorage.setItem("extraItems",JSON.stringify(extraItems));
+    localStorage.setItem("extraStock",JSON.stringify(extraStock));
+  }catch(e){ console.warn("Extra items save failed",e); }
+}
+
+function showExtraStockPanel(){
+  let el=document.getElementById("exStockBody");
+  if(!el) return;
+  let items=Object.entries(extraStock).sort((a,b)=>b[1].updatedMs-a[1].updatedMs);
+  let totalQty=items.reduce((s,[,v])=>s+v.qty,0);
+  let totalEl=document.getElementById("exTotalStock");
+  if(totalEl) totalEl.textContent="📦 Total Items: "+items.length+" | Total Qty: "+totalQty.toFixed(2);
+  el.innerHTML=items.map(([name,v],i)=>`<tr><td>${i+1}</td><td><b>${sanitize(name)}</b></td><td>${sanitize(v.location)}</td><td><b>${v.qty.toFixed(2)}</b></td><td class="small">${v.updatedAt}</td><td style="white-space:nowrap"><button onclick="editExStockItem('${sanitize(name).replace(/'/g,"\\'")}')" style="background:#f39c12;padding:4px 8px;font-size:11px;margin:0">✏ Edit</button> <button onclick="showExItemHist('${sanitize(name).replace(/'/g,"\\'")}')" style="background:#c0392b;padding:4px 10px;font-size:12px;margin:0">📜 History</button> <button onclick="quickExInOut('${sanitize(name).replace(/'/g,"\\'")}')" style="background:#27ae60;padding:4px 10px;font-size:12px;margin:0">📥 OUT</button> <button onclick="quickExInOutIn('${sanitize(name).replace(/'/g,"\\'")}')" style="background:#2980b9;padding:4px 10px;font-size:12px;margin:0">📤 IN</button></td></tr>`).join("")||`<tr><td colspan="6" style="text-align:center;color:#999">કોઈ Item નથી</td></tr>`;
+}
+
+function fillExHistItemFilter(){
+  let itEl=document.getElementById("exHistItem");
+  if(!itEl) return;
+  let names=[...new Set(extraItems.map(i=>i.itemName))].filter(Boolean).sort();
+  itEl.innerHTML=`<option value="">— બધા Items —</option>`+names.map(n=>`<option value="${sanitize(n)}">${sanitize(n)}</option>`).join("");
+}
+function clearExHistFilters(){
+  ["exHistFrom","exHistTo","exHistItem"].forEach(id=>{let el=document.getElementById(id); if(el) el.value="";});
+  showExtraItemsHistory();
+}
+function showExtraItemsHistory(){
+  let from=document.getElementById("exHistFrom")?.value||"";
+  let to=document.getElementById("exHistTo")?.value||"";
+  let itemF=document.getElementById("exHistItem")?.value||"";
+  let list=extraItems.slice();
+  if(from) list=list.filter(i=>i.dateMs>=new Date(from).getTime());
+  if(to) list=list.filter(i=>i.dateMs<=new Date(to).getTime()+86400000);
+  if(itemF) list=list.filter(i=>i.itemName===itemF);
+  list.sort((a,b)=>b.dateMs-a.dateMs);
+  resetPagination('exHistBody');
+  _pageRenders['exHistBody']=showExtraItemsHistory;
+  renderPaginatedTable('exHistBody',list,i=>{
+    let typeBadge=i.type==="in"?"<span style='color:#27ae60;font-weight:bold'>📥 IN</span>":"<span style='color:#e74c3c;font-weight:bold'>📤 OUT</span>";
+    return `<tr><td>${i.date}</td><td>${typeBadge}</td><td><b>${sanitize(i.itemName)}</b></td><td>${i.qty.toFixed(2)}</td><td>${sanitize(i.location)}</td><td>${sanitize(i.vigat||'—')}</td><td>${sanitize(i.person||'—')}</td><td><b>${i.stockAfter.toFixed(2)}</b></td></tr>`;
+  });
+}
+
+function showExItemHist(itemName){
+  let el=document.getElementById("exItemHistBody");
+  let title=document.getElementById("exItemHistTitle");
+  if(!el) return;
+  title.textContent="📜 "+itemName+" — History";
+  let list=extraItems.filter(i=>i.itemName===itemName).sort((a,b)=>b.dateMs-a.dateMs);
+  el.innerHTML=list.map(i=>{
+    let typeBadge=i.type==="in"?"<span style='color:#27ae60;font-weight:bold'>📥 IN (+)</span>":"<span style='color:#e74c3c;font-weight:bold'>📤 OUT (-)</span>";
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid #eee">
+      <div style="flex:1">
+        <div style="font-size:13px;color:#555">${i.date}</div>
+        <div><b>${typeBadge}</b> ${i.qty.toFixed(2)} — ${sanitize(i.location)}</div>
+        <div style="font-size:12px;color:#888">${sanitize(i.vigat||'')} ${i.person?'— '+sanitize(i.person):''}</div>
+      </div>
+      <div style="text-align:right"><div style="font-size:11px;color:#888">Stock After</div><b style="font-size:15px">${i.stockAfter.toFixed(2)}</b></div>
+    </div>`;
+  }).join("")||"<p style='text-align:center;color:#999;padding:20px'>કોઈ history નથી</p>";
+  document.getElementById("exItemHistModal").classList.remove("hide");
+  document.getElementById("exItemHistOverlay").classList.remove("hide");
+}
+function closeExItemHist(){
+  document.getElementById("exItemHistModal").classList.add("hide");
+  document.getElementById("exItemHistOverlay").classList.add("hide");
+}
+
+// Excel/PDF for Extra Items
+function dlExItemsExcel(){
+  if(typeof dlExcel==='function'){ dlExcel('exHistBody','Store Extra Items History','extra_items'); }
+}
+function dlExItemsPDF(){
+  if(typeof dlPDF==='function'){ dlPDF('exHistBody','Store Extra Items History'); }
+}
+
+// =====================================================
+// === PAGINATION HELPER (show 20, load more) ===
+// =====================================================
+let _pageCounts={}; // {tableId: loadedCount}
+let _pageRenders={}; // {tableId: renderFn}
+function renderPaginatedTable(tableBodyId,fullList,renderRowFn,extraAfterFn){
+  if(!_pageCounts[tableBodyId]) _pageCounts[tableBodyId]=PAGE_SIZE;
+  let loaded=_pageCounts[tableBodyId];
+  let el=document.getElementById(tableBodyId);
+  if(!el) return;
+  let visible=fullList.slice(0,loaded);
+  let html=visible.map(renderRowFn).join('');
+  if(!html) html=`<tr><td colspan="99" style="text-align:center;color:#999">કોઈ record નથી</td></tr>`;
+  // Load more button
+  if(fullList.length>loaded){
+    let remaining=fullList.length-loaded;
+    let show=Math.min(PAGE_SIZE,remaining);
+    html+=`<tr><td colspan="99" style="text-align:center;padding:12px"><button onclick="loadMoreRows('${tableBodyId}')" style="background:#2980b9;padding:8px 20px;font-size:13px;border-radius:6px">⬇ Load More (${show} of ${remaining} remaining)</button> <span style="color:#888;font-size:12px;margin-left:8px">Showing ${loaded} of ${fullList.length}</span></td></tr>`;
+  } else if(fullList.length>0) {
+    html+=`<tr><td colspan="99" style="text-align:center;padding:8px;color:#888;font-size:12px">✅ All ${fullList.length} entries shown</td></tr>`;
+  }
+  el.innerHTML=html;
+  if(extraAfterFn) extraAfterFn();
+}
+function loadMoreRows(tableBodyId){
+  if(!_pageCounts[tableBodyId]) _pageCounts[tableBodyId]=PAGE_SIZE;
+  _pageCounts[tableBodyId]+=PAGE_SIZE;
+  if(_pageRenders[tableBodyId]) _pageRenders[tableBodyId]();
+}
+function resetPagination(tableBodyId){ _pageCounts[tableBodyId]=PAGE_SIZE; }
+
+// =====================================================
+// === SEARCHABLE DROPDOWN (sdd) ===
+// =====================================================
+function initSearchableDropdowns(){
+  document.querySelectorAll('select.sdd').forEach(sel=>{
+    if(sel.dataset.sddInit){
+      if(sel._sddRefresh) sel._sddRefresh();
+      return;
+    }
+    sel.dataset.sddInit='1';
+    sel.style.display='none';
+    let wrap=document.createElement('div');
+    wrap.className='sdd-wrap';
+    let toggle=document.createElement('div');
+    toggle.className='sdd-toggle';
+    toggle.textContent=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'— Select —';
+    toggle.tabIndex=0;
+    let panel=document.createElement('div');
+    panel.className='sdd-panel';
+    let searchInput=document.createElement('input');
+    searchInput.className='sdd-search';
+    searchInput.placeholder='🔍 Search...';
+    searchInput.type='text';
+    let optsDiv=document.createElement('div');
+    optsDiv.className='sdd-opts';
+    panel.appendChild(searchInput);
+    panel.appendChild(optsDiv);
+    wrap.appendChild(toggle);
+    wrap.appendChild(panel);
+    sel.parentNode.insertBefore(wrap,sel);
+    function renderOpts(query){
+      let q=(query||'').toLowerCase();
+      let html='',found=0;
+      [...sel.options].forEach((opt,i)=>{
+        let text=opt.textContent;
+        if(q&&!text.toLowerCase().includes(q)) return;
+        let isActive=(i===sel.selectedIndex);
+        html+=`<div class="sdd-opt${isActive?' active':''}" data-idx="${i}">${text}</div>`;
+        found++;
+      });
+      if(!found) html='<div class="sdd-opt empty">કોઈ match નથી</div>';
+      optsDiv.innerHTML=html;
+    }
+    renderOpts('');
+    toggle.addEventListener('click',e=>{
+      e.stopPropagation();
+      let isOpen=panel.classList.contains('open');
+      document.querySelectorAll('.sdd-panel.open').forEach(p=>p.classList.remove('open'));
+      if(!isOpen){ panel.classList.add('open'); searchInput.value=''; renderOpts(''); searchInput.focus(); }
+    });
+    toggle.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ toggle.click(); e.preventDefault(); } });
+    searchInput.addEventListener('input',()=>renderOpts(searchInput.value));
+    optsDiv.addEventListener('click',e=>{
+      let opt=e.target.closest('.sdd-opt');
+      if(!opt||opt.classList.contains('empty')) return;
+      let idx=parseInt(opt.dataset.idx);
+      sel.selectedIndex=idx;
+      toggle.textContent=sel.options[idx].textContent;
+      panel.classList.remove('open');
+      sel.dispatchEvent(new Event('change'));
+    });
+    sel._sddRefresh=()=>{
+      toggle.textContent=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'— Select —';
+      renderOpts(searchInput.value||'');
+    };
+    sel._sddSync=()=>{ toggle.textContent=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'— Select —'; };
+  });
+}
+function syncSearchableDropdown(sel){ if(sel&&sel._sddSync) sel._sddSync(); }
+document.addEventListener('click',e=>{ if(!e.target.closest('.sdd-wrap')){ document.querySelectorAll('.sdd-panel.open').forEach(p=>p.classList.remove('open')); } });
+
+// =====================================================
+// === EXTRA ITEMS: QUICK IN/OUT FROM STOCK TABLE ===
+// =====================================================
+function quickExInOut(itemName,typeOverride){
+  let stock=extraStock[itemName];
+  let avail=stock?stock.qty:0;
+  document.getElementById('exIoItemName').textContent=itemName;
+  document.getElementById('exIoAvail').textContent=avail.toFixed(2);
+  document.getElementById('exIoItem').value=itemName;
+  document.getElementById('exIoQty').value='';
+  document.getElementById('exIoVigat').value='';
+  document.getElementById('exIoPerson').value='';
+  document.getElementById('exIoType').value=typeOverride||'out';
+  document.getElementById('exIoLocation').value=stock?stock.location:'';
+  document.getElementById('exIoModal').style.display='';
+  document.getElementById('exIoOverlay').style.display='';
+  document.getElementById('exIoQty').focus();
+}
+function quickExInOutIn(itemName){ quickExInOut(itemName,'in'); }
+function closeExIoModal(){
+  document.getElementById('exIoModal').style.display='none';
+  document.getElementById('exIoOverlay').style.display='none';
+}
+function submitQuickExInOut(){
+  let itemName=document.getElementById('exIoItem').value;
+  let qty=parseFloat(document.getElementById('exIoQty').value)||0;
+  let type=document.getElementById('exIoType').value;
+  let location=document.getElementById('exIoLocation').value.trim();
+  let vigat=document.getElementById('exIoVigat').value.trim();
+  let person=document.getElementById('exIoPerson').value.trim();
+  if(!itemName){ toast('Item Name ભરો!','error'); return; }
+  if(qty<=0){ toast('Quantity ભરો!','error'); return; }
+  if(!location){ toast('Location ભરો!','error'); return; }
+  if(!extraStock[itemName]) extraStock[itemName]={qty:0,location:location,updatedAt:now(),updatedMs:Date.now()};
+  if(type==='out'&&extraStock[itemName].qty<qty){ toast('⚠️ Stock ઓછો છે! Available: '+extraStock[itemName].qty.toFixed(2),'error'); return; }
+  if(type==='in') extraStock[itemName].qty+=qty; else extraStock[itemName].qty-=qty;
+  extraStock[itemName].location=location;
+  extraStock[itemName].updatedAt=now();
+  extraStock[itemName].updatedMs=Date.now();
+  let stockAfter=extraStock[itemName].qty;
+  extraItems.push({id:Date.now(),itemName,location,qty,type,vigat,person,stockAfter,date:now(),dateMs:Date.now()});
+  localStorage.setItem('extraItems',JSON.stringify(extraItems));
+  localStorage.setItem('extraStock',JSON.stringify(extraStock));
+  if(typeof _saveExtraToMainData==='function') _saveExtraToMainData();
+  closeExIoModal();
+  showExtraStockPanel();
+  showExtraItemsHistory();
+  toast((type==='in'?'📥 IN':'📤 OUT')+' થયું! '+qty+' '+itemName,'success');
+}
+
+// =====================================================
+// === EXTRA ITEMS: ITEM NAME AUTOCOMPLETE ===
+// =====================================================
+function initExItemAutocomplete(){
+  let input=document.getElementById('exItemName');
+  if(!input||input.dataset.acInit) return;
+  input.dataset.acInit='1';
+  let wrap=document.createElement('div');
+  wrap.style.cssText='position:relative;width:100%';
+  input.parentNode.insertBefore(wrap,input);
+  wrap.appendChild(input);
+  let list=document.createElement('div');
+  list.style.cssText='position:absolute;top:100%;left:0;right:0;z-index:90;background:#fff;border:1px solid #ccc;border-radius:0 0 6px 6px;box-shadow:0 4px 8px rgba(0,0,0,0.1);max-height:150px;overflow-y:auto;display:none';
+  wrap.appendChild(list);
+  input.addEventListener('input',()=>{
+    let q=input.value.trim().toLowerCase();
+    if(!q){ list.style.display='none'; return; }
+    let names=[...new Set(extraItems.map(i=>i.itemName))].filter(Boolean);
+    let matches=names.filter(n=>n.toLowerCase().includes(q));
+    if(!matches.length){ list.style.display='none'; return; }
+    list.innerHTML=matches.map(n=>`<div style="padding:6px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid #eee" data-name="${sanitize(n)}">${sanitize(n)}</div>`).join('');
+    list.style.display='block';
+  });
+  list.addEventListener('click',e=>{
+    let item=e.target.closest('[data-name]');
+    if(!item) return;
+    input.value=item.dataset.name;
+    list.style.display='none';
+  });
+  input.addEventListener('blur',()=>{ setTimeout(()=>{ list.style.display='none'; },200); });
+}
+
+// =====================================================
+// === INCOMING HISTORY EDIT/DELETE ===
+// =====================================================
+let _editIncId=null;
+function editIncomingEntry(id){
+  let entry=traderIncoming.find(x=>x.id===id);
+  if(!entry) return;
+  _editIncId=id;
+  document.getElementById('eiIncTrader').value=entry.traderName;
+  document.getElementById('eiIncBillNo').value=entry.billNo||'';
+  document.getElementById('eiIncItem').value=entry.itemName;
+  document.getElementById('eiIncQty').value=entry.qty;
+  document.getElementById('eiIncPrice').value=entry.price;
+  document.getElementById('eiIncModal').style.display='';
+  document.getElementById('eiIncOverlay').style.display='';
+}
+function closeEiIncModal(){
+  document.getElementById('eiIncModal').style.display='none';
+  document.getElementById('eiIncOverlay').style.display='none';
+  _editIncId=null;
+}
+function saveEiInc(){
+  if(!_editIncId) return;
+  let entry=traderIncoming.find(x=>x.id===_editIncId);
+  if(!entry) return;
+  let newQty=parseFloat(document.getElementById('eiIncQty').value)||0;
+  let newPrice=parseFloat(document.getElementById('eiIncPrice').value)||0;
+  let newBillNo=document.getElementById('eiIncBillNo').value.trim();
+  if(newQty<=0){ toast('Quantity ભરો!','error'); return; }
+  if(newPrice<0){ toast('Price negative ન હોઈ શકે!','error'); return; }
+  // Adjust stock: remove old qty, add new qty
+  let item=traderItems.find(it=>it.id===entry.itemId);
+  if(item){
+    item.stock=item.stock-entry.qty+newQty;
+    if(item.stock<0) item.stock=0;
+    item.updatedAt=now();
+    item.updatedMs=Date.now();
+  }
+  entry.qty=newQty;
+  entry.price=newPrice;
+  entry.total=newQty*newPrice;
+  entry.billNo=newBillNo;
+  entry.date=now();
+  entry.dateMs=Date.now();
+  save();
+  closeEiIncModal();
+  showTraderIncomingHistory();
+  showItemMasterList();
+  fillItemDropdowns();
+  showTraderStockPanel();
+  toast('✅ Incoming entry updated!','success');
+}
+function deleteIncomingEntry(id){
+  let entry=traderIncoming.find(x=>x.id===id);
+  if(!entry) return;
+  if(!confirm('Delete incoming entry for '+entry.itemName+' ('+entry.qty+' '+qtyUnit(entry.qtyType)+')?')) return;
+  // Reduce stock
+  let item=traderItems.find(it=>it.id===entry.itemId);
+  if(item){
+    item.stock-=entry.qty;
+    if(item.stock<0) item.stock=0;
+    item.updatedAt=now();
+    item.updatedMs=Date.now();
+  }
+  traderIncoming=traderIncoming.filter(x=>x.id!==id);
+  save();
+  showTraderIncomingHistory();
+  showItemMasterList();
+  fillItemDropdowns();
+  showTraderStockPanel();
+  showTradersDashboard();
+  toast('✅ Entry deleted!','success');
+}
+
+// =====================================================
+// === SELL HISTORY EDIT/DELETE ===
+// =====================================================
+let _editSellId=null;
+function editSellEntry(id){
+  let entry=traderSells.find(x=>x.id===id);
+  if(!entry) return;
+  _editSellId=id;
+  document.getElementById('esSellDept').value=entry.dept;
+  document.getElementById('esSellItem').value=entry.itemName;
+  document.getElementById('esSellQty').value=entry.qty;
+  document.getElementById('esSellModal').style.display='';
+  document.getElementById('esSellOverlay').style.display='';
+}
+function closeEsSellModal(){
+  document.getElementById('esSellModal').style.display='none';
+  document.getElementById('esSellOverlay').style.display='none';
+  _editSellId=null;
+}
+function saveEsSell(){
+  if(!_editSellId) return;
+  let entry=traderSells.find(x=>x.id===_editSellId);
+  if(!entry) return;
+  let newQty=parseFloat(document.getElementById('esSellQty').value)||0;
+  if(newQty<=0){ toast('Quantity ભરો!','error'); return; }
+  // Adjust stock: restore old qty, reduce new qty
+  let item=traderItems.find(it=>it.id===entry.itemId);
+  if(item){
+    item.stock=item.stock+entry.qty-newQty;
+    if(item.stock<0) item.stock=0;
+    item.updatedAt=now();
+    item.updatedMs=Date.now();
+  }
+  entry.qty=newQty;
+  entry.total=newQty*entry.price;
+  entry.date=now();
+  entry.dateMs=Date.now();
+  save();
+  closeEsSellModal();
+  showTraderSellHistory();
+  showItemMasterList();
+  fillItemDropdowns();
+  showTraderStockPanel();
+  showTradersDashboard();
+  toast('✅ Sell entry updated!','success');
+}
+function deleteSellEntry(id){
+  let entry=traderSells.find(x=>x.id===id);
+  if(!entry) return;
+  if(!confirm('Delete sell entry for '+entry.itemName+' ('+entry.qty+' '+qtyUnit(entry.qtyType)+')?')) return;
+  // Restore stock
+  let item=traderItems.find(it=>it.id===entry.itemId);
+  if(item){
+    item.stock+=entry.qty;
+    item.updatedAt=now();
+    item.updatedMs=Date.now();
+  }
+  traderSells=traderSells.filter(x=>x.id!==id);
+  save();
+  showTraderSellHistory();
+  showItemMasterList();
+  fillItemDropdowns();
+  showTraderStockPanel();
+  showTradersDashboard();
+  toast('✅ Entry deleted!','success');
+}
+
+// =====================================================
+// === ITEM-WISE SUMMARY TAB ===
+// =====================================================
+function showItemSummary(searchQ){
+  let el=document.getElementById('itemSummaryBody');
+  if(!el) return;
+  let sq=(searchQ||document.getElementById('itemSummarySearch')?.value||'').trim().toLowerCase();
+  let filteredItems=sq?traderItems.filter(it=>it.name.toLowerCase().includes(sq)):traderItems;
+  let totalItems=filteredItems.length;
+  let totalStockValue=filteredItems.reduce((s,it)=>s+(it.stock*it.price),0);
+  let totalIncoming=traderIncoming.filter(x=>filteredItems.some(it=>it.id===x.itemId)).reduce((s,i)=>s+i.total,0);
+  let totalSells=traderSells.filter(x=>filteredItems.some(it=>it.id===x.itemId)).reduce((s,i)=>s+i.total,0);
+  let lowItems=filteredItems.filter(it=>it.stock<=getItemLowLimit(it));
+  let pendingReqs=traderRequests.filter(r=>r.status==='pending'&&filteredItems.some(it=>it.id===r.itemId));
+  // Summary cards
+  let cardsEl=document.getElementById('itemSummaryCards');
+  if(cardsEl){
+    cardsEl.innerHTML=`
+      <div class="card" style="border-left:4px solid #2980b9"><div class="cardt">📋 Total Items</div><div class="cardv">${totalItems}</div></div>
+      <div class="card" style="border-left:4px solid #16a085"><div class="cardt">💰 Stock Value</div><div class="cardv">₹${totalStockValue.toFixed(2)}</div></div>
+      <div class="card" style="border-left:4px solid #27ae60"><div class="cardt">📥 Total Purchase</div><div class="cardv">₹${totalIncoming.toFixed(2)}</div></div>
+      <div class="card" style="border-left:4px solid #8e44ad"><div class="cardt">📤 Total Sale</div><div class="cardv">₹${totalSells.toFixed(2)}</div></div>
+      <div class="card" style="border-left:4px solid #e74c3c"><div class="cardt">⚠️ Low Stock</div><div class="cardv">${lowItems.length}</div></div>
+      <div class="card" style="border-left:4px solid #f39c12"><div class="cardt">⏳ Pending Reqs</div><div class="cardv">${pendingReqs.length}</div></div>
+    `;
+  }
+  // Item detail table
+  el.innerHTML=filteredItems.map((it,i)=>{
+    let incoming=traderIncoming.filter(x=>x.itemId===it.id).reduce((s,x)=>s+x.qty,0);
+    let sold=traderSells.filter(x=>x.itemId===it.id).reduce((s,x)=>s+x.qty,0);
+    let pendReq=pendingReqs.filter(r=>r.itemId===it.id).reduce((s,r)=>s+r.qtyRequested,0);
+    let isLow=it.stock<=getItemLowLimit(it);
+    let rowBg=isLow?'background:#fdecea':'';
+    return `<tr style="${rowBg}"><td>${i+1}</td><td><b>${sanitize(it.name)}</b></td><td>${qtyTypeLabel(it.qtyType)}</td><td><b>${it.stock.toFixed(2)}</b> ${qtyUnit(it.qtyType)}</td><td>₹${it.price.toFixed(2)}</td><td>₹${(it.stock*it.price).toFixed(2)}</td><td>${incoming.toFixed(2)} ${qtyUnit(it.qtyType)}</td><td>${sold.toFixed(2)} ${qtyUnit(it.qtyType)}</td><td>${pendReq?pendReq.toFixed(2)+' '+qtyUnit(it.qtyType):'—'}</td></tr>`;
+  }).join('')||`<tr><td colspan="9" style="text-align:center;color:#999">કોઈ Item નથી</td></tr>`;
+}
+function filterItemSummary(){ showItemSummary(); }
+
+// =====================================================
+// === DEPT-WISE DETAIL TAB ===
+// =====================================================
+function showDeptDetail(){
+  let el=document.getElementById('deptDetailBody');
+  if(!el) return;
+  // Group sells by dept
+  let deptMap={};
+  traderSells.forEach(s=>{
+    if(!deptMap[s.dept]) deptMap[s.dept]={items:{},totalQty:0,totalValue:0,entries:0};
+    let d=deptMap[s.dept];
+    if(!d.items[s.itemName]) d.items[s.itemName]={qty:0,value:0,entries:0};
+    d.items[s.itemName].qty+=s.qty;
+    d.items[s.itemName].value+=s.total;
+    d.items[s.itemName].entries++;
+    d.totalQty+=s.qty;
+    d.totalValue+=s.total;
+    d.entries++;
+  });
+  // Group requests by dept
+  let deptReqs={};
+  traderRequests.forEach(r=>{
+    if(!deptReqs[r.dept]) deptReqs[r.dept]={pending:0,approved:0,rejected:0};
+    deptReqs[r.dept][r.status]=(deptReqs[r.dept][r.status]||0)+1;
+  });
+  let rows='';
+  Object.keys(deptMap).sort().forEach(dept=>{
+    let d=deptMap[dept];
+    let req=deptReqs[dept]||{pending:0,approved:0,rejected:0};
+    rows+=`<tr style="background:#e8f4f8;font-weight:bold"><td colspan="6">🏢 ${sanitize(dept)}</td><td>₹${d.totalValue.toFixed(2)}</td><td>${d.entries} entries</td><td>⏳${req.pending} ✅${req.approved} ❌${req.rejected}</td></tr>`;
+    Object.keys(d.items).sort().forEach(item=>{
+      let it=d.items[item];
+      rows+=`<tr><td></td><td><b>${sanitize(item)}</b></td><td colspan="4"></td><td>${it.qty.toFixed(2)}</td><td>₹${it.value.toFixed(2)}</td><td>${it.entries} entries</td></tr>`;
+    });
+  });
+  // Depts with requests but no sells
+  Object.keys(deptReqs).sort().forEach(dept=>{
+    if(deptMap[dept]) return;
+    let req=deptReqs[dept];
+    rows+=`<tr style="background:#fef9e7"><td colspan="6">🏢 ${sanitize(dept)}</td><td>—</td><td>No sales yet</td><td>⏳${req.pending} ✅${req.approved} ❌${req.rejected}</td></tr>`;
+  });
+  el.innerHTML=rows||`<tr><td colspan="9" style="text-align:center;color:#999">કોઈ data નથી</td></tr>`;
+}
+
+// =====================================================
+// === FINANCIAL SUMMARY TAB ===
+// =====================================================
+function fillFinFilters(){
+  let trEl=document.getElementById('finTrader');
+  if(trEl){
+    let trs=[...new Set(traderIncoming.map(i=>i.traderName))].filter(Boolean).sort();
+    trEl.innerHTML='<option value="">— બધા —</option>'+trs.map(t=>'<option value="'+sanitize(t)+'">'+sanitize(t)+'</option>').join('');
+  }
+  let itEl=document.getElementById('finItem');
+  if(itEl){
+    itEl.innerHTML='<option value="">— બધા —</option>'+traderItems.map(it=>'<option value="'+it.id+'">'+sanitize(it.name)+'</option>').join('');
+  }
+}
+function clearFinFilters(){
+  ['finFrom','finTo','finTrader','finItem'].forEach(id=>{let el=document.getElementById(id); if(el) el.value='';});
+  showFinancialSummary();
+}
+function showFinancialSummary(){
+  let el=document.getElementById('finSummaryBody');
+  if(!el) return;
+  let from=document.getElementById('finFrom')?.value||'';
+  let to=document.getElementById('finTo')?.value||'';
+  let traderF=document.getElementById('finTrader')?.value||'';
+  let itemF=parseInt(document.getElementById('finItem')?.value)||0;
+  // Apply filters
+  let incList=traderIncoming.slice();
+  let sellList=traderSells.slice();
+  if(from){ incList=incList.filter(i=>i.dateMs>=new Date(from).getTime()); sellList=sellList.filter(i=>i.dateMs>=new Date(from).getTime()); }
+  if(to){ incList=incList.filter(i=>i.dateMs<=new Date(to).getTime()+86400000); sellList=sellList.filter(i=>i.dateMs<=new Date(to).getTime()+86400000); }
+  if(traderF){ incList=incList.filter(i=>i.traderName===traderF); }
+  if(itemF){ incList=incList.filter(i=>i.itemId===itemF); sellList=sellList.filter(i=>i.itemId===itemF); }
+  let totalPurchase=incList.reduce((s,i)=>s+i.total,0);
+  let totalSale=sellList.reduce((s,i)=>s+i.total,0);
+  let totalStockValue=traderItems.reduce((s,it)=>s+(it.stock*it.price),0);
+  // Cards (no profit/loss)
+  let cardsEl=document.getElementById('finSummaryCards');
+  if(cardsEl){
+    cardsEl.innerHTML=`
+      <div class="card" style="border-left:4px solid #27ae60"><div class="cardt">📥 Total Purchase</div><div class="cardv">₹${totalPurchase.toFixed(2)}</div></div>
+      <div class="card" style="border-left:4px solid #8e44ad"><div class="cardt">📤 Total Sale</div><div class="cardv">₹${totalSale.toFixed(2)}</div></div>
+      <div class="card" style="border-left:4px solid #16a085"><div class="cardt">📦 Stock Value</div><div class="cardv">₹${totalStockValue.toFixed(2)}</div></div>
+    `;
+  }
+  // Monthly breakdown
+  let months={};
+  incList.forEach(i=>{
+    let d=new Date(i.dateMs);
+    let key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    if(!months[key]) months[key]={purchase:0,sale:0};
+    months[key].purchase+=i.total;
+  });
+  sellList.forEach(s=>{
+    let d=new Date(s.dateMs);
+    let key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    if(!months[key]) months[key]={purchase:0,sale:0};
+    months[key].sale+=s.total;
+  });
+  let rows=Object.keys(months).sort().reverse().map(m=>{
+    let x=months[m];
+    return `<tr><td><b>${m}</b></td><td>₹${x.purchase.toFixed(2)}</td><td>₹${x.sale.toFixed(2)}</td></tr>`;
+  }).join('');
+  // Trader-wise spending
+  let traderSpend={};
+  incList.forEach(i=>{
+    if(!traderSpend[i.traderName]) traderSpend[i.traderName]={qty:0,value:0,entries:0};
+    traderSpend[i.traderName].qty+=i.qty;
+    traderSpend[i.traderName].value+=i.total;
+    traderSpend[i.traderName].entries++;
+  });
+  let traderRows=Object.keys(traderSpend).sort().map(t=>{
+    let x=traderSpend[t];
+    return `<tr><td><b>${sanitize(t)}</b></td><td>${x.entries}</td><td>₹${x.value.toFixed(2)}</td></tr>`;
+  }).join('');
+  el.innerHTML=`
+    <div style="margin-bottom:16px">
+      <h3 style="color:#2980b9;margin-bottom:8px">📅 Monthly Summary</h3>
+      <table><thead><tr><th>Month</th><th>Purchase</th><th>Sale</th></tr></thead><tbody>${rows||'<tr><td colspan="3" style="text-align:center;color:#999">કોઈ data નથી</td></tr>'}</tbody></table>
+    </div>
+    <div>
+      <h3 style="color:#e67e22;margin-bottom:8px">🏪 Trader-wise Spending</h3>
+      <table><thead><tr><th>Trader</th><th>Entries</th><th>Total Amount</th></tr></thead><tbody>${traderRows||'<tr><td colspan="3" style="text-align:center;color:#999">કોઈ data નથી</td></tr>'}</tbody></table>
+    </div>
+  `;
+}
+
+// =====================================================
+// === STOCK MOVEMENT LOG TAB ===
+// =====================================================
+function showStockMovementLog(){
+  let el=document.getElementById('stockMovLogBody');
+  if(!el) return;
+  // Combine IN and OUT entries
+  let movements=[];
+  traderIncoming.forEach(i=>{
+    movements.push({srcId:i.id,date:i.date,dateMs:i.dateMs,type:'IN',item:i.itemName,qty:i.qty,price:i.price,total:i.total,from:i.traderName,to:'Stock',bal:0});
+  });
+  traderSells.forEach(s=>{
+    movements.push({srcId:s.id,date:s.date,dateMs:s.dateMs,type:'OUT',item:s.itemName,qty:s.qty,price:s.price,total:s.total,from:'Stock',to:s.dept,bal:0});
+  });
+  // Sort by date descending
+  movements.sort((a,b)=>b.dateMs-a.dateMs);
+  // Calculate running balance per item
+  let itemBal={};
+  movements.forEach(m=>{
+    if(!itemBal[m.item]) itemBal[m.item]=0;
+    if(m.type==='IN') itemBal[m.item]+=m.qty; else itemBal[m.item]-=m.qty;
+    m.bal=itemBal[m.item];
+  });
+  // Apply filters
+  let from=document.getElementById('movLogFrom')?.value||'';
+  let to=document.getElementById('movLogTo')?.value||'';
+  let itemF=document.getElementById('movLogItem')?.value||'';
+  if(from) movements=movements.filter(m=>m.dateMs>=new Date(from).getTime());
+  if(to) movements=movements.filter(m=>m.dateMs<=new Date(to).getTime()+86400000);
+  if(itemF) movements=movements.filter(m=>m.item===itemF);
+  resetPagination('stockMovLogBody');
+  _pageRenders['stockMovLogBody']=showStockMovementLog;
+  renderPaginatedTable('stockMovLogBody',movements,m=>{
+    let typeBadge=m.type==='IN'?'<span style="color:#27ae60;font-weight:bold">📥 IN</span>':'<span style="color:#e74c3c;font-weight:bold">📤 OUT</span>';
+    let actionBtns='';
+    if(m.type==='IN'&&m.srcId){ actionBtns=`<button onclick="editIncomingEntry(${m.srcId})" style="background:#f39c12;padding:3px 8px;font-size:11px;margin:0">✏ Edit</button> <button onclick="deleteIncomingEntry(${m.srcId})" style="background:#e74c3c;padding:3px 8px;font-size:11px;margin:0">🗑</button>`; }
+    else if(m.type==='OUT'&&m.srcId){ actionBtns=`<button onclick="editSellEntry(${m.srcId})" style="background:#f39c12;padding:3px 8px;font-size:11px;margin:0">✏ Edit</button> <button onclick="deleteSellEntry(${m.srcId})" style="background:#e74c3c;padding:3px 8px;font-size:11px;margin:0">🗑</button>`; }
+    return `<tr><td>${m.date}</td><td>${typeBadge}</td><td><b>${sanitize(m.item)}</b></td><td>${m.qty.toFixed(2)}</td><td>₹${m.price.toFixed(2)}</td><td>₹${m.total.toFixed(2)}</td><td>${sanitize(m.from)}</td><td>${sanitize(m.to)}</td><td><b>${m.bal.toFixed(2)}</b></td><td style="white-space:nowrap">${actionBtns}</td></tr>`;
+  });
+}
+function fillMovLogFilters(){
+  let itEl=document.getElementById('movLogItem');
+  if(itEl){
+    let items=[...new Set([...traderIncoming.map(i=>i.itemName),...traderSells.map(s=>s.itemName)])].filter(Boolean).sort();
+    itEl.innerHTML=`<option value="">— બધા Items —</option>`+items.map(n=>`<option value="${sanitize(n)}">${sanitize(n)}</option>`).join('');
+  }
+}
+function clearMovLogFilters(){
+  ['movLogFrom','movLogTo','movLogItem'].forEach(id=>{let el=document.getElementById(id); if(el) el.value='';});
+  showStockMovementLog();
+}
+
+// =====================================================
+// === DEPARTMENT REQUEST (dept role - request items from traders) ===
+// =====================================================
+
+// Update auto date/time display
+function updateDeptReqAutoDT(){
+  let el=document.getElementById("deptReqAutoDT");
+  if(el) el.textContent=now();
+}
+setInterval(updateDeptReqAutoDT,1000);
+
+// Fill item dropdown for department request
+function fillDeptReqItemDropdown(){
+  let el=document.getElementById("deptReqItem");
+  if(!el) return;
+  el.innerHTML=`<option value="">— વસ્તુ પસંદ કરો —</option>`+traderItems.filter(it=>it.stock>0).map(it=>`<option value="${it.id}">${sanitize(it.name)} (Avail: ${it.stock.toFixed(2)} ${qtyUnit(it.qtyType)})</option>`).join("");
+}
+
+// When item selected, show qty type
+function onDeptReqItemChange(){
+  let id=parseInt(document.getElementById("deptReqItem").value);
+  let item=traderItems.find(it=>it.id===id);
+  if(item){
+    document.getElementById("deptReqQtyType").value=qtyTypeLabel(item.qtyType);
+    let u3=document.getElementById("deptReqQtyUnitLbl");
+    if(u3) u3.textContent="("+qtyUnit(item.qtyType)+")";
+  } else {
+    document.getElementById("deptReqQtyType").value="";
+    let u3=document.getElementById("deptReqQtyUnitLbl");
+    if(u3) u3.textContent="(જથ્થું)";
+  }
+}
+
+// Submit department request
+function submitDeptRequest(){
+  let itemId=parseInt(document.getElementById("deptReqItem").value);
+  let qty=parseFloat(document.getElementById("deptReqQty").value)||0;
+  let mgrName=document.getElementById("deptReqMgr").value.trim();
+  if(!itemId){ toast("Item પસંદ કરો!","error"); return; }
+  if(qty<=0){ toast("Quantity ભરો!","error"); return; }
+  if(!mgrName){ toast("Manager Name ભરો!","error"); return; }
+  let item=traderItems.find(it=>it.id===itemId);
+  if(!item) return;
+  let deptLabel=cur.role==="dept"?unitLabel(cur.dept,cur.office):"Admin";
+  traderRequests.push({
+    id:Date.now(),
+    dept:deptLabel,
+    itemId,itemName:item.name,
+    qtyRequested:qty,
+    available:item.stock,
+    mgrName,
+    status:"pending",
+    date:now(),dateMs:Date.now()
+  });
+  save();
+  document.getElementById("deptReqQty").value="0";
+  document.getElementById("deptReqMgr").value="";
+  document.getElementById("deptReqItem").value="";
+  document.getElementById("deptReqQtyType").value="";
+  fillDeptReqItemDropdown();
+  showDeptMyRequests();
+  addNotif("send","Trader Request",deptLabel+" requested "+qty+" "+item.name+" (Manager: "+mgrName+")");
+  toast("✅ Request મોકલાઈ!","success");
+}
+
+// Show department's own requests
+function showDeptMyRequests(){
+  let el=document.getElementById("deptReqMyList");
+  if(!el) return;
+  let deptLabel=cur.role==="dept"?unitLabel(cur.dept,cur.office):"";
+  let myReqs=traderRequests.filter(r=>r.dept===deptLabel).sort((a,b)=>b.dateMs-a.dateMs);
+  el.innerHTML=myReqs.map(r=>{
+    let stBadge=r.status==="approved"?"<span style='color:#27ae60;font-weight:bold'>✅ Approved</span>":r.status==="rejected"?"<span style='color:#e74c3c;font-weight:bold'>❌ Rejected</span>":"<span style='color:#f39c12;font-weight:bold'>⏳ Pending</span>";
+    return `<tr><td class="small">${r.date}</td><td><b>${sanitize(r.itemName)}</b></td><td>${r.qtyRequested}</td><td>${sanitize(r.mgrName||'—')}</td><td>${stBadge}</td><td>${r.qtyApproved?r.qtyApproved:''}</td></tr>`;
+  }).join("")||`<tr><td colspan="6" style="text-align:center;color:#999">કોઈ request નથી</td></tr>`;
+}
+
+// Monthly Usage Report for department
+function showDeptMonthlyReport(){
+  let monthVal=document.getElementById("deptRepMonth")?.value||""; // format: YYYY-MM
+  let itemFilter=parseInt(document.getElementById("deptRepItem")?.value)||0;
+  let el=document.getElementById("deptRepBody");
+  let summaryEl=document.getElementById("deptRepSummary");
+  if(!el) return;
+  let deptLabel=cur.role==="dept"?unitLabel(cur.dept,cur.office):"";
+  // Get sells for this department
+  let list=traderSells.filter(s=>s.dept===deptLabel);
+  // Filter by month
+  if(monthVal){
+    list=list.filter(s=>{
+      let d=new Date(s.dateMs);
+      let ym=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,'0');
+      return ym===monthVal;
+    });
+  }
+  // Filter by item
+  if(itemFilter){
+    list=list.filter(s=>s.itemId===itemFilter);
+  }
+  list.sort((a,b)=>b.dateMs-a.dateMs);
+  // Calculate totals
+  let totalQty=list.reduce((s,i)=>s+i.qty,0);
+  let totalValue=list.reduce((s,i)=>s+i.total,0);
+  let itemCount={};
+  list.forEach(s=>{
+    if(!itemCount[s.itemName]) itemCount[s.itemName]={qty:0,value:0};
+    itemCount[s.itemName].qty+=s.qty;
+    itemCount[s.itemName].value+=s.total;
+  });
+  // Show summary
+  if(summaryEl&&list.length>0){
+    summaryEl.style.display="block";
+    let summaryHtml=`<div style="display:flex;flex-wrap:wrap;gap:12px">
+      <div style="background:#e8f8f5;padding:10px;border-radius:6px;flex:1;min-width:120px;text-align:center"><div style="font-size:12px;color:#666">📦 Total Items Used</div><div style="font-size:20px;font-weight:bold;color:#16a085">${list.length}</div></div>
+      <div style="background:#e8f8f5;padding:10px;border-radius:6px;flex:1;min-width:120px;text-align:center"><div style="font-size:12px;color:#666">🔢 Total Quantity</div><div style="font-size:20px;font-weight:bold;color:#2980b9">${totalQty.toFixed(2)}</div></div>
+      <div style="background:#e8f8f5;padding:10px;border-radius:6px;flex:1;min-width:120px;text-align:center"><div style="font-size:12px;color:#666">💰 Total Value</div><div style="font-size:20px;font-weight:bold;color:#8e44ad">₹${totalValue.toFixed(2)}</div></div>
+    </div>`;
+    // Item-wise breakdown
+    let itemKeys=Object.keys(itemCount);
+    if(itemKeys.length>0){
+      summaryHtml+=`<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px">`;
+      itemKeys.forEach(k=>{
+        summaryHtml+=`<div style="background:#fff;padding:6px 12px;border-radius:6px;border:1px solid #ddd;font-size:13px"><b>${sanitize(k)}</b>: ${itemCount[k].qty.toFixed(2)} | ₹${itemCount[k].value.toFixed(2)}</div>`;
+      });
+      summaryHtml+=`</div>`;
+    }
+    summaryEl.innerHTML=summaryHtml;
+  } else if(summaryEl){
+    summaryEl.style.display="none";
+    summaryEl.innerHTML="";
+  }
+  // Show table    el.innerHTML=list.map(s=>`<tr><td class="small">${s.date}</td><td><b>${sanitize(s.itemName)}</b></td><td>${s.qty.toFixed(2)} ${qtyUnit(s.qtyType)}</td><td>₹${s.price.toFixed(2)}</td><td>₹${s.total.toFixed(2)}</td><td>—</td><td><span style='color:#27ae60;font-weight:bold'>✅ Done</span></td></tr>`).join("")||`<tr><td colspan="7" style="text-align:center;color:#999">કોઈ record નથી</td></tr>`;
+}
+
+// Fill item filter for monthly report
+function fillDeptRepItemFilter(){
+  let el=document.getElementById("deptRepItem");
+  if(!el) return;
+  el.innerHTML=`<option value="">— બધા Items —</option>`+traderItems.map(it=>`<option value="${it.id}">${sanitize(it.name)}</option>`).join("");
+}
+
+// Clear monthly report
+function clearDeptMonthlyReport(){
+  document.getElementById("deptRepMonth").value="";
+  document.getElementById("deptRepItem").value="";
+  let el=document.getElementById("deptRepBody");
+  if(el) el.innerHTML=`<tr><td colspan="7" style="text-align:center;color:#999">Filter select કરીને ▶ લોડ કરો દબાવો</td></tr>`;
+  let summaryEl=document.getElementById("deptRepSummary");
+  if(summaryEl){ summaryEl.style.display="none"; summaryEl.innerHTML=""; }
+}
+
+// Excel export for dept monthly report
+function dlDeptRepExcel(){
+  if(typeof dlExcel==='function'){ dlExcel('deptRepBody','Dept Monthly Report','dept_monthly'); }
+}
+
 </script>
 
+  <div class="page" id="pg_traders">
+
+    <!-- Store Manager Login Box (for stock role) -->
+    <div class="box" id="storeMgrLoginBox" style="border:2px solid #f39c12;background:#fef9e7;display:none">
+      <h2>🏪 Store Manager Login</h2>
+      <div class="row">
+        <div><label>Store Manager ID</label><input id="smLoginId" placeholder="Store Manager ID"></div>
+        <div><label>Password</label><div class="passwrap"><input id="smLoginPass" type="password" placeholder="Password"><span class="togglepass" onclick="toggleFieldPass('smLoginPass')">👁️</span></div></div>
+        <div style="display:flex;align-items:flex-end"><button onclick="loginStoreManager()" style="background:#f39c12;width:100%">🔐 Login</button></div>
+      </div>
+      <div id="smLoginMsg" style="font-size:12px;margin-top:4px"></div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div id="traderDashSection" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h2 style="margin:0">🏪 Traders Dashboard</h2>
+        <button onclick="logoutStoreManager()" style="background:#e74c3c;font-size:12px;padding:6px 14px">🚪 Logout Store Manager</button>
+      </div>
+      <div class="cards" id="traderDashCards"></div>
+    </div>
+
+    <!-- TAB MENU -->
+    <div class="box" id="traderTabMenu" style="padding:10px;display:none">
+      <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
+        <button class="trd-tab" onclick="openTraderTab('tabMaster')" style="background:#2980b9;color:#fff;padding:10px 18px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">📋 Master (Items & Traders)</button>
+        <button class="trd-tab" onclick="openTraderTab('tabIncoming')" style="background:#27ae60;color:#fff;padding:10px 18px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">📥 Incoming Stock</button>
+        <button class="trd-tab" onclick="openTraderTab('tabIssue')" style="background:#8e44ad;color:#fff;padding:10px 18px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">📤 Issue / Sell + 📝 Requests</button>
+        <button class="trd-tab" onclick="openTraderTab('tabStockSummary')" style="background:#16a085;color:#fff;padding:10px 18px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">📦 Stock & Summary</button>
+        <button class="trd-tab" onclick="openTraderTab('tabReports')" style="background:#e74c3c;color:#fff;padding:10px 18px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">📊 Reports (Analysis/Usage/Financial)</button>
+        <button class="trd-tab" onclick="openTraderTab('tabMovLog')" style="background:#7d3c98;color:#fff;padding:10px 18px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">📋 Stock Log</button>
+        <button class="trd-tab" onclick="openTraderTab('tabExtraItems')" style="background:#c0392b;color:#fff;padding:10px 18px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">📦 Store Items (Extra)</button>
+      </div>
+    </div>
+
+    <!-- PANEL: Master (Items + Traders merged) -->
+    <div class="box trd-panel" id="tabMaster" style="border:2px solid #2980b9;background:#eef5fb;display:none">
+      <div style="display:flex;flex-wrap:wrap;gap:16px">
+        <!-- Left: Item Master -->
+        <div style="flex:1;min-width:400px">
+          <div style="background:#2980b9;color:#fff;padding:10px 14px;border-radius:8px;margin-bottom:10px">
+            <h2 style="margin:0;color:#fff">📋 Item Master — વસ્તુ માસ્ટર</h2>
+          </div>
+          <div class="row">
+            <div><label>Item Name (વસ્તુ નામ) <span class="reqstar">*</span></label><input id="itmName" placeholder="Item Name"></div>
+            <div><label>Qty Type (જથ્થાનો પ્રકાર) <span class="reqstar">*</span></label><select id="itmQtyType" onchange="updateItmQtyHint()"><option value="liter">📏 Liter (લિટર)</option><option value="nanga">🔢 Nanga (નાંગ)</option><option value="box">📦 Box (બોક્સ)</option><option value="kg">⚖️ KG (કિલો)</option><option value="number">🔢 Number / Count</option></select><div id="itmQtyHint" style="font-size:11px;color:#16a085;margin-top:4px"></div></div>
+            <div><label>Price / Bhav (ભાવ) <span class="reqstar">*</span></label><input id="itmPrice" type="number" step="0.01" placeholder="0"></div>
+          </div>
+          <div class="row">
+            <div><label>⚠️ Low Stock Limit (ઓછા Stock ની હદ)</label><input id="itmLowLimit" type="number" step="1" value="10" placeholder="10"></div>
+          </div>
+          <button onclick="addItemMaster()" style="background:#2980b9">➕ Item ઉમેરો</button>
+          <table><thead><tr><th>#</th><th>Item Name</th><th>Qty Type</th><th>Price</th><th>Stock</th><th>⚠️ Limit</th><th>Action</th></tr></thead><tbody id="itemMasterBody"></tbody></table>
+        </div>
+        <!-- Right: Traders Master -->
+        <div style="flex:1;min-width:400px">
+          <div style="background:#e67e22;color:#fff;padding:10px 14px;border-radius:8px;margin-bottom:10px">
+            <h2 style="margin:0;color:#fff">🏪 Traders Master — વેપારી માસ્ટર</h2>
+          </div>
+          <div class="row">
+            <div style="flex:1"><label>Trader / Company Name (વેપારી/કંપની નામ) <span class="reqstar">*</span></label><input id="trdName" placeholder="Company Name"></div>
+          </div>
+          <div id="trdPersonsWrap">
+            <div class="row trd-person-row" style="align-items:flex-end">
+              <div><label>Person Name (વ્યક્તિ નામ)</label><input class="trdPerson" placeholder="Person Name"></div>
+              <div><label>Mobile Number</label><input class="trdMobile" placeholder="Mobile Number"></div>
+            </div>
+          </div>
+          <button onclick="addTraderPersonRow()" style="background:#8e44ad">➕ વ્યક્તિ ઉમેરો</button>
+          <button onclick="addTrader()" style="background:#e67e22">➕ Trader ઉમેરો</button>
+          <table><thead><tr><th>#</th><th>Trader / Company Name</th><th>Persons (નામ + મોબાઈલ)</th><th>Action</th></tr></thead><tbody id="traderListBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL: Request -->
+    <!-- (Request merged into Issue/Sell panel) -->
+
+    <!-- PANEL: Incoming Stock + History -->
+    <div class="box trd-panel" id="tabIncoming" style="border:2px solid #27ae60;background:#f0faf4;display:none">
+      <h2>📥 Incoming Stock — બહારથી સામાન આવ્યો</h2>
+      <div class="row">
+        <div style="flex:2"><label>Trader (વેપારી) <span class="reqstar">*</span></label><select id="incTrader" class="sdd"><option value="">— વેપારી પસંદ કરો —</option></select></div>
+        <div><label>Bill Number (બિલ નં.)</label><input id="incBillNo" placeholder="Bill #"></div>
+      </div>
+      <div style="background:#e8f8f5;padding:10px;border-radius:6px;margin:8px 0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <b style="color:#27ae60">📋 Items (વસ્તુઓ)</b>
+          <button onclick="addIncItemRow()" style="background:#2980b9;padding:4px 12px;font-size:12px;margin:0">➕ Add Item</button>
+        </div>
+        <div id="incItemsWrap">
+          <div class="inc-item-row" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:6px">
+            <div style="flex:2"><label>Item <span class="reqstar">*</span></label><select class="incItem sdd" onchange="onIncItemRowChange(this)"><option value="">— Select —</option></select></div>
+            <div><label>Qty <span class="reqstar">*</span></label><input class="incQty" type="number" step="0.01" placeholder="0" oninput="updateIncRowTotal(this)"></div>
+            <div><label>Price <span class="reqstar">*</span></label><input class="incPrice" type="number" step="0.01" placeholder="0" oninput="updateIncRowTotal(this)"></div>
+            <div><label>Total</label><input class="incRowTotal" oninput="updateIncRowTotal(this)" style="background:#fffcf0;width:90px"></div>
+            <button onclick="removeIncItemRow(this)" style="background:#e74c3c;padding:6px 10px;margin:0;font-size:12px">🗑</button>
+          </div>
+        </div>
+      </div>
+      <div style="background:#fff;padding:8px 12px;border-radius:6px;margin:6px 0;font-size:14px;display:flex;justify-content:space-between">
+        <b>Grand Total: ₹<span id="incGrandTotal">0.00</span></b>
+        <span id="incItemCount" style="color:#888">1 item</span>
+      </div>
+      <button onclick="addIncomingStockMulti()" style="background:#27ae60;font-size:15px;padding:10px 24px">📥 Stock ઉમેરો (All Items)</button>
+
+      <!-- Incoming History Section -->
+      <div style="margin-top:20px;border-top:2px solid #27ae60;padding-top:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+          <h2 style="margin:0">📥 Incoming History — આવક ઇતિહાસ</h2>
+          <div class="dlbar"><button class="xls" onclick="dlTrdIncHistExcel()">📊 Excel</button><button class="pdf" onclick="dlTrdIncHistPDF()">📄 PDF</button></div>
+        </div>
+        <div class="row datebar">
+          <div><label>📅 થી</label><input type="date" id="trdIncFrom"></div>
+          <div><label>📅 સુધી</label><input type="date" id="trdIncTo"></div>
+          <div><label>🏪 Trader</label><select id="trdIncTrader" class="sdd"></select></div>
+          <div><label>📋 Item</label><select id="trdIncItem" class="sdd"></select></div>
+          <div style="display:flex;align-items:flex-end"><button onclick="showTraderIncomingHistory()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div>
+          <div style="display:flex;align-items:flex-end"><button onclick="clearTrdIncHistFilters()" style="background:#7f8c8d;width:100%">🔄</button></div>
+        </div>
+        <table><thead><tr><th>Date</th><th>Trader</th><th>Bill No</th><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th>Action</th></tr></thead><tbody id="traderIncHistBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- PANEL: Issue/Sell + History -->
+    <div class="box trd-panel" id="tabIssue" style="border:2px solid #8e44ad;background:#f5eef8;display:none">
+      <!-- Pending Requests Section -->
+      <div style="background:#fef9e7;border:2px solid #f39c12;border-radius:8px;padding:12px;margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+          <h3 style="margin:0;color:#f39c12">📝 વિભાગોની માંગણી (Pending Requests)</h3>
+          <div class="dlbar"><button class="xls" onclick="dlReqHistExcel()">📊 Excel</button><button class="pdf" onclick="dlReqHistPDF()">📄 PDF</button></div>
+        </div>
+        <div id="pendingRequestsSection">
+          <table><thead><tr><th>Date</th><th>Department</th><th>Item</th><th>Qty Requested</th><th>Available</th><th>Manager</th><th>Action</th></tr></thead><tbody id="pendingRequestsBody"></tbody></table>
+        </div>
+      </div>
+
+      <h2>📤 Issue / Sell to Department — વેચાણ</h2>
+      <div class="row">
+        <div><label>Department (ડીપાર્ટમેન્ટ) <span class="reqstar">*</span></label><select id="issDept" class="sdd"><option value="">— Department પસંદ કરો —</option></select></div>
+        <div><label>Item (વસ્તુ) <span class="reqstar">*</span></label><select id="issItem" class="sdd" onchange="onIssItemChange()"><option value="">— વસ્તુ પસંદ કરો —</option></select></div>
+        <div><label>Quantity <span id="issQtyUnitLbl">(જથ્થું)</span> <span class="reqstar">*</span></label><input id="issQty" type="number" step="0.01" placeholder="0" oninput="updateIssTotal()"></div>
+        <div><label>Available</label><input id="issAvail" readonly style="background:#e8f8f0"></div>
+      </div>
+      <div style="background:#fff;padding:8px 12px;border-radius:6px;margin:6px 0;font-size:13px">
+        <b>Total: ₹<span id="issTotal">0</span></b> | <span id="issQtyType"></span>
+      </div>
+      <div id="issStockWarn" style="color:#e74c3c;font-size:12px;display:none">⚠️ પૂરતો stock નથી!</div>
+      <button onclick="issueToDept()" style="background:#8e44ad">📤 Issue કરો</button>
+
+      <!-- Request History Section (below Issue form) -->
+      <div style="margin-top:20px;border-top:1px solid #f39c12;padding-top:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><h3 style="margin:0;font-size:14px">📋 Request History</h3><button onclick="toggleSellHistory()" style="background:#8e44ad;padding:5px 14px;margin:0;font-size:13px;border-radius:6px;">📤 Sell History</button></div>
+        <div class="row datebar">
+          <div><label>📅 થી</label><input type="date" id="reqHistFrom"></div>
+          <div><label>📅 સુધી</label><input type="date" id="reqHistTo"></div>
+          <div><label>🏢 Department</label><select id="reqHistDept" class="sdd"></select></div>
+          <div><label>📋 Item</label><select id="reqHistItem" class="sdd"></select></div>
+          <div style="display:flex;align-items:flex-end"><button onclick="showRequestHistory()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div>
+          <div style="display:flex;align-items:flex-end"><button onclick="clearReqHistFilters()" style="background:#7f8c8d;width:100%">🔄</button></div>
+        </div>
+        <table><thead><tr><th>Date</th><th>Department</th><th>Item</th><th>Qty</th><th>Status</th><th>Edit Info</th></tr></thead><tbody id="requestHistBody"></tbody></table>
+      </div>
+
+      <!-- Sell History Section (toggled by button) -->
+      <div id="sellHistSection" style="margin-top:20px;border-top:2px solid #8e44ad;padding-top:14px;display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+          <h2 style="margin:0">📤 Sell History — વેચાણ ઇતિહાસ</h2>
+          <div class="dlbar"><button class="xls" onclick="dlTrdSellHistExcel()">📊 Excel</button><button class="pdf" onclick="dlTrdSellHistPDF()">📄 PDF</button></div>
+        </div>
+        <div class="row datebar">
+          <div><label>📅 થી</label><input type="date" id="trdSellFrom"></div>
+          <div><label>📅 સુધી</label><input type="date" id="trdSellTo"></div>
+          <div><label>🏢 Department</label><select id="trdSellDept" class="sdd"></select></div>
+          <div><label>📋 Item</label><select id="trdSellItem" class="sdd"></select></div>
+          <div style="display:flex;align-items:flex-end"><button onclick="showTraderSellHistory()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div>
+          <div style="display:flex;align-items:flex-end"><button onclick="clearTrdSellHistFilters()" style="background:#7f8c8d;width:100%">🔄</button></div>
+        </div>
+        <table><thead><tr><th>Date</th><th>Department</th><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th>Action</th></tr></thead><tbody id="traderSellHistBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- PANEL: Reports (Analysis + Dept Usage + Financial merged) -->
+    <div class="box trd-panel" id="tabReports" style="border:3px solid #e74c3c;background:#fdf2f2;display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+        <h2 style="margin:0">📊 Reports — Analysis / Dept Usage / Financial</h2>
+      </div>
+      <!-- Sub-tabs -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+        <button onclick="showReportSection('rptAnalysis')" class="rpt-subtab" style="background:#e74c3c;color:#fff;padding:8px 16px;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:13px">📊 Analysis</button>
+        <button onclick="showReportSection('rptDeptUsage')" class="rpt-subtab" style="background:#16a085;color:#fff;padding:8px 16px;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:13px">🏢 Dept Usage</button>
+        <button onclick="showReportSection('rptFinancial')" class="rpt-subtab" style="background:#d35400;color:#fff;padding:8px 16px;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:13px">💰 Financial</button>
+      </div>
+      <!-- Sub-section: Analysis -->
+      <div id="rptAnalysis" class="rpt-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+          <h3 style="margin:0;color:#e74c3c">📊 Analysis — Low Stock & Pending Requests</h3>
+          <button onclick="showTraderAnalysis('traderAnalysisBody')" style="background:#27ae60;padding:6px 14px;font-size:12px">🔄 Refresh</button>
+        </div>
+        <p style="font-size:13px;color:#555">⚠️ જે items નો stock ઓછો છે અથવા pending request મુજબ પૂરતો નથી — તે અહીં બતાવે છે.</p>
+        <div id="traderAnalysisBody"></div>
+      </div>
+      <!-- Sub-section: Dept Usage -->
+      <div id="rptDeptUsage" class="rpt-section" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+          <h3 style="margin:0;color:#16a085">🏢 Department-wise Usage — કયા Dept એ કેટલું લીધું</h3>
+          <div class="dlbar"><button class="xls" onclick="dlDeptUsageExcel()">📊 Excel</button><button class="pdf" onclick="dlDeptUsagePDF()">📄 PDF</button></div>
+        </div>
+        <div class="row datebar">
+          <div><label>📅 થી</label><input type="date" id="trdUsageFrom"></div>
+          <div><label>📅 સુધી</label><input type="date" id="trdUsageTo"></div>
+          <div><label>🏢 Department</label><select id="trdUsageDept" class="sdd"></select></div>
+          <div><label>📋 Item</label><select id="trdUsageItem" class="sdd"></select></div>
+          <div style="display:flex;align-items:flex-end"><button onclick="showTraderDeptUsage()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div>
+          <div style="display:flex;align-items:flex-end"><button onclick="clearTrdUsageFilters()" style="background:#7f8c8d;width:100%">🔄</button></div>
+        </div>
+        <table><thead><tr><th>Department</th><th>Item</th><th>Total Qty Used</th><th>Total Value</th><th>Entries</th></tr></thead><tbody id="traderDeptUsageBody"></tbody></table>
+      </div>
+      <!-- Sub-section: Financial -->
+      <div id="rptFinancial" class="rpt-section" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+          <h3 style="margin:0;color:#d35400">💰 Financial Summary — ખરીદી vs વેચાણ</h3>
+          <div class="dlbar"><button class="xls" onclick="dlFinExcel()">📊 Excel</button><button class="pdf" onclick="dlFinPDF()">📄 PDF</button></div>
+        </div>
+        <div class="row datebar">
+          <div><label>📅 થી</label><input type="date" id="finFrom"></div>
+          <div><label>📅 સુધી</label><input type="date" id="finTo"></div>
+          <div><label>🏪 Trader</label><select id="finTrader" class="sdd"><option value="">— બધા —</option></select></div>
+          <div><label>📋 Item</label><select id="finItem" class="sdd"><option value="">— બધા —</option></select></div>
+          <div style="display:flex;align-items:flex-end"><button onclick="showFinancialSummary()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div>
+          <div style="display:flex;align-items:flex-end"><button onclick="clearFinFilters()" style="background:#7f8c8d;width:100%">🔄</button></div>
+        </div>
+        <div class="cards" id="finSummaryCards"></div>
+        <div id="finSummaryBody"></div>
+      </div>
+    </div>
+
+    <!-- PANEL: Stock & Summary (merged) -->
+    <div class="box trd-panel" id="tabStockSummary" style="border:2px solid #16a085;background:#e8f8f5;display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+        <h2>📦 Stock Panel & Summary — હાલનો Stock + સારાંશ</h2>
+        <div class="dlbar"><button class="xls" onclick="dlTraderStockExcel()">📊 Excel</button><button class="pdf" onclick="dlTraderStockPDF()">📄 PDF</button></div>
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <div style="flex:2"><label>🔍 Item શોધો (Dropdown)</label><select id="trdStockSearchSel" class="sdd" onchange="showTraderStockPanel()"><option value="">— બધા Items —</option></select></div>
+        <div style="flex:2"><label>🔍 Item શોધો (Type)</label><input id="trdStockSearchText" placeholder="Item name..." oninput="filterTraderStock()" style="width:100%"></div>
+        <div style="display:flex;align-items:flex-end"><button onclick="showTraderStockPanel()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div>
+      </div>
+      <table><thead><tr><th>#</th><th>Item Name</th><th>Qty Type</th><th>Available Stock</th><th>Price</th><th>Last Updated</th></tr></thead><tbody id="traderStockBody"></tbody></table>
+      <div id="traderStockTotal" style="margin-top:8px;font-weight:bold;color:#16a085"></div>
+      <!-- Summary Section -->
+      <div style="margin-top:16px;border-top:2px solid #34495e;padding-top:14px">
+        <h3 style="color:#34495e;margin:0 0 10px">📊 Item-wise Summary</h3>
+        <div class="row datebar" style="margin-bottom:10px;gap:8px;align-items:flex-end">
+          <div style="flex:2"><label>🔍 Item શોધો</label><input id="itemSummarySearch" placeholder="Item name લખો..." oninput="filterItemSummary()"></div>
+          <div style="display:flex;align-items:flex-end"><button onclick="document.getElementById('itemSummarySearch').value='';filterItemSummary()" style="background:#7f8c8d;width:100%">🔄 Clear</button></div>
+        </div>
+        <div class="cards" id="itemSummaryCards"></div>
+        <table><thead><tr><th>#</th><th>Item Name</th><th>Type</th><th>Stock</th><th>Price</th><th>Incoming</th><th>Sold</th><th>Pending Req</th></tr></thead><tbody id="itemSummaryBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- (Dept Usage merged into Reports panel) -->
+
+    <!-- PANEL: Store Extra Items (STANDALONE - no Item Master connection) -->
+    <div class="box trd-panel" id="tabExtraItems" style="border:3px solid #c0392b;background:#fff;display:none">
+      <div style="background:#c0392b;color:#fff;padding:12px 16px;border-radius:8px;margin-bottom:14px">
+        <h2 style="margin:0;color:#fff">📦 Store Extra Items — અલગ સામાન</h2>
+        <p style="margin:4px 0 0;font-size:12px;opacity:0.9">આ standalone system છે. Item Master સાથે કોઈ લેવાદેવા નથી. અહીં side/extra items manage થાય.</p>
+      </div>
+
+      <!-- SECTION 1: Add New Extra Item -->
+      <div style="border:2px solid #e74c3c;border-radius:8px;padding:14px;background:#fef9e7;margin-bottom:14px">
+        <h3 style="margin:0 0 10px;color:#c0392b">➕ નવો Extra Item ઉમેરો</h3>
+        <div class="row">
+          <div><label>Item Name (વસ્તુ નામ) <span class="reqstar">*</span></label><input id="exItemName" placeholder="જે નામ લખવું હોય"></div>
+          <div><label>Location (જગ્યા) <span class="reqstar">*</span></label><input id="exLocation" placeholder="કઈ જગ્યાએ છે"></div>
+          <div><label>Quantity (જથ્થું) <span class="reqstar">*</span></label><input id="exQty" type="number" step="0.01" placeholder="0"></div>
+        </div>
+        <div class="row">
+          <div style="flex:2"><label>વિગત (Description)</label><input id="exVigat" placeholder="વધુ માહિતી"></div>
+          <div><label>📥 IN / 📤 OUT <span class="reqstar">*</span></label><select id="exType"><option value="in">📥 IN (આવ્યું / ઉમેરો)</option><option value="out">📤 OUT (ગયું / આપ્યું)</option></select></div>
+          <div><label>કોણ લાવ્યું / કોને આપ્યું</label><input id="exPerson" placeholder="Person Name"></div>
+        </div>
+        <div style="background:#e8e8e8;padding:6px 12px;border-radius:4px;margin:8px 0;font-size:12px;color:#555;display:flex;justify-content:space-between;align-items:center">
+          <span>📅 Auto Date/Time: <b id="exAutoDT"></b></span>
+          <span style="color:#c0392b;font-weight:bold">અલગ System — Item Master થી અલગ</span>
+        </div>
+        <button onclick="addExtraItem()" style="background:#c0392b;margin:0">➕ Extra Item ઉમેરો</button>
+      </div>
+
+      <!-- SECTION 2: Total Stock Summary -->
+      <div style="border:2px solid #16a085;border-radius:8px;padding:14px;background:#e8f8f5;margin-bottom:14px">
+        <h3 style="margin:0 0 10px;color:#16a085">📊 Total Stock — અખુટબલ</h3>
+        <div id="exTotalStock" style="font-size:20px;font-weight:bold;color:#16a085;margin:10px 0"></div>
+        <table><thead><tr><th>#</th><th>Item Name</th><th>Location</th><th>Available Stock</th><th>Last Updated</th><th>📜 History</th></tr></thead><tbody id="exStockBody"></tbody></table>
+      </div>
+
+      <!-- SECTION 3: Full History -->
+      <div style="border:2px solid #2980b9;border-radius:8px;padding:14px;background:#eef5fb">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+          <h3 style="margin:0 0 10px;color:#2980b9">📜 Full History — બધી History</h3>
+          <div class="dlbar"><button class="xls" onclick="dlExItemsExcel()">📊 Excel</button><button class="pdf" onclick="dlExItemsPDF()">📄 PDF</button></div>
+        </div>
+        <div class="row datebar">
+          <div><label>📅 થી</label><input type="date" id="exHistFrom"></div>
+          <div><label>📅 સુધી</label><input type="date" id="exHistTo"></div>
+          <div><label>📋 Item</label><select id="exHistItem" class="sdd"></select></div>
+          <div style="display:flex;align-items:flex-end"><button onclick="showExtraItemsHistory()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div>
+          <div style="display:flex;align-items:flex-end"><button onclick="clearExHistFilters()" style="background:#7f8c8d;width:100%">🔄</button></div>
+        </div>
+        <table><thead><tr><th>Date</th><th>Type</th><th>Item Name</th><th>Qty</th><th>Location</th><th>વિગત</th><th>Person</th><th>Stock After</th></tr></thead><tbody id="exHistBody"></tbody></table>
+      </div>
+
+      <!-- Per-Item History Modal -->
+      <div class="box hide" id="exItemHistModal" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:200;width:90%;max-width:700px;max-height:80vh;overflow-y:auto;background:#fff;box-shadow:0 4px 20px rgba(0,0,0,0.3);border:2px solid #c0392b">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2 id="exItemHistTitle" style="margin:0">📜 Item History</h2>
+          <button onclick="closeExItemHist()" style="background:#7f8c8d;padding:4px 12px;margin:0">✖ Close</button>
+        </div>
+        <div id="exItemHistBody"></div>
+      </div>
+      <div class="hide" id="exItemHistOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:199" onclick="closeExItemHist()"></div>
+
+      <!-- Quick IN/OUT Modal (from stock table) -->
+      <div id="exIoModal" class="ex-io-modal" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3 style="margin:0;color:#27ae60" id="exIoItemName">—</h3>
+          <button onclick="closeExIoModal()" style="background:#7f8c8d;padding:4px 12px;margin:0;font-size:12px">✖</button>
+        </div>
+        <div style="background:#e8f8f5;padding:6px 10px;border-radius:4px;margin-bottom:10px;font-size:13px">📦 Available: <b id="exIoAvail">0</b></div>
+        <input type="hidden" id="exIoItem">
+        <div class="row">
+          <div><label>📥/📤 Type <span class="reqstar">*</span></label><select id="exIoType"><option value="out">📤 OUT (આપો)</option><option value="in">📥 IN (ઉમેરો)</option></select></div>
+          <div><label>Quantity <span class="reqstar">*</span></label><input id="exIoQty" type="number" step="0.01" placeholder="0"></div>
+        </div>
+        <div class="row">
+          <div><label>Location <span class="reqstar">*</span></label><input id="exIoLocation" placeholder="Location"></div>
+          <div><label>વિગત</label><input id="exIoVigat" placeholder="Description"></div>
+          <div><label>Person</label><input id="exIoPerson" placeholder="Name"></div>
+        </div>
+        <button onclick="submitQuickExInOut()" style="background:#27ae60;width:100%;margin-top:10px;font-size:15px">✅ કરો</button>
+      </div>
+      <div id="exIoOverlay" class="ex-io-overlay" style="display:none" onclick="closeExIoModal()"></div>
+    </div>
+
+    <!-- MODAL: Edit Trader -->
+    <div id="etTraderModal" class="ex-io-modal" style="display:none;border-color:#e67e22">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0;color:#e67e22">✏ Edit Trader</h3>
+        <button onclick="closeEtTraderModal()" style="background:#7f8c8d;padding:4px 12px;margin:0;font-size:12px">✖</button>
+      </div>
+      <div style="margin-bottom:10px"><label>Trader / Company Name <span class="reqstar">*</span></label><input id="etName" placeholder="Company Name" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px"></div>
+      <div style="margin-bottom:10px">
+        <label style="font-weight:600">Persons (નામ + મોબાઈલ)</label>
+        <div id="etPersonsWrap"></div>
+        <button onclick="addEtPerson()" style="background:#8e44ad;padding:4px 12px;font-size:12px;margin-top:6px">➕ વ્યક્તિ ઉમેરો</button>
+      </div>
+      <button onclick="saveEtTrader()" style="background:#27ae60;width:100%;font-size:15px">✅ Save</button>
+    </div>
+    <div id="etTraderOverlay" class="ex-io-overlay" style="display:none" onclick="closeEtTraderModal()"></div>
+
+    <!-- MODAL: Edit Item Master -->
+    <div id="eiItemModal" class="ex-io-modal" style="display:none;border-color:#2980b9">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0;color:#2980b9">✏ Edit Item</h3>
+        <button onclick="closeEiItemModal()" style="background:#7f8c8d;padding:4px 12px;margin:0;font-size:12px">✖</button>
+      </div>
+      <div class="row">
+        <div style="flex:2"><label>Item Name <span class="reqstar">*</span></label><input id="eiName" placeholder="Item Name" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px"></div>
+        <div><label>Qty Type <span class="reqstar">*</span></label><select id="eiQtyType" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px"><option value="liter">📏 Liter</option><option value="nanga">🔢 Nanga</option><option value="box">📦 Box</option><option value="kg">⚖️ KG</option><option value="number">🔢 Number</option></select></div>
+      </div>
+      <div class="row">
+        <div><label>Price (₹) <span class="reqstar">*</span></label><input id="eiPrice" type="number" step="0.01" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px"></div>
+        <div><label>Stock <span class="reqstar">*</span></label><input id="eiStock" type="number" step="0.01" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px"></div>
+        <div><label>⚠️ Low Stock Limit</label><input id="eiLowLimit" type="number" step="1" value="10" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px"></div>
+      </div>
+      <button onclick="saveEiItem()" style="background:#27ae60;width:100%;font-size:15px">✅ Save</button>
+    </div>
+    <div id="eiItemOverlay" class="ex-io-overlay" style="display:none" onclick="closeEiItemModal()"></div>
+
+    <!-- MODAL: Edit Stock Panel -->
+    <div id="esStockModal" class="ex-io-modal" style="display:none;border-color:#16a085">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0;color:#16a085">✏ Edit Stock — <span id="esName"></span></h3>
+        <button onclick="closeEsStockModal()" style="background:#7f8c8d;padding:4px 12px;margin:0;font-size:12px">✖</button>
+      </div>
+      <div style="background:#e8f8f5;padding:6px 10px;border-radius:4px;margin-bottom:10px;font-size:13px">Type: <b id="esQtyType"></b></div>
+      <div class="row">
+        <div><label>Stock Quantity <span class="reqstar">*</span></label><input id="esStock" type="number" step="0.01" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px"></div>
+        <div><label>Price (₹) <span class="reqstar">*</span></label><input id="esPrice" type="number" step="0.01" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px"></div>
+      </div>
+      <button onclick="saveEsStock()" style="background:#27ae60;width:100%;font-size:15px">✅ Save</button>
+    </div>
+    <div id="esStockOverlay" class="ex-io-overlay" style="display:none" onclick="closeEsStockModal()"></div>
+
+    <!-- MODAL: Edit Extra Items Stock -->
+    <div id="exEdModal" class="ex-io-modal" style="display:none;border-color:#f39c12">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0;color:#f39c12">✏ Edit Extra Item</h3>
+        <button onclick="closeExEdModal()" style="background:#7f8c8d;padding:4px 12px;margin:0;font-size:12px">✖</button>
+      </div>
+      <div style="margin-bottom:10px"><label>Item Name <span class="reqstar">*</span></label><input id="exEdName" placeholder="Item Name" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px"></div>
+      <div style="margin-bottom:10px"><label>Location <span class="reqstar">*</span></label><input id="exEdLocation" placeholder="Location" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px"></div>
+      <button onclick="saveExEd()" style="background:#27ae60;width:100%;font-size:15px">✅ Save</button>
+    </div>
+    <div id="exEdOverlay" class="ex-io-overlay" style="display:none" onclick="closeExEdModal()"></div>
+
+    <!-- PANEL: Item-wise Summary -->
+    <!-- (Item Summary merged into tabStockSummary, Dept Detail removed) -->
+
+    <!-- PANEL: Financial Summary -->
+    <!-- (Financial merged into Reports panel) -->
+
+    <!-- PANEL: Stock Movement Log -->
+    <div class="box trd-panel" id="tabMovLog" style="border:2px solid #7d3c98;background:#f5eef8;display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+        <h2 style="margin:0">📋 Stock Movement Log — IN/OUT નો હિસાબ</h2>
+        <div class="dlbar"><button class="xls" onclick="dlMovLogExcel()">📊 Excel</button><button class="pdf" onclick="dlMovLogPDF()">📄 PDF</button></div>
+      </div>
+      <div class="row datebar">
+        <div><label>📅 થી</label><input type="date" id="movLogFrom"></div>
+        <div><label>📅 સુધી</label><input type="date" id="movLogTo"></div>
+        <div><label>📋 Item</label><select id="movLogItem" class="sdd"></select></div>
+        <div style="display:flex;align-items:flex-end"><button onclick="showStockMovementLog()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div>
+        <div style="display:flex;align-items:flex-end"><button onclick="clearMovLogFilters()" style="background:#7f8c8d;width:100%">🔄</button></div>
+      </div>
+      <table><thead><tr><th>Date</th><th>Type</th><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th>From</th><th>To</th><th>Balance</th><th>Action</th></tr></thead><tbody id="stockMovLogBody"></tbody></table>
+    </div>
+
+    <!-- MODAL: Edit Request -->
+    <div id="erReqModal" class="ex-io-modal" style="display:none;border-color:#f39c12">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0;color:#f39c12">✏ Edit Request — માંગણી બદલો</h3>
+        <button onclick="closeErReqModal()" style="background:#7f8c8d;padding:4px 12px;margin:0;font-size:12px">✖</button>
+      </div>
+      <div style="background:#fef9e7;padding:10px;border-radius:6px;margin-bottom:12px;font-size:13px">
+        <div><b>🏢 Department:</b> <span id="erDept"></span></div>
+        <div><b>📋 Item:</b> <span id="erItem"></span></div>
+        <div><b>📦 Available:</b> <span id="erAvail" style="color:#27ae60"></span></div>
+        <div><b>🔢 Current Qty:</b> <span id="erOldQty"></span></div>
+      </div>
+      <div style="margin-bottom:12px">
+        <label>🔢 New Quantity <span class="reqstar">*</span></label>
+        <input id="erNewQty" type="number" step="0.01" style="width:100%;padding:10px;border:2px solid #f39c12;border-radius:6px;font-size:16px">
+        <div id="erQtyHint" style="font-size:12px;color:#888;margin-top:4px"></div>
+      </div>
+      <button onclick="saveReqEdit()" style="background:#27ae60;width:100%;font-size:15px;padding:10px">✅ Save</button>
+    </div>
+    <div id="erReqOverlay" class="ex-io-overlay" style="display:none" onclick="closeErReqModal()"></div>
+
+    <!-- MODAL: Edit Incoming Entry -->
+    <div id="eiIncModal" class="ex-io-modal" style="display:none;border-color:#27ae60">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0;color:#27ae60">✏ Edit Incoming Entry</h3>
+        <button onclick="closeEiIncModal()" style="background:#7f8c8d;padding:4px 12px;margin:0;font-size:12px">✖</button>
+      </div>
+      <div class="row">
+        <div><label>Trader</label><input id="eiIncTrader" readonly style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;background:#f0f0f0"></div>
+        <div><label>Bill No</label><input id="eiIncBillNo" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px"></div>
+      </div>
+      <div class="row">
+        <div><label>Item</label><input id="eiIncItem" readonly style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;background:#f0f0f0"></div>
+      </div>
+      <div class="row">
+        <div><label>Quantity <span class="reqstar">*</span></label><input id="eiIncQty" type="number" step="0.01" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px"></div>
+        <div><label>Price (₹) <span class="reqstar">*</span></label><input id="eiIncPrice" type="number" step="0.01" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px"></div>
+      </div>
+      <button onclick="saveEiInc()" style="background:#27ae60;width:100%;font-size:15px">✅ Save</button>
+    </div>
+    <div id="eiIncOverlay" class="ex-io-overlay" style="display:none" onclick="closeEiIncModal()"></div>
+
+    <!-- MODAL: Edit Sell Entry -->
+    <div id="esSellModal" class="ex-io-modal" style="display:none;border-color:#8e44ad">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0;color:#8e44ad">✏ Edit Sell Entry</h3>
+        <button onclick="closeEsSellModal()" style="background:#7f8c8d;padding:4px 12px;margin:0;font-size:12px">✖</button>
+      </div>
+      <div class="row">
+        <div><label>Department</label><input id="esSellDept" readonly style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;background:#f0f0f0"></div>
+        <div><label>Item</label><input id="esSellItem" readonly style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;background:#f0f0f0"></div>
+      </div>
+      <div style="margin-bottom:10px"><label>Quantity <span class="reqstar">*</span></label><input id="esSellQty" type="number" step="0.01" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px"></div>
+      <button onclick="saveEsSell()" style="background:#27ae60;width:100%;font-size:15px">✅ Save</button>
+    </div>
+    <div id="esSellOverlay" class="ex-io-overlay" style="display:none" onclick="closeEsSellModal()"></div>
+
+    <!-- PANEL: Department Request (dept role only) -->
+    <div class="trd-panel" id="tabDeptRequest" style="display:none">
+      <!-- Request Form -->
+      <div class="box" style="border:2px solid #f39c12;background:#fef9e7">
+        <h2>📝 સામાન માંગણી — Traders પાસેથી મંગાવો</h2>
+        <div style="background:#e8e8e8;padding:6px 12px;border-radius:4px;margin-bottom:10px;font-size:12px;color:#555">
+          📅 Auto Date/Time: <b id="deptReqAutoDT"></b>
+        </div>
+        <div class="row">
+          <div style="flex:2"><label>📋 Item (વસ્તુ) <span class="reqstar">*</span></label><select id="deptReqItem" class="sdd" onchange="onDeptReqItemChange()"><option value="">— વસ્તુ પસંદ કરો —</option></select></div>
+          <div><label>📏 Qty Type (જથ્થાનો પ્રકાર)</label><input id="deptReqQtyType" readonly style="background:#e8f8f0" placeholder="Item પસંદ કરો"></div>
+        </div>
+        <div class="row">
+          <div><label>🔢 Quantity <span id="deptReqQtyUnitLbl">(જથ્થું)</span> <span class="reqstar">*</span></label><input id="deptReqQty" type="number" step="0.01" placeholder="0"></div>
+          <div style="flex:2"><label>👤 Manager Name <span class="reqstar">*</span></label><input id="deptReqMgr" placeholder="Manager Name"></div>
+        </div>
+        <button onclick="submitDeptRequest()" style="background:#f39c12;font-size:16px;padding:10px 28px">📝 Request મોકલો</button>
+      </div>
+
+      <!-- My Requests -->
+      <div class="box" style="border:2px solid #2980b9;background:#eef5fb">
+        <h2>📋 મારી Requests</h2>
+        <table><thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Manager</th><th>Status</th><th>Approved Qty</th></tr></thead><tbody id="deptReqMyList"></tbody></table>
+      </div>
+
+      <!-- Monthly Usage Report -->
+      <div class="box" style="border:2px solid #16a085;background:#e8f8f5">
+        <h2>📊 Monthly Usage Report — મારો માસિક હિસાબ</h2>
+        <div class="row datebar">
+          <div><label>📅 Month (મહિનો)</label><input type="month" id="deptRepMonth" onchange="showDeptMonthlyReport()"></div>
+          <div><label>📋 Item Filter</label><select id="deptRepItem" class="sdd" onchange="showDeptMonthlyReport()"><option value="">— બધા Items —</option></select></div>
+          <div style="display:flex;align-items:flex-end"><button onclick="showDeptMonthlyReport()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div>
+          <div style="display:flex;align-items:flex-end"><button onclick="clearDeptMonthlyReport()" style="background:#7f8c8d;width:100%">🔄 Clear</button></div>
+          <div style="display:flex;align-items:flex-end"><button onclick="dlDeptRepExcel()" style="background:#27ae60;width:100%">📊 Excel</button></div>
+        </div>
+        <div id="deptRepSummary" style="margin:10px 0;padding:10px;background:#fff;border-radius:6px;display:none"></div>
+        <table><thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th>Manager</th><th>Status</th></tr></thead><tbody id="deptRepBody"></tbody></table>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+  <script src="js/app.js"></script>
 </body>
+  </body>
 </html>
