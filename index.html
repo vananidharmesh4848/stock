@@ -4931,8 +4931,6 @@ function dlMovLogPDF(){ if(typeof dlPDF==='function'){ dlPDF('stockMovLogBody','
 // =====================================================
 // === STORE MANAGER EXTRA ITEMS ===
 // =====================================================
-let extraItems = JSON.parse(localStorage.getItem("extraItems") || "[]");
-let extraStock = JSON.parse(localStorage.getItem("extraStock") || "{}"); // {itemName: {qty, location, updatedAt}}
 
 // Add to save function
 function _origSave_extraItems(){
