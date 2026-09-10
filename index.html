@@ -39,17 +39,41 @@
   };
   Date.now = window.getSyncedTime;
 
+  // Cloud storage caps - Firebase free plan (1GB) never fills up.
+  // Generous caps here; localStorage caps are smaller (see trimArrays in app.js).
+  window.cloudTrim = function(p){
+    p = p || {};
+    let cap = (arr, n) => (Array.isArray(arr) && arr.length > n) ? arr.slice(arr.length - n) : arr;
+    p.hist = cap(p.hist, 10000);
+    p.reps = cap(p.reps, 3000);
+    p.sugs = cap(p.sugs, 2000);
+    p.fourP = cap(p.fourP, 3000);
+    p.jangads = cap(p.jangads, 2000);
+    p.loginHistory = cap(p.loginHistory, 500);
+    return p;
+  };
+
   let saveTimeout = null;
   window.cloudSave = function(p) {
     if (saveTimeout) clearTimeout(saveTimeout);
     saveTimeout = setTimeout(async () => {
       try {
-        await set(dbRef, p);
+        await set(dbRef, window.cloudTrim(p));
       } catch(e) {
         console.error("Save err", e);
-        alert("Firebase Save Error: " + e.message);
+        let msg = (e && e.message) ? e.message : String(e);
+        let hint = /limit|quota|storage|large|size/i.test(msg) ? " — Firebase storage ભરાઈ ગયું છે! Admin માં '🔥 Firebase Clean' બટન દબાવો" : "";
+        if (window.toast) window.toast("❌ Firebase સેવ ન થયું: " + msg + hint, "error");
+        else alert("Firebase Save Error: " + msg + hint);
       }
     }, 150); // 150ms debounce
+  };
+
+  // Immediate rewrite with trimmed data (Admin -> "Firebase Clean" button)
+  window.cloudCleanNow = async function(){
+    let payload = (typeof window.__cloudPayload === "function") ? window.__cloudPayload() : {};
+    try { await set(dbRef, window.cloudTrim(payload)); return { ok: true }; }
+    catch(e){ return { ok: false, error: (e && e.message) ? e.message : String(e) }; }
   };
   
   window.cloudListen = function(cb){ onValue(dbRef, (s)=>{ if(s.exists()) cb(s.val()); }); };
@@ -832,6 +856,12 @@
       </div>
       <hr style="margin:14px 0;border-color:#ddd">
 
+      <!-- Firebase Clean (Storage) -->
+      <h3>🔥 Firebase Clean (સ્ટોરેજ ખાલી કરો)</h3>
+      <p style="font-size:13px;color:#555">Firebase free plan (1GB) ભરાઈ ગયું હોય ત્યારે આ બટન દબાવો — જૂની History / Repairing / 4P / Suggestion જોગવાઈઓ આપોઆપ કપાઈ જશે, હાલનો Stock ડેટા સલામત રહેશે.</p>
+      <div class="dlbar"><button class="del" id="fbCleanBtn" onclick="cloudCleanNow()" style="background:#c0392b">🔥 Firebase Clean હવે</button></div>
+      <hr style="margin:14px 0;border-color:#ddd">
+
       <!-- Data Purge -->
       <h3>🔥 Data Delete / Purge (ડેટા સાફ કરો)</h3>
       <p style="font-size:13px;color:#c0392b;font-weight:bold;">⚠️ ચેતવણી: નક્કી કરેલ સમયગાળાનો તમામ ટ્રાન્ઝેક્શન ડેટા (History, Stock, Repairing, 4P, Suggestion) કાયમ માટે ડિલીટ થઈ જશે.</p>
@@ -1021,11 +1051,11 @@ if(!dstatus[STOCK_DEPT]||!dstatus[STOCK_DEPT].length) dstatus[STOCK_DEPT]=["Chal
   fourP.forEach(f=>{if(f.from===old){hasOld=true;f.from=STOCK_DEPT;}});
   if(hasOld||dstatus[old]){
     if(dstatus[old]){dstatus[STOCK_DEPT]=[...(dstatus[STOCK_DEPT]||[]),...dstatus[old]];delete dstatus[old];}
-    localStorage.setItem("stock",JSON.stringify(data));
-    localStorage.setItem("hist",JSON.stringify(hist));
-    localStorage.setItem("reps",JSON.stringify(reps));
-    localStorage.setItem("fourP",JSON.stringify(fourP));
-    localStorage.setItem("dstatus",JSON.stringify(dstatus));
+    safeSet("stock",data);
+    safeSet("hist",hist);
+    safeSet("reps",reps);
+    safeSet("fourP",fourP);
+    safeSet("dstatus",dstatus);
   }
 })();
 let uchak = JSON.parse(localStorage.getItem("uchak") || "[]");
@@ -1169,19 +1199,54 @@ function deptColorIndex(name){ let s=0; for(let i=0;i<name.length;i++) s=(s*31+n
 
 let lastLocalUpdate = Number(localStorage.getItem("lastLocalUpdate") || "0");
 let lastCloudApplied = Number(localStorage.getItem("lastCloudApplied") || "0");
+const LOCAL_CAPS = { hist:2000, reps:1000, sugs:500, fourP:1000, jangads:500 };
+function trimArrays(){
+  let cut=(name,arr,max)=>{ if(Array.isArray(arr)&&arr.length>max){ arr.splice(0,arr.length-max); console.log("🧹 "+name+" trimmed to "+max); } };
+  cut("hist",hist,LOCAL_CAPS.hist); cut("reps",reps,LOCAL_CAPS.reps); cut("sugs",sugs,LOCAL_CAPS.sugs); cut("fourP",fourP,LOCAL_CAPS.fourP); cut("jangads",jangads,LOCAL_CAPS.jangads);
+  let lh=JSON.parse(localStorage.getItem("loginHistory")||"[]");
+  if(lh.length>500){ lh=lh.slice(lh.length-500); try{ localStorage.setItem("loginHistory",JSON.stringify(lh)); }catch(e){} }
+}
+function safeSet(key,val){
+  let str = (typeof val === "string") ? val : JSON.stringify(val);
+  try{ localStorage.setItem(key,str); return true; }
+  catch(e){
+    try{ trimArrays(); localStorage.setItem(key,str); return true; }
+    catch(e2){ console.warn("localStorage full — could not save '"+key+"'", e2); return false; }
+  }
+}
+function saveAll(){
+  safeSet("lastLocalUpdate", lastLocalUpdate);
+  safeSet("users",users); safeSet("stock",data); safeSet("hist",hist); safeSet("reps",reps);
+  safeSet("sugs",sugs); safeSet("labels",labels); safeSet("managers",managers); safeSet("dataentrys",dataentrys);
+  safeSet("dstatus",dstatus); safeSet("deptVigats",deptVigats); safeSet("fourP",fourP);
+  safeSet("uchak",uchak); safeSet("uchakProcesses",uchakProcesses); safeSet("uchakRates",uchakRates); safeSet("deptProcesses",deptProcesses); safeSet("deptRates",deptRates); safeSet("jangads",jangads); safeSet("jangadCounter",String(jangadCounter));
+  if(jangadEditPass) safeSet("jangadEditPass",jangadEditPass);
+  if(kapanEditPass) safeSet("kapanEditPass",kapanEditPass);
+  safeSet("traders",traders); safeSet("traderItems",traderItems); safeSet("traderIncoming",traderIncoming); safeSet("traderSells",traderSells); safeSet("traderRequests",traderRequests); safeSet("storeManager",storeManager); safeSet("extraItems",extraItems); safeSet("extraStock",extraStock);
+}
+function cloudPayload(){
+  return {users, stock:data, hist, reps, sugs, labels, managers, dataentrys, dstatus, deptVigats, fourP, uchak, uchakProcesses, uchakRates, deptProcesses, deptRates, jangads, jangadCounter, traders, traderItems, traderIncoming, traderSells, traderRequests, storeManager, extraItems, extraStock, updated:Date.now(), sugAll, loginHistory:JSON.parse(localStorage.getItem("loginHistory")||"[]")};
+}
+window.__cloudPayload = cloudPayload;
+async function cloudCleanNow(){
+  if(!window.cloudSave){ toast("Firebase ઉપલબ્ધ નથી","error"); return; }
+  if(!confirm("Firebase માંથી જૂનો hist/reps/sugs/fourP/jangads ડેટા કાપીને જગ્યા ખાલી કરવી છે? (હાલનો stock ડેટા સલામત રહેશે)")) return;
+  let btn=document.getElementById("fbCleanBtn");
+  if(btn){ btn.disabled=true; btn.textContent="⏳ Firebase Clean થાય છે..."; }
+  try{
+    let r = await window.cloudCleanNow();
+    if(r && r.ok) toast("✅ Firebase Clean થઈ ગયું! જગ્યા ખાલી થઈ.","success");
+    else toast("❌ Firebase Clean ન થયું: "+(r&&r.error?r.error:"unknown error"),"error");
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent="🔥 Firebase Clean હવે"; }
+  }
+}
 function save(){
   let nowMs = Date.now();
   lastLocalUpdate = nowMs;
-  try{
-    localStorage.setItem("lastLocalUpdate", nowMs);
-    localStorage.setItem("users",JSON.stringify(users)); localStorage.setItem("stock",JSON.stringify(data));
-    localStorage.setItem("hist",JSON.stringify(hist)); localStorage.setItem("reps",JSON.stringify(reps));
-    localStorage.setItem("sugs",JSON.stringify(sugs)); localStorage.setItem("labels",JSON.stringify(labels));
-    localStorage.setItem("managers",JSON.stringify(managers)); localStorage.setItem("dataentrys",JSON.stringify(dataentrys));
-    localStorage.setItem("dstatus",JSON.stringify(dstatus)); localStorage.setItem("deptVigats",JSON.stringify(deptVigats)); localStorage.setItem("fourP",JSON.stringify(fourP));
-    localStorage.setItem("uchak",JSON.stringify(uchak)); localStorage.setItem("uchakProcesses",JSON.stringify(uchakProcesses)); localStorage.setItem("uchakRates",JSON.stringify(uchakRates)); localStorage.setItem("deptProcesses",JSON.stringify(deptProcesses)); localStorage.setItem("deptRates",JSON.stringify(deptRates)); localStorage.setItem("jangads",JSON.stringify(jangads)); localStorage.setItem("jangadCounter",String(jangadCounter)); if(jangadEditPass) localStorage.setItem("jangadEditPass",jangadEditPass); if(kapanEditPass) localStorage.setItem("kapanEditPass",kapanEditPass); localStorage.setItem("traders",JSON.stringify(traders)); localStorage.setItem("traderItems",JSON.stringify(traderItems)); localStorage.setItem("traderIncoming",JSON.stringify(traderIncoming)); localStorage.setItem("traderSells",JSON.stringify(traderSells)); localStorage.setItem("traderRequests",JSON.stringify(traderRequests)); localStorage.setItem("storeManager",JSON.stringify(storeManager)); localStorage.setItem("extraItems",JSON.stringify(extraItems)); localStorage.setItem("extraStock",JSON.stringify(extraStock));
-  }catch(e){ console.warn("localStorage quota exceeded",e); toast("⚠️ Local storage full — Firebase backup only.","warning"); }
-  if(window.cloudSave){ window.cloudSave({users,stock:data,hist,reps,sugs,labels,managers,dataentrys,dstatus,deptVigats,fourP,uchak,uchakProcesses,uchakRates,deptProcesses,deptRates,jangads,jangadCounter,traders,traderItems,traderIncoming,traderSells,traderRequests,storeManager,extraItems,extraStock,updated:nowMs,sugAll,loginHistory:JSON.parse(localStorage.getItem("loginHistory")||"[]")}); }
+  if(window.cloudSave){ window.cloudSave(cloudPayload()); }
+  trimArrays();
+  saveAll();
 }
 
 let curPage="";
@@ -1216,8 +1281,6 @@ function openApp(){
   initJangadEntry(); showJangadInbox();
   if(isFull){ partRows=[]; addPartRow(); addPartRow(); }
   buildNav();
-  document.addEventListener("contextmenu",function(e){ e.preventDefault(); });
-  document.addEventListener("keydown",function(e){ if(e.key==="F12"||(e.ctrlKey&&e.shiftKey&&["I","J","C"].includes(e.key.toUpperCase()))||(e.ctrlKey&&e.key==="U")){ e.preventDefault(); e.stopPropagation(); return false; } });
 }
 function logout(){ endSession(); location.reload(); }
 function manualRefresh(){
@@ -2551,37 +2614,34 @@ function applyCloudData(d){
   reps.forEach(r=>{if(r.to===old)r.to=STOCK_DEPT;if(r.from===old)r.from=STOCK_DEPT;});
   fourP.forEach(f=>{if(f.from===old)f.from=STOCK_DEPT;});
   if(dstatus[old]){dstatus[STOCK_DEPT]=[...(dstatus[STOCK_DEPT]||[]),...dstatus[old]];delete dstatus[old];}
-  if(d.sugAll) { sugAll=d.sugAll; localStorage.setItem("sugAll",JSON.stringify(sugAll)); }
-  if(d.loginHistory) { localStorage.setItem("loginHistory",JSON.stringify(d.loginHistory)); }
-  if(d.uchak) { uchak=d.uchak; localStorage.setItem("uchak",JSON.stringify(uchak)); }
-  if(d.uchakProcesses) { uchakProcesses=d.uchakProcesses; localStorage.setItem("uchakProcesses",JSON.stringify(uchakProcesses)); }
-  if(d.uchakRates) { uchakRates=d.uchakRates; localStorage.setItem("uchakRates",JSON.stringify(uchakRates)); }
-  if(d.deptProcesses) { deptProcesses=d.deptProcesses; localStorage.setItem("deptProcesses",JSON.stringify(deptProcesses)); }
-  if(d.deptRates) { deptRates=d.deptRates; localStorage.setItem("deptRates",JSON.stringify(deptRates)); }
+  if(d.sugAll) { sugAll=d.sugAll; safeSet("sugAll",sugAll); }
+  if(d.loginHistory) { safeSet("loginHistory",d.loginHistory); }
+  if(d.uchak) { uchak=d.uchak; safeSet("uchak",uchak); }
+  if(d.uchakProcesses) { uchakProcesses=d.uchakProcesses; safeSet("uchakProcesses",uchakProcesses); }
+  if(d.uchakRates) { uchakRates=d.uchakRates; safeSet("uchakRates",uchakRates); }
+  if(d.deptProcesses) { deptProcesses=d.deptProcesses; safeSet("deptProcesses",deptProcesses); }
+  if(d.deptRates) { deptRates=d.deptRates; safeSet("deptRates",deptRates); }
   // Migration in cloud data
   if(!d.deptProcesses||!d.deptProcesses["ઉચક"]||!d.deptProcesses["ઉચક"].length){
-    if(uchakProcesses.length){ deptProcesses["ઉચક"]=uchakProcesses; uchakProcesses=[]; localStorage.setItem("deptProcesses",JSON.stringify(deptProcesses)); localStorage.setItem("uchakProcesses",JSON.stringify(uchakProcesses)); }
+    if(uchakProcesses.length){ deptProcesses["ઉચક"]=uchakProcesses; uchakProcesses=[]; safeSet("deptProcesses",deptProcesses); safeSet("uchakProcesses",uchakProcesses); }
     else if(!deptProcesses["ઉચક"]) deptProcesses["ઉચક"]=["Setup","Doping","Galaxy","Marking"];
   }
   if(!d.deptRates||!d.deptRates["ઉચક"]||!d.deptRates["ઉચક"].length){
-    if(uchakRates.length){ deptRates["ઉચક"]=uchakRates; uchakRates=[]; localStorage.setItem("deptRates",JSON.stringify(deptRates)); localStorage.setItem("uchakRates",JSON.stringify(uchakRates)); }
+    if(uchakRates.length){ deptRates["ઉચક"]=uchakRates; uchakRates=[]; safeSet("deptRates",deptRates); safeSet("uchakRates",uchakRates); }
   }
   uchak.forEach(u=>{ if(!u.dept) u.dept="ઉચક"; if(!u.nextOpts) u.nextOpts=[]; });
-  if(d.jangads) { jangads=d.jangads; jangads.forEach(j=>{ if(!j.depts){ j.depts=[j.dept||"ઉચક"]; j.deptIndex=0; } if(!j.tag) j.tag="Regular"; }); localStorage.setItem("jangads",JSON.stringify(jangads)); }
-  jangadCounter=d.jangadCounter||parseInt(localStorage.getItem("jangadCounter")||"0"); localStorage.setItem("jangadCounter",String(jangadCounter));
-  if(d.traders){traders=d.traders;localStorage.setItem("traders",JSON.stringify(traders));}
-  if(d.traderItems){traderItems=d.traderItems;localStorage.setItem("traderItems",JSON.stringify(traderItems));}
-  if(d.traderIncoming){traderIncoming=d.traderIncoming;localStorage.setItem("traderIncoming",JSON.stringify(traderIncoming));}
-  if(d.traderSells){traderSells=d.traderSells;localStorage.setItem("traderSells",JSON.stringify(traderSells));}
-  if(d.traderRequests){traderRequests=d.traderRequests;localStorage.setItem("traderRequests",JSON.stringify(traderRequests));}
-  if(d.extraItems){extraItems=d.extraItems;localStorage.setItem("extraItems",JSON.stringify(extraItems));}
-  if(d.extraStock){extraStock=d.extraStock;localStorage.setItem("extraStock",JSON.stringify(extraStock));}
-  if(d.storeManager){storeManager=d.storeManager;localStorage.setItem("storeManager",JSON.stringify(storeManager));}
-  localStorage.setItem("users",JSON.stringify(users)); localStorage.setItem("stock",JSON.stringify(data));
-  localStorage.setItem("hist",JSON.stringify(hist)); localStorage.setItem("reps",JSON.stringify(reps));
-  localStorage.setItem("sugs",JSON.stringify(sugs)); localStorage.setItem("labels",JSON.stringify(labels));
-  localStorage.setItem("managers",JSON.stringify(managers)); localStorage.setItem("dataentrys",JSON.stringify(dataentrys));
-  localStorage.setItem("dstatus",JSON.stringify(dstatus)); localStorage.setItem("deptVigats",JSON.stringify(deptVigats)); localStorage.setItem("fourP",JSON.stringify(fourP));
+  if(d.jangads) { jangads=d.jangads; jangads.forEach(j=>{ if(!j.depts){ j.depts=[j.dept||"ઉચક"]; j.deptIndex=0; } if(!j.tag) j.tag="Regular"; }); safeSet("jangads",jangads); }
+  jangadCounter=d.jangadCounter||parseInt(localStorage.getItem("jangadCounter")||"0"); safeSet("jangadCounter",String(jangadCounter));
+  if(d.traders){traders=d.traders;safeSet("traders",traders);}
+  if(d.traderItems){traderItems=d.traderItems;safeSet("traderItems",traderItems);}
+  if(d.traderIncoming){traderIncoming=d.traderIncoming;safeSet("traderIncoming",traderIncoming);}
+  if(d.traderSells){traderSells=d.traderSells;safeSet("traderSells",traderSells);}
+  if(d.traderRequests){traderRequests=d.traderRequests;safeSet("traderRequests",traderRequests);}
+  if(d.extraItems){extraItems=d.extraItems;safeSet("extraItems",extraItems);}
+  if(d.extraStock){extraStock=d.extraStock;safeSet("extraStock",extraStock);}
+  if(d.storeManager){storeManager=d.storeManager;safeSet("storeManager",storeManager);}
+  trimArrays();
+  saveAll();
   if(cur){
     refresh();
     fillDeptDropdown();
