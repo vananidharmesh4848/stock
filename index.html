@@ -39,30 +39,26 @@
   };
   Date.now = window.getSyncedTime;
 
-  // Cloud storage caps - Optimized to reduce Firebase bandwidth & storage usage drastically.
+  // Cloud storage caps - Firebase free plan (1GB) never fills up.
+  // Generous caps here; localStorage caps are smaller (see trimArrays in app.js).
   window.cloudTrim = function(p){
     p = p || {};
     let cap = (arr, n) => (Array.isArray(arr) && arr.length > n) ? arr.slice(arr.length - n) : arr;
-    p.hist = cap(p.hist, 800);
-    p.reps = cap(p.reps, 300);
-    p.sugs = cap(p.sugs, 150);
-    p.fourP = cap(p.fourP, 500);
-    p.jangads = cap(p.jangads, 400);
-    p.loginHistory = cap(p.loginHistory, 50);
+    p.hist = cap(p.hist, 10000);
+    p.reps = cap(p.reps, 3000);
+    p.sugs = cap(p.sugs, 2000);
+    p.fourP = cap(p.fourP, 3000);
+    p.jangads = cap(p.jangads, 2000);
+    p.loginHistory = cap(p.loginHistory, 500);
     return p;
   };
 
   let saveTimeout = null;
-  let lastSavedHash = "";
   window.cloudSave = function(p) {
     if (saveTimeout) clearTimeout(saveTimeout);
     saveTimeout = setTimeout(async () => {
       try {
-        let trimmed = window.cloudTrim(p);
-        let hash = (trimmed.updated || "") + "_" + (trimmed.stock ? trimmed.stock.length : 0) + "_" + (trimmed.hist ? trimmed.hist.length : 0) + "_" + (trimmed.fourP ? trimmed.fourP.length : 0);
-        if (hash === lastSavedHash) return;
-        lastSavedHash = hash;
-        await set(dbRef, trimmed);
+        await set(dbRef, window.cloudTrim(p));
       } catch(e) {
         console.error("Save err", e);
         let msg = (e && e.message) ? e.message : String(e);
@@ -70,7 +66,7 @@
         if (window.toast) window.toast("❌ Firebase સેવ ન થયું: " + msg + hint, "error");
         else alert("Firebase Save Error: " + msg + hint);
       }
-    }, 1500); // 1500ms debounce for minimal bandwidth
+    }, 150); // 150ms debounce
   };
 
   // Immediate rewrite with trimmed data (Admin -> "Firebase Clean" button)
@@ -968,7 +964,7 @@
       <div id="fourPPanel"><p style="text-align:center;color:#999;padding:20px">Stock માં રહેલા બધા Kapans — શોધીને 4P મોકલો</p></div>
     </div>
     <div class="box" style="border:2px solid #8e44ad">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:8px"><h3 style="margin:0">📋 4P History — Restore to Stock / Complete Delete</h3><div class="dlbar"><button class="xls" onclick="dl4PExcel()">📊 Excel</button><button class="pdf" onclick="dl4PPDF()">📄 PDF</button></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:8px"><h3 style="margin:0">📋 4P History — Restore to Stock</h3><div class="dlbar"><button class="xls" onclick="dl4PExcel()">📊 Excel</button><button class="pdf" onclick="dl4PPDF()">📄 PDF</button></div></div>
       <div class="row datebar" style="margin-bottom:10px">
         <div><label>🔍 Kapan</label><input id="fphSearch" placeholder="Kapan"></div>
         <div><label>📅 થી</label><input id="fphFrom" type="date"></div>
@@ -976,22 +972,16 @@
         <div style="display:flex;align-items:flex-end"><button onclick="show4PHistory()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div>
         <div style="display:flex;align-items:flex-end"><button onclick="clear4PHistory()" style="background:#7f8c8d;width:100%">🔄</button></div>
       </div>
-      <div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-        <div>
-          <button class="sugcat" onclick="dateQuick('today','fphFrom,fphTo',show4PHistory)" style="background:#2980b9;font-size:12px;padding:4px 10px;margin:2px">Today</button>
-          <button class="sugcat" onclick="dateQuick('week','fphFrom,fphTo',show4PHistory)" style="background:#2980b9;font-size:12px;padding:4px 10px;margin:2px">This Week</button>
-          <button class="sugcat" onclick="dateQuick('month','fphFrom,fphTo',show4PHistory)" style="background:#2980b9;font-size:12px;padding:4px 10px;margin:2px">This Month</button>
-          <button class="sugcat" onclick="dateQuick('30days','fphFrom,fphTo',show4PHistory)" style="background:#2980b9;font-size:12px;padding:4px 10px;margin:2px">30 Days</button>
-          <button class="sugcat" onclick="dateQuick('all','fphFrom,fphTo',show4PHistory)" style="background:#7f8c8d;font-size:12px;padding:4px 10px;margin:2px">All</button>
-        </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="del" onclick="purgeSelected4P()" style="background:#c0392b;font-size:12px;padding:5px 12px;margin:0" title="પસંદ કરેલ કાપણને 4P, History, Stock, Repairing, Jangad - બધી જગ્યાએથી કાયમ માટે Delete કરો">🗑️ સિલેક્ટ કરેલ કાયમ Delete કરો</button>
-          <button class="del" onclick="purgeDateRange4P()" style="background:#922b21;font-size:12px;padding:5px 12px;margin:0" title="તારીખ ફિલ્ટર મુજબની બધી કાપણોને બધી જગ્યાએથી કાયમ માટે Delete કરો">🔥 તારીખ મુજબ બધું Delete કરો</button>
-        </div>
+      <div style="margin-bottom:10px">
+        <button class="sugcat" onclick="dateQuick('today','fphFrom,fphTo',show4PHistory)" style="background:#2980b9;font-size:12px;padding:4px 10px;margin:2px">Today</button>
+        <button class="sugcat" onclick="dateQuick('week','fphFrom,fphTo',show4PHistory)" style="background:#2980b9;font-size:12px;padding:4px 10px;margin:2px">This Week</button>
+        <button class="sugcat" onclick="dateQuick('month','fphFrom,fphTo',show4PHistory)" style="background:#2980b9;font-size:12px;padding:4px 10px;margin:2px">This Month</button>
+        <button class="sugcat" onclick="dateQuick('30days','fphFrom,fphTo',show4PHistory)" style="background:#2980b9;font-size:12px;padding:4px 10px;margin:2px">30 Days</button>
+        <button class="sugcat" onclick="dateQuick('all','fphFrom,fphTo',show4PHistory)" style="background:#7f8c8d;font-size:12px;padding:4px 10px;margin:2px">All</button>
       </div>
       <div style="overflow-x:auto;max-height:400px;overflow-y:auto">
-      <table><thead><tr><th style="width:36px;text-align:center"><input type="checkbox" id="fphChkAll" onchange="toggleFphAll(this)" style="width:auto"></th><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>From</th><th>Date-Time</th><th>Action</th></tr></thead>
-        <tbody id="fourPHistBody"><tr><td colspan="8" style="text-align:center;color:#999">કોઈ 4P record નથી</td></tr></tbody>
+      <table><thead><tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>From</th><th>Date-Time</th><th>Action</th></tr></thead>
+        <tbody id="fourPHistBody"><tr><td colspan="7" style="text-align:center;color:#999">કોઈ 4P record નથી</td></tr></tbody>
       </table>
       </div>
     </div>
@@ -1209,12 +1199,12 @@ function deptColorIndex(name){ let s=0; for(let i=0;i<name.length;i++) s=(s*31+n
 
 let lastLocalUpdate = Number(localStorage.getItem("lastLocalUpdate") || "0");
 let lastCloudApplied = Number(localStorage.getItem("lastCloudApplied") || "0");
-const LOCAL_CAPS = { hist:800, reps:300, sugs:150, fourP:500, jangads:400 };
+const LOCAL_CAPS = { hist:2000, reps:1000, sugs:500, fourP:1000, jangads:500 };
 function trimArrays(){
   let cut=(name,arr,max)=>{ if(Array.isArray(arr)&&arr.length>max){ arr.splice(0,arr.length-max); console.log("🧹 "+name+" trimmed to "+max); } };
   cut("hist",hist,LOCAL_CAPS.hist); cut("reps",reps,LOCAL_CAPS.reps); cut("sugs",sugs,LOCAL_CAPS.sugs); cut("fourP",fourP,LOCAL_CAPS.fourP); cut("jangads",jangads,LOCAL_CAPS.jangads);
   let lh=JSON.parse(localStorage.getItem("loginHistory")||"[]");
-  if(lh.length>50){ lh=lh.slice(lh.length-50); try{ localStorage.setItem("loginHistory",JSON.stringify(lh)); }catch(e){} }
+  if(lh.length>500){ lh=lh.slice(lh.length-500); try{ localStorage.setItem("loginHistory",JSON.stringify(lh)); }catch(e){} }
 }
 function safeSet(key,val){
   let str = (typeof val === "string") ? val : JSON.stringify(val);
@@ -2044,17 +2034,12 @@ function show4PHistory(){
   });
   el.innerHTML=list.map((f,i)=>{
     let ri=fourP.length-1-i;
-    let safeItem = sanitize(f.item||"").replace(/"/g, '&quot;');
     return `<tr>
-      <td style="text-align:center"><input type="checkbox" class="fphChk" value="${ri}" data-kapan="${safeItem}" style="width:auto"></td>
-      <td><b>${f.item}</b></td><td>${f.carat}</td><td>${f.nang}</td><td>${f.pis}</td>
+      <td>${f.item}</td><td>${f.carat}</td><td>${f.nang}</td><td>${f.pis}</td>
       <td>${f.from||"—"}</td><td class="small">${f.movedAt||""}</td>
-      <td style="white-space:nowrap">
-        <button class="edit" onclick="restoreFrom4P(${ri})" style="padding:3px 8px;font-size:11px">↩ Restore</button>
-        <button class="del" onclick="purgeSingle4P(${ri})" style="padding:3px 8px;font-size:11px;background:#e74c3c;margin-left:3px" title="બધી જગ્યાએથી કાયમ માટે Delete">🗑️ Delete</button>
-      </td>
+      <td><button class="edit" onclick="restoreFrom4P(${ri})" style="padding:3px 10px;font-size:11px">↩ Restore</button></td>
     </tr>`;
-  }).join("")||`<tr><td colspan="8" style="text-align:center;color:#999">કોઈ 4P record નથી</td></tr>`;
+  }).join("")||`<tr><td colspan="7" style="text-align:center;color:#999">કોઈ 4P record નથી</td></tr>`;
 }
 function restoreFrom4P(idx){
   let f=fourP[idx]; if(!f) return;
@@ -2064,115 +2049,6 @@ function restoreFrom4P(idx){
   fourP.splice(idx,1);
   save(); show4PPanel(); show4PHistory(); refresh();
   toast("↩ Stock માં પાછું મૂકાઈ ગયું!","success");
-}
-function toggleFphAll(master){
-  let checked = master.checked;
-  document.querySelectorAll(".fphChk").forEach(c => { c.checked = checked; });
-}
-function purgeKapanCompletely(kapanNames){
-  if(!kapanNames || !kapanNames.length) return { fourP:0, hist:0, data:0, reps:0, jangads:0 };
-  let nameSet = new Set();
-  let baseSet = new Set();
-  kapanNames.forEach(k => {
-    if(!k) return;
-    let kn = String(k).trim();
-    nameSet.add(kn);
-    nameSet.add(normKapan(kn));
-    let bn = baseName(kn);
-    if(bn){
-      baseSet.add(bn);
-      baseSet.add(normKapan(bn));
-    }
-  });
-
-  let matchesKapan = (itemName) => {
-    if(!itemName) return false;
-    let n = String(itemName).trim();
-    if(nameSet.has(n) || nameSet.has(normKapan(n))) return true;
-    let b = baseName(n);
-    if(b && (baseSet.has(b) || baseSet.has(normKapan(b)))) return true;
-    return false;
-  };
-
-  let counts = { fourP: 0, hist: 0, data: 0, reps: 0, jangads: 0 };
-
-  let initFourP = fourP.length;
-  fourP = fourP.filter(f => !matchesKapan(f.item));
-  counts.fourP = initFourP - fourP.length;
-
-  let initHist = hist.length;
-  hist = hist.filter(h => !matchesKapan(h.item));
-  counts.hist = initHist - hist.length;
-
-  let initData = data.length;
-  data = data.filter(d => !matchesKapan(d.item));
-  counts.data = initData - data.length;
-
-  let initReps = reps.length;
-  reps = reps.filter(r => !matchesKapan(r.kapan || r.item));
-  counts.reps = initReps - reps.length;
-
-  let initJangads = jangads.length;
-  jangads = jangads.filter(j => !matchesKapan(j.kapan));
-  counts.jangads = initJangads - jangads.length;
-
-  if(typeof deptVigats === "object" && deptVigats){
-    Object.keys(deptVigats).forEach(k => {
-      baseSet.forEach(b => {
-        if(k.startsWith(b + "|||") || k.includes(b)) {
-          delete deptVigats[k];
-        }
-      });
-    });
-  }
-
-  return counts;
-}
-function purgeSingle4P(idx){
-  let f = fourP[idx];
-  if(!f) return;
-  let kName = f.item;
-  if(!confirm(`⚠️ ચેતવણી: "${kName}" કાપણને:\n• 4P List\n• History (બધી હિસ્ટ્રી)\n• Stock (ચાલુ સ્ટોક)\n• Repairing & Jangad\nબધી જ જગ્યાએથી કાયમ માટે Delete કરવી છે?\n(આ ડેટા પાછો નહીં આવે)`)) return;
-  if(!verifyKapanPass("🔒 કાપણ કાયમ Delete કરવા Password નાખો:")) return;
-  let r = purgeKapanCompletely([kName]);
-  save(); show4PHistory(); show4PPanel(); refresh();
-  toast(`🗑️ "${kName}" બધી જગ્યાએથી સંપૂર્ણ Delete થઈ ગઈ! (4P: ${r.fourP}, Hist: ${r.hist}, Stock: ${r.data})`, "success");
-}
-function purgeSelected4P(){
-  let checks = [...document.querySelectorAll(".fphChk:checked")].map(c => c.dataset.kapan).filter(Boolean);
-  if(!checks.length){ toast("કાપણ પસંદ કરો!", "error"); return; }
-  checks = [...new Set(checks)];
-  if(!confirm(`⚠️ ચેતવણી: પસંદ કરેલી ${checks.length} કાપણને:\n• 4P List\n• History\n• Stock\n• Repairing & Jangad\nબધી જ જગ્યાએથી કાયમ માટે Delete કરવી છે?\n(આ ડેટા પાછો નહીં આવે)`)) return;
-  if(!verifyKapanPass(`🔒 પસંદ કરેલ ${checks.length} કાપણ Delete કરવા Password નાખો:`)) return;
-  let r = purgeKapanCompletely(checks);
-  save(); show4PHistory(); show4PPanel(); refresh();
-  let mChk = document.getElementById("fphChkAll"); if(mChk) mChk.checked = false;
-  toast(`🗑️ ${checks.length} કાપણ બધી જગ્યાએથી સંપૂર્ણ Delete થઈ ગઈ! (4P: ${r.fourP}, Hist: ${r.hist}, Stock: ${r.data})`, "success");
-}
-function purgeDateRange4P(){
-  let from = document.getElementById("fphFrom")?.value || "";
-  let to = document.getElementById("fphTo")?.value || "";
-  if(!from && !to){
-    toast("📅 તારીખ 'થી' અથવા 'સુધી' પસંદ કરો!", "error"); return;
-  }
-  let filtered = fourP.filter(f => {
-    if(!f.movedMs) return false;
-    let iso = todayISO(f.movedMs);
-    if(from && iso < from) return false;
-    if(to && iso > to) return false;
-    return true;
-  });
-  if(!filtered.length){
-    toast("આ તારીખમાં કોઈ 4P રેકોર્ડ મળ્યો નથી!", "warning"); return;
-  }
-  let kapans = [...new Set(filtered.map(f => f.item).filter(Boolean))];
-  let dtText = from && to ? `${from} થી ${to}` : from ? `${from} પછી` : `${to} સુધી`;
-  if(!confirm(`⚠️ ચેતવણી: તારીખ (${dtText}) ની ${kapans.length} કાપણને:\n• 4P List\n• History\n• Stock\n• Repairing & Jangad\nબધી જ જગ્યાએથી કાયમ માટે Delete કરવી છે?\n(આ ડેટા પાછો નહીં આવે)`)) return;
-  if(!verifyKapanPass(`🔒 તારીખ મુજબ ${kapans.length} કાપણ Delete કરવા Password નાખો:`)) return;
-  let r = purgeKapanCompletely(kapans);
-  save(); show4PHistory(); show4PPanel(); refresh();
-  let mChk = document.getElementById("fphChkAll"); if(mChk) mChk.checked = false;
-  toast(`🔥 તારીખ મુજબની ${kapans.length} કાપણ બધી જગ્યાએથી સંપૂર્ણ Delete થઈ ગઈ! (4P: ${r.fourP}, Hist: ${r.hist})`, "success");
 }
 function showDeptWise(){ if(!(cur.role==="admin"||cur.role==="stock")) return; let s=normKapan(document.getElementById("dwSearch").value); let dp=document.getElementById("dwDept").value;     let list=data.filter(d=>d.status==="Received").filter(d=>{ if(s&&!normKapan(d.item).includes(s)) return false; if(dp&&d.to!==dp) return false; return true; }); let g={}; list.forEach(d=>{ (g[d.to]=g[d.to]||[]).push(d); }); let rows=""; Object.keys(g).sort().forEach(dpto=>{ let recs=g[dpto]; recs.sort(kapanSort); let tC=0,tN=0,tP=0; recs.forEach(d=>{tC+=Number(d.carat);tN+=Number(d.nang);tP+=Number(d.pis);}); rows+=`<tr class="deptgrp-${deptColorIndex(dpto)}" style="font-weight:bold;font-size:15px"><td>🏬 ${dpto}</td><td>${tC.toFixed(2)}ct</td><td>${tN}</td><td>${tP}</td><td colspan="5">⬇ ${recs.length}</td></tr>`; recs.forEach(d=>{ let lb=d.label?`<span class="lblbadge">${d.label}</span> `:""; let st=d.dstat?`<span class="statbadge">${d.dstat}</span>`:"—"; rows+=`<tr class="${d.tag==='urgent'?'urgent-row':''}"><td style="padding-left:25px">${dpto}</td><td>${lb}${d.item} ${noteHTML(d.note)}</td><td>${d.carat}</td><td>${d.nang}</td><td>${d.pis}</td><td><span class="tag ${d.tag}">${tagName(d.tag)}</span></td><td>${st}</td><td>${d.manager?`<span class="mgr">${d.manager}</span>`:"—"}</td><td class="hrs">${hoursSince(d.recvTime)}</td></tr>`; }); }); document.getElementById("deptWise").innerHTML=rows||`<tr><td colspan="9">કોઈ record નથી</td></tr>`; }
 function clearDeptWise(){ document.getElementById("dwSearch").value=""; document.getElementById("dwDept").value=""; document.getElementById("deptWise").innerHTML='<tr><td colspan="9" style="text-align:center;color:#999">લોડ કરવા ▶ લોડ કરો દબાવો</td></tr>'; }
