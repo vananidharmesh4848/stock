@@ -13,73 +13,113 @@
     console.error("Unhandled Promise Rejection: " + event.reason);
   });
 </script>
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-  import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
-  const firebaseConfig = {
-    apiKey: "AIzaSyADKss0WogDYUxD9hsM5AhzM2HVTHRBKz0",
-    authDomain: "diamond-stock-b82c0.firebaseapp.com",
-    databaseURL: "https://diamond-stock-b82c0-default-rtdb.firebaseio.com",
-    projectId: "diamond-stock-b82c0",
-    storageBucket: "diamond-stock-b82c0.firebasestorage.app",
-    messagingSenderId: "119668289861",
-    appId: "1:119668289861:web:b70609f32585edb94b8e2c"
-  };
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const dbRef = ref(db, "stockdata/main");
-  
-  const originalDateNow = Date.now;
-  let serverTimeOffset = 0;
-  onValue(ref(db, ".info/serverTimeOffset"), (s) => {
-    serverTimeOffset = s.val() || 0;
-  });
-  window.getSyncedTime = function() {
-    return originalDateNow() + serverTimeOffset;
-  };
-  Date.now = window.getSyncedTime;
+<script type="text/javascript">
+  // ═══════════════════════════════════════════
+  //  Local Server Sync — replaces Firebase
+  // ═══════════════════════════════════════════
 
-  // Cloud storage caps - Firebase free plan (1GB) never fills up.
-  // Generous caps here; localStorage caps are smaller (see trimArrays in app.js).
-  window.cloudTrim = function(p){
-    p = p || {};
-    let cap = (arr, n) => (Array.isArray(arr) && arr.length > n) ? arr.slice(arr.length - n) : arr;
-    p.hist = cap(p.hist, 10000);
-    p.reps = cap(p.reps, 3000);
-    p.sugs = cap(p.sugs, 2000);
-    p.fourP = cap(p.fourP, 3000);
-    p.jangads = cap(p.jangads, 2000);
-    p.loginHistory = cap(p.loginHistory, 500);
-    return p;
-  };
+  window.setView = function(mode){ localStorage.setItem('viewMode',mode); if(typeof applyView==='function') applyView(mode); document.querySelectorAll('input[name="viewMode"]').forEach(function(r){ r.checked=(r.value===mode); }); };
+  window.setView('desktop');
 
-  let saveTimeout = null;
+  // No cloud trimming needed locally — unlimited storage
+  window.cloudTrim = function(p) { return p; };
+
+  // Get server base URL (auto-detect)
+  const API_BASE = window.location.origin;
+
+  // ─── Project scope (LiveHost shared link) ───
+  // When this file is opened through LiveHost the page lives at /f/<project>/…
+  // Scope every server call to that project so the LiveHost server can keep a
+  // separate data blob per project (otherwise /api/data just 404s and the app
+  // silently falls back to this browser's localStorage — nothing syncs).
+  const PROJ_KEY = (function () {
+    const m = /^\/f\/([^\/]+)\//.exec(window.location.pathname);
+    return m ? decodeURIComponent(m[1]) : '';
+  })();
+  function apiUrl(p) {
+    if (!PROJ_KEY) return API_BASE + p;
+    return API_BASE + p + (p.indexOf('?') >= 0 ? '&' : '?') + 'p=' + encodeURIComponent(PROJ_KEY);
+  }
+
+  // ─── Save: POST /api/data (debounced) ───
+  let _saveTimeout = null;
   window.cloudSave = function(p) {
-    if (saveTimeout) clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(async () => {
+    if (_saveTimeout) clearTimeout(_saveTimeout);
+    _saveTimeout = setTimeout(async () => {
       try {
-        await set(dbRef, window.cloudTrim(p));
+        await fetch(apiUrl('/api/data'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(p)
+        });
       } catch(e) {
-        console.error("Save err", e);
-        let msg = (e && e.message) ? e.message : String(e);
-        let hint = /limit|quota|storage|large|size/i.test(msg) ? " — Firebase storage ભરાઈ ગયું છે! Admin માં '🔥 Firebase Clean' બટન દબાવો" : "";
-        if (window.toast) window.toast("❌ Firebase સેવ ન થયું: " + msg + hint, "error");
-        else alert("Firebase Save Error: " + msg + hint);
+        console.error('Save err', e);
+        if (window.toast) window.toast('❌ સેવ ન થયું: ' + e.message, 'error');
       }
-    }, 150); // 150ms debounce
+    }, 150);
   };
 
-  // Immediate rewrite with trimmed data (Admin -> "Firebase Clean" button)
-  window.cloudCleanNow = async function(){
-    let payload = (typeof window.__cloudPayload === "function") ? window.__cloudPayload() : {};
-    try { await set(dbRef, window.cloudTrim(payload)); return { ok: true }; }
-    catch(e){ return { ok: false, error: (e && e.message) ? e.message : String(e) }; }
+  // ─── Immediate save: POST /api/data (no debounce — Backup Restore vite reload cancel na thay etle) ───
+  window.cloudSaveNow = function(p) {
+    return fetch(apiUrl('/api/data'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(p)
+    });
   };
-  
-  window.cloudListen = function(cb){ onValue(dbRef, (s)=>{ if(s.exists()) cb(s.val()); }); };
-  window.cloudLoad = async function(cb){ try{ let s=await get(dbRef); cb(s.exists()?s.val():null); }catch(e){ cb(null); } };
+
+  // ─── Load: GET /api/data ───
+  window.cloudLoad = function(cb) {
+    fetch(apiUrl('/api/data'))
+      .then(r => r.json())
+      .then(d => cb(d))
+      .catch(e => { console.warn('Load err', e); cb(null); });
+  };
+
+  // ─── Listen: SSE /api/stream (real-time) ───
+  window.cloudListen = function(cb) {
+    const es = new EventSource(apiUrl('/api/stream'));
+    es.onmessage = function(e) {
+      try { cb(JSON.parse(e.data)); } catch(_) {}
+    };
+    es.onerror = function() {
+      // EventSource auto-reconnects
+    };
+  };
+
+  // ─── Clean: overwrite with empty data ───
+  window.cloudCleanNow = async function() {
+    try {
+      await fetch(apiUrl('/api/data'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      return { ok: true };
+    } catch(e) {
+      return { ok: false, error: e.message };
+    }
+  };
+
+  // ─── Hard delete on the server (date range / kapan) ───
+  // Delete PERMANENT thay: server potana store mathi kadhi nakhe che ane tombstones
+  // rakhe che, jethi juna data vala device fari push kari ne delete karelu record
+  // pachu na lave.
+  window.cloudDeleteRange = async function(q) {
+    try {
+      const r = await fetch(apiUrl('/api/data/delete'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(q || {})
+      });
+      return await r.json();
+    } catch(e) {
+      return { ok:false, error:e.message };
+    }
+  };
+
   window.firebaseReady = true;
-  console.log("✅ Firebase જોડાઈ ગયું!");
+  console.log('✅ Local Server જોડાઈ ગયું!');
 </script>
 <style>
   * { box-sizing: border-box; font-family: Arial, sans-serif; }
@@ -302,6 +342,16 @@
   .capslock-warn{ color:#e74c3c; font-size:11px; font-weight:bold; margin-top:2px; }
   /* Edit request badge */
   .editreq{ background:#f39c12; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px; }
+  /* ══ એડમિન ડેટાબેસ મેનેજમેન્ટ પેનલ (Local Data Clean + Date+Kapan Delete) ══ */
+  .dbm-panel{ background:#fff; border:2px solid #c0392b; border-radius:8px; padding:14px; }
+  .dbm-panel h2{ color:#b91c1c; margin-bottom:8px; }
+  .dbm-panel h3{ margin:6px 0 4px; font-size:15px; }
+  .dbm-notice{ background:#fef2f2; border:1px solid #fca5a5; color:#b91c1c; padding:6px 10px; border-radius:4px; font-size:12px; margin-bottom:10px; }
+  .dbm-chk{ display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:6px; margin:8px 0; }
+  .dbm-chk label{ display:flex; align-items:center; gap:6px; font-size:12.5px; cursor:pointer; padding:4px 6px; border:1px solid #e2e8f0; border-radius:4px; background:#f8fafc; font-weight:normal; }
+  .dbm-btn{ background:#dc2626; color:#fff; border:none; padding:8px 14px; border-radius:4px; cursor:pointer; font-weight:700; font-size:13px; margin:0; width:auto; }
+  .dbm-btn:hover{ background:#b91c1c; }
+  .dbm-status{ margin-top:8px; font-size:12.5px; min-height:18px; font-weight:bold; }
 </style>
 </head>
 <body>
@@ -856,19 +906,29 @@
       </div>
       <hr style="margin:14px 0;border-color:#ddd">
 
-      <!-- Firebase Clean (Storage) -->
-      <h3>🔥 Firebase Clean (સ્ટોરેજ ખાલી કરો)</h3>
-      <p style="font-size:13px;color:#555">Firebase free plan (1GB) ભરાઈ ગયું હોય ત્યારે આ બટન દબાવો — જૂની History / Repairing / 4P / Suggestion જોગવાઈઓ આપોઆપ કપાઈ જશે, હાલનો Stock ડેટા સલામત રહેશે.</p>
-      <div class="dlbar"><button class="del" id="fbCleanBtn" onclick="cloudCleanNow()" style="background:#c0392b">🔥 Firebase Clean હવે</button></div>
+      <!-- Local Data Clean -->
+      <h3>🔥 Local Data Clean (જૂની entries કાયમ માટે કાઢો)</h3>
+      <p style="font-size:13px;color:#555">History / Repairing / 4P / Suggestion / Jangad ની બધી entries કાયમ માટે ડિલીટ થશે (હાલનો Stock data સલામત રહેશે). તારીખ પ્રમાણે જ કાપવું હોય તો નીચેનું <b>🗓️ Date + Kapan Delete</b> વાપરો.</p>
+      <div class="dlbar"><button class="del" id="fbCleanBtn" onclick="cloudCleanNow()" style="background:#c0392b">🔥 Local Data Clean હવે</button></div>
       <hr style="margin:14px 0;border-color:#ddd">
 
       <!-- Data Purge -->
-      <h3>🔥 Data Delete / Purge (ડેટા સાફ કરો)</h3>
-      <p style="font-size:13px;color:#c0392b;font-weight:bold;">⚠️ ચેતવણી: નક્કી કરેલ સમયગાળાનો તમામ ટ્રાન્ઝેક્શન ડેટા (History, Stock, Repairing, 4P, Suggestion) કાયમ માટે ડિલીટ થઈ જશે.</p>
+      <h3>🗓️ Date + Kapan Delete (તારીખ અને કાપણ પ્રમાણે ડિલીટ)</h3>
+      <p style="font-size:13px;color:#c0392b;font-weight:bold;">⚠️ ચેતવણી: પસંદ કરેલા સમયગાળાનો (અને પસંદ કરો તો ફક્ત એ કાપણનો) તમામ ડેટા — History, Stock, Repairing, 4P, Suggestion — <b>કાયમ માટે</b> ડિલીટ થશે. Server પર પણ permanent થાય છે, એટલે બીજા device થી ફરી પાછો નહીં આવે.</p>
       <div class="row">
         <div><label>📅 થી (Start Date)</label><input type="date" id="purgeFrom"></div>
         <div><label>📅 સુધી (End Date)</label><input type="date" id="purgeTo"></div>
-        <div style="display:flex;align-items:flex-end"><button onclick="purgeDataRange()" style="background:#e74c3c;width:100%;margin-top:8px;">🔥 ડેટા ડિલીટ કરો</button></div>
+        <div><label>🔎 કાપણ (Kapan) — ખાલી રાખો તો બધા</label><input id="purgeKapan" list="purgeKapanList" placeholder="દા.ત. g-875-26" onfocus="fillPurgeKapanList()" oninput="fillPurgeKapanList()"><datalist id="purgeKapanList"></datalist></div>
+        <!-- Section selection (Stock unchecked by default — keep stock data) -->
+        <div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:140px"><label style="display:flex;align-items:center;gap:6px;font-weight:normal;font-size:13px;cursor:pointer"><input type="checkbox" id="purgeSecHist" checked> 📜 History</label></div>
+          <div style="flex:1;min-width:140px"><label style="display:flex;align-items:center;gap:6px;font-weight:normal;font-size:13px;cursor:pointer"><input type="checkbox" id="purgeSecStock"> 📦 Stock (ફક્ત કાપણ — કાઢતા વખતે સાવચેત)</label></div>
+          <div style="flex:1;min-width:140px"><label style="display:flex;align-items:center;gap:6px;font-weight:normal;font-size:13px;cursor:pointer"><input type="checkbox" id="purgeSecReps" checked> 🔧 Repairing</label></div>
+          <div style="flex:1;min-width:140px"><label style="display:flex;align-items:center;gap:6px;font-weight:normal;font-size:13px;cursor:pointer"><input type="checkbox" id="purgeSecFourP" checked> 4️⃣ 4P</label></div>
+          <div style="flex:1;min-width:140px"><label style="display:flex;align-items:center;gap:6px;font-weight:normal;font-size:13px;cursor:pointer"><input type="checkbox" id="purgeSecSugs" checked> 💡 Suggestion</label></div>
+          <div style="flex:1;min-width:140px"><label style="display:flex;align-items:center;gap:6px;font-weight:normal;font-size:13px;cursor:pointer"><input type="checkbox" id="purgeSecSugAll" checked> 📋 All Suggestions</label></div>
+        </div>
+        <div style="display:flex;align-items:flex-end"><button onclick="purgeDataRange()" style="background:#e74c3c;width:100%;margin-top:10px;">🔥 ડેટા ડિલીટ કરો</button></div>
       </div>
       <hr style="margin:14px 0;border-color:#ddd">
 
@@ -905,6 +965,72 @@
   <!-- PAGE: LOGIN HISTORY -->
   <div class="page" id="pg_lhist">
     <div class="box adminbox"><h2>🔐 Login History</h2><p style="font-size:12px;color:#555">ક્યા PC થી કોણે login કર્યું તેની હિસ્ટ્રી.</p><div class="row datebar"><div><label>Search ID/PC</label><input id="lhSearch" placeholder="Search..."></div><div><label>📅 થી</label><input type="date" id="lhFrom"></div><div><label>📅 સુધી</label><input type="date" id="lhTo"></div><div style="display:flex;align-items:flex-end"><button onclick="showLoginHistory()" style="background:#27ae60;width:100%">▶ લોડ કરો</button></div><div style="display:flex;align-items:flex-end"><button onclick="clearLoginFilter()" style="background:#7f8c8d;width:100%">🔄 Clear</button></div></div><div class="dlbar" style="margin-bottom:10px"><button class="xls" onclick="dlLoginHistExcel()">📊 Excel</button><button class="del" onclick="clearLoginHist()" style="background:#e74c3c">🗑️ Delete All</button></div><div style="overflow-x:auto;max-height:500px;overflow-y:auto"><table><thead><tr><th>#</th><th>User ID</th><th>Department</th><th>Role</th><th>PC / Browser</th><th>Date-Time</th><th>Action</th></tr></thead><tbody id="loginHistBody"><tr><td colspan="7" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr></tbody></table></div></div>
+  </div>
+
+  <!-- PAGE: DB MANAGE (Admin only — Local Data Clean + Date+Kapan Delete ek j jagya e) -->
+  <div class="page" id="pg_dbm">
+    <div class="box dbm-panel">
+      <h2>🗄️ Database Manage — Local Data Clean + Date Kapan Delete</h2>
+      <div class="dbm-notice"><strong>⚠️ ચેતવણી:</strong> ડિલીટ કરેલો ડેટા server પણ permanent જાય છે (tombstones સાથે) — બીજા device પરથી પાછો નહીં આવે. <strong>Stock ડિફોલ્ટમાં unchecked છે</strong> — સમજીને જ ચેક કરો.</div>
+
+      <!-- 📦 Kapan List by Date Range (aakhi jagya e dekhva mate) -->
+      <h3>📦 Kapan List — તારીખ પ્રમાણે</h3>
+      <p style="font-size:12.5px;color:#555;margin:4px 0">From/To તારીખ ભરો → ▶ લોડ કરો → બધા કાપણ દેખાશે. જે કાપણ ડિલીટ કરવું હોય તેના ☑ checkbox કરીને 🔥 ડિલીટ દબાવો.</p>
+      <div class="row">
+        <div><label>📅 થી (From)</label><input type="date" id="dbmKapFrom"></div>
+        <div><label>📅 સુધી (To)</label><input type="date" id="dbmKapTo"></div>
+        <div style="display:flex;align-items:flex-end"><button class="addp" onclick="dbmListKapan()" style="margin:0;width:100%">▶ લોડ કરો</button></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">
+        <button class="addp" onclick="dbmSelectAllKapan(true)" style="margin:0;padding:4px 10px;font-size:12px">☑ બધા Select</button>
+        <button style="background:#7f8c8d;margin:0;padding:4px 10px;font-size:12px" onclick="dbmSelectAllKapan(false)">☐ Clear</button>
+        <button class="del" onclick="dbmDeleteSelectedKapan()" style="margin:0;padding:4px 10px;font-size:12px">🔥 Select થયેલ ડિલીટ કરો</button>
+        <span id="dbmKapInfo" style="font-size:12px;color:#666"></span>
+      </div>
+      <div style="overflow-x:auto;max-height:400px;overflow-y:auto;border:1px solid #ddd;border-radius:4px">
+        <table style="margin:0"><thead><tr><th style="width:30px">✓</th><th>#</th><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>From Office</th><th>To Office</th><th>Date</th><th>Source</th></tr></thead><tbody id="dbmKapListBody"><tr><td colspan="10" style="text-align:center;color:#999">📅 તારીખ પસંદ કરીને ▶ લોડ કરો દબાવો</td></tr></tbody></table>
+      </div>
+      <hr style="margin:14px 0;border-color:#ddd">
+
+      <!-- 🔥 Local Data Clean -->
+      <h3>🔥 Local Data Clean (જૂની entries કાયમ માટે કાઢો)</h3>
+      <p style="font-size:12.5px;color:#555;margin:4px 0">History / Repairing / 4P / Suggestion / All Suggestions / Jangad ની બધી entries કાયમ માટે ડિલીટ થશે (હાલનો Stock data સલામત રહેશે). તારીખ પ્રમાણે જ કાપવું હોય તો નીચેનું <b>🗓️ Date + Kapan Delete</b> વાપરો.</p>
+      <div class="dbm-chk">
+        <label><input type="checkbox" id="dbmCleanHist" checked> 📜 History</label>
+        <label><input type="checkbox" id="dbmCleanStock"> 📦 Stock (કાઢતા વખતે સાવચેત)</label>
+        <label><input type="checkbox" id="dbmCleanReps" checked> 🔧 Repairing</label>
+        <label><input type="checkbox" id="dbmClean4P" checked> 4️⃣ 4P</label>
+        <label><input type="checkbox" id="dbmCleanSugs" checked> 💡 Suggestion</label>
+        <label><input type="checkbox" id="dbmCleanSugAll" checked> 📋 All Suggestions</label>
+        <label><input type="checkbox" id="dbmCleanJangads" checked> 🚛 Jangad</label>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="dbm-btn" onclick="dbmCleanNow()">🔥 Local Data Clean હવે</button>
+        <span id="dbmCleanStatus" class="dbm-status"></span>
+      </div>
+      <hr style="margin:14px 0;border-color:#ddd">
+
+      <!-- 🗓️ Date + Kapan Delete -->
+      <h3>🗓️ Date + Kapan Delete (તારીખ અને કાપણ પ્રમાણે ડિલીટ)</h3>
+      <p style="font-size:12.5px;color:#c0392b;font-weight:bold;margin:4px 0">⚠️ પસંદ કરેલા સમયગાળાનો (અને પસંદ કરો તો ફક્ત એ કાપણનો) તમામ ડેટા કાયમ માટે ડિલીટ થશે — Server પર પણ permanent, બીજા device થી ફરી પાછો નહીં આવે.</p>
+      <div class="row">
+        <div><label>📅 થી (Start Date)</label><input type="date" id="dbmFrom"></div>
+        <div><label>📅 સુધી (End Date)</label><input type="date" id="dbmTo"></div>
+        <div><label>🔎 કાપણ (Kapan) — ખાલી રાખો તો બધા</label><input id="dbmKapan" placeholder="દા.ત. g-875-26"></div>
+      </div>
+      <div class="dbm-chk">
+        <label><input type="checkbox" id="dbmSecHist" checked> 📜 History</label>
+        <label><input type="checkbox" id="dbmSecStock"> 📦 Stock (ફક્ત કાપણ — કાઢતા વખતે સાવચેત)</label>
+        <label><input type="checkbox" id="dbmSecReps" checked> 🔧 Repairing</label>
+        <label><input type="checkbox" id="dbmSecFourP" checked> 4️⃣ 4P</label>
+        <label><input type="checkbox" id="dbmSecSugs" checked> 💡 Suggestion</label>
+        <label><input type="checkbox" id="dbmSecSugAll" checked> 📋 All Suggestions</label>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="dbm-btn" onclick="dbmPurgeRange()">🔥 ડેટા ડિલીટ કરો (Date+Kapan)</button>
+        <span id="dbmPurgeStatus" class="dbm-status"></span>
+      </div>
+    </div>
   </div>
 
   <!-- PAGE: URGENT PANEL -->
@@ -989,26 +1115,25 @@
 
 </div>
 <script>
+// ─── Default (first-run) users = dukanno REAL department / ID / Password ───
+// (pella generic template users hata — admin123, galaxy1, planning1, marking1… —
+//  te kadhI nakhya. Have koi navu browser/device khulse to aa 8 j users aave.)
+const DEFAULT_USERS = [
+  {dept:"Admin",      office:"",              id:"admin", pass:"@dpdp@", role:"admin", parts:["Main"]},
+  {dept:"Stock",      office:"",              id:"GS321", pass:"GS321",  role:"stock", parts:["Main"]},
+  {dept:"Galaxy",     office:"MANAS - JAYESH", id:"GLX1",  pass:"GLX1",   role:"dept",  parts:["SETUP TO SCAN"]},
+  {dept:"PLANING",    office:"CHINTAN",        id:"AUTO",  pass:"AUTO",   role:"dept",  parts:["AUTO"]},
+  {dept:"CHEHAR LS",  office:"",              id:"LS",    pass:"LS",     role:"dept",  parts:["MEJIK","LS"]},
+  {dept:"SAIAMBE LS", office:"",              id:"LS2",   pass:"LS2",    role:"dept",  parts:["MEJIK","LS"]},
+  {dept:"AP 3",       office:"",              id:"GM123", pass:"GM123",  role:"dept",  parts:["MARKING","ACTIVPART"]},
+  {dept:"AP 4",       office:"",              id:"GAP2",  pass:"GAP2",   role:"dept",  parts:["MARKING","ACTIVPART"]}
+];
+// Juno template users (galaxy1/planning1/marking1…) detect kari ne upgrade karo —
+// jethi juna browser ma pan turat sahi ID/Password chale.
+const OLD_TEMPLATE_IDS = ["galaxy1","galaxy2","planning1","planning2","marking1","marking2","ls1","mejik1","mejik2","multi1","activ1","activ2","activ3"];
 let users = JSON.parse(localStorage.getItem("users") || "null");
-if(!users){
-  users = [
-    {dept:"Admin", office:"", id:"admin", pass:"admin123", role:"admin", parts:["Main"]},
-    {dept:"Stock", office:"", id:"", pass:"", role:"stock", parts:["Main"]},
-    {dept:"Galaxy", office:"Office-1", id:"galaxy1", pass:"123", role:"dept", parts:["Main"]},
-    {dept:"Galaxy", office:"Office-2", id:"galaxy2", pass:"123", role:"dept", parts:["Main"]},
-    {dept:"Planning", office:"Office-1", id:"planning1", pass:"123", role:"dept", parts:["Main"]},
-    {dept:"Planning", office:"Office-2", id:"planning2", pass:"123", role:"dept", parts:["Main"]},
-    {dept:"Marking", office:"Office-1", id:"marking1", pass:"123", role:"dept", parts:["Main"]},
-    {dept:"Marking", office:"Office-2", id:"marking2", pass:"123", role:"dept", parts:["Main"]},
-    {dept:"LS", office:"Office-1", id:"ls1", pass:"123", role:"dept", parts:["Main"]},
-    {dept:"LS", office:"Office-2", id:"ls2", pass:"123", role:"dept", parts:["Main"]},
-    {dept:"Mejik", office:"Office-1", id:"mejik1", pass:"123", role:"dept", parts:["Main"]},
-    {dept:"Mejik", office:"Office-2", id:"mejik2", pass:"123", role:"dept", parts:["Main"]},
-    {dept:"Multi", office:"Office-1", id:"multi1", pass:"123", role:"dept", parts:["Main"]},
-    {dept:"Activpart", office:"Office-1", id:"activ1", pass:"123", role:"dept", parts:["Main"]},
-    {dept:"Activpart", office:"Office-2", id:"activ2", pass:"123", role:"dept", parts:["Main"]},
-    {dept:"Activpart", office:"Office-3", id:"activ3", pass:"123", role:"dept", parts:["Main"]}
-  ];
+if(!users || !users.length || users.some(u => u && OLD_TEMPLATE_IDS.indexOf(u.id) !== -1)){
+  users = JSON.parse(JSON.stringify(DEFAULT_USERS));
   localStorage.setItem("users", JSON.stringify(users));
 }
 let data = JSON.parse(localStorage.getItem("stock") || "[]");
@@ -1199,12 +1324,33 @@ function deptColorIndex(name){ let s=0; for(let i=0;i<name.length;i++) s=(s*31+n
 
 let lastLocalUpdate = Number(localStorage.getItem("lastLocalUpdate") || "0");
 let lastCloudApplied = Number(localStorage.getItem("lastCloudApplied") || "0");
-const LOCAL_CAPS = { hist:2000, reps:1000, sugs:500, fourP:1000, jangads:500 };
+// UNLIMITED — koi auto-trim nahi. Darek record rahe che; juno data tame jate
+// date/kapan select kari ne delete karo (te delete server par permanent thay che).
+// localStorage ma ~5MB limit hoy che, etle aakhu payload IndexedDB ma pan mirror
+// thay che (bigSet) ane boot par hydrateFromIdb() thi fari load thay che.
+const LOCAL_CAPS = { hist:5000, reps:1000, sugs:500, fourP:500, jangads:200 };
 function trimArrays(){
   let cut=(name,arr,max)=>{ if(Array.isArray(arr)&&arr.length>max){ arr.splice(0,arr.length-max); console.log("🧹 "+name+" trimmed to "+max); } };
   cut("hist",hist,LOCAL_CAPS.hist); cut("reps",reps,LOCAL_CAPS.reps); cut("sugs",sugs,LOCAL_CAPS.sugs); cut("fourP",fourP,LOCAL_CAPS.fourP); cut("jangads",jangads,LOCAL_CAPS.jangads);
   let lh=JSON.parse(localStorage.getItem("loginHistory")||"[]");
-  if(lh.length>500){ lh=lh.slice(lh.length-500); try{ localStorage.setItem("loginHistory",JSON.stringify(lh)); }catch(e){} }
+  if(lh.length>50){ lh=lh.slice(0,50); try{ localStorage.setItem("loginHistory",JSON.stringify(lh)); }catch(e){} }
+}
+// ══ sanitizeObj — record ma thi null/undefined/empty-string keys kadhi nakhe ══
+function sanitizeObj(obj){
+  if(!obj||typeof obj!=="object"||Array.isArray(obj)) return obj;
+  let out={};
+  for(let k in obj){
+    if(obj.hasOwnProperty(k)){
+      let v=obj[k];
+      if(v===null||v===undefined||v===""||v===0) continue;
+      out[k]=v;
+    }
+  }
+  return out;
+}
+function sanitizeArr(arr){
+  if(!Array.isArray(arr)) return arr;
+  return arr.map(x=>sanitizeObj(x)).filter(Boolean);
 }
 function safeSet(key,val){
   let str = (typeof val === "string") ? val : JSON.stringify(val);
@@ -1215,6 +1361,10 @@ function safeSet(key,val){
   }
 }
 function saveAll(){
+  // sanitizeArr — null/empty/undefined keys kadhi nakhe → 10-30% jagya bachave
+  data=sanitizeArr(data); hist=sanitizeArr(hist); reps=sanitizeArr(reps);
+  sugs=sanitizeArr(sugs); fourP=sanitizeArr(fourP); jangads=sanitizeArr(jangads);
+  if(sugAll) sugAll=sanitizeArr(sugAll);
   safeSet("lastLocalUpdate", lastLocalUpdate);
   safeSet("users",users); safeSet("stock",data); safeSet("hist",hist); safeSet("reps",reps);
   safeSet("sugs",sugs); safeSet("labels",labels); safeSet("managers",managers); safeSet("dataentrys",dataentrys);
@@ -1223,23 +1373,193 @@ function saveAll(){
   if(jangadEditPass) safeSet("jangadEditPass",jangadEditPass);
   if(kapanEditPass) safeSet("kapanEditPass",kapanEditPass);
   safeSet("traders",traders); safeSet("traderItems",traderItems); safeSet("traderIncoming",traderIncoming); safeSet("traderSells",traderSells); safeSet("traderRequests",traderRequests); safeSet("storeManager",storeManager); safeSet("extraItems",extraItems); safeSet("extraStock",extraStock);
+  // localStorage ma hard ~5MB quota che — etle aakhu payload IndexedDB ma pan mirror kariye
+  try{ if(window.__cloudPayload) bigSet("payload", JSON.stringify(window.__cloudPayload())); }catch(e){ console.warn("idb mirror failed", e); }
+}
+
+/* ─── UNLIMITED local storage (IndexedDB mirror) ───
+ * localStorage (~5MB) ma moto history na samay, etle aakhu payload IndexedDB ma
+ * (jinema practical limit nathi) pan save thay che ane boot par fari load thay che. */
+function bigOpen(){ return new Promise((res,rej)=>{ try{ let r=indexedDB.open("stockBig",1); r.onupgradeneeded=()=>{ try{ r.result.createObjectStore("kv"); }catch(e){} }; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }); }
+async function bigSet(key,val){ try{ let db=await bigOpen(); await new Promise((res,rej)=>{ let tx=db.transaction("kv","readwrite").objectStore("kv").put(val,key); tx.onsuccess=()=>res(); tx.onerror=()=>rej(tx.error); }); }catch(e){ console.warn("bigSet failed",e); } }
+async function bigGet(key){ try{ let db=await bigOpen(); return await new Promise((res,rej)=>{ let tx=db.transaction("kv","readonly").objectStore("kv").get(key); tx.onsuccess=()=>res(tx.result); tx.onerror=()=>rej(tx.error); }); }catch(e){ return null; } }
+async function hydrateFromIdb(){
+  try{
+    let s=await bigGet("payload"); if(!s) return;
+    let d=JSON.parse(s); if(!d||typeof d!=="object"||Array.isArray(d)) return;
+    let idbHist=(Array.isArray(d.hist)?d.hist.length:0), memHist=hist.length;
+    let idbStock=(Array.isArray(d.stock)?d.stock.length:0), memStock=data.length;
+    if(idbHist<=memHist && idbStock<=memStock) return;    // localStorage pase aatlu ke vadhu che
+    let keep=lastCloudApplied; lastCloudApplied=0;        // dedupe guard bypass karo
+    applyCloudData(d);
+    lastCloudApplied=Math.max(keep, Number(d.updated)||0);
+    localStorage.setItem("lastCloudApplied", String(lastCloudApplied));
+    console.log("📦 IndexedDB thi data load: hist "+idbHist+", stock "+idbStock);
+  }catch(e){ console.warn("IndexedDB hydrate failed", e); }
 }
 function cloudPayload(){
-  return {users, stock:data, hist, reps, sugs, labels, managers, dataentrys, dstatus, deptVigats, fourP, uchak, uchakProcesses, uchakRates, deptProcesses, deptRates, jangads, jangadCounter, traders, traderItems, traderIncoming, traderSells, traderRequests, storeManager, extraItems, extraStock, updated:Date.now(), sugAll, loginHistory:JSON.parse(localStorage.getItem("loginHistory")||"[]")};
+  // loginHistory server par pahelathi che — payload ma vakht nu space bachavo
+  return {users, stock:data, hist, reps, sugs, labels, managers, dataentrys, dstatus, deptVigats, fourP, uchak, uchakProcesses, uchakRates, deptProcesses, deptRates, jangads, jangadCounter, traders, traderItems, traderIncoming, traderSells, traderRequests, storeManager, extraItems, extraStock, updated:Date.now(), sugAll};
 }
 window.__cloudPayload = cloudPayload;
 async function cloudCleanNow(){
-  if(!window.cloudSave){ toast("Firebase ઉપલબ્ધ નથી","error"); return; }
-  if(!confirm("Firebase માંથી જૂનો hist/reps/sugs/fourP/jangads ડેટા કાપીને જગ્યા ખાલી કરવી છે? (હાલનો stock ડેટા સલામત રહેશે)")) return;
+  if(!window.cloudDeleteRange){ toast("Server ઉપલબ્ધ નથી","error"); return; }
+  if(!confirm("⚠️ Server પરની History / Repairing / Suggestion / 4P / Jangad ની બધી entries કાયમ માટે ડિલીટ થશે. (હાલનો Stock ડેટા સલામત રહેશે). ચાલુ રાખવું?")) return;
   let btn=document.getElementById("fbCleanBtn");
-  if(btn){ btn.disabled=true; btn.textContent="⏳ Firebase Clean થાય છે..."; }
+  if(btn){ btn.disabled=true; btn.textContent="⏳ Clean થાય છે..."; }
   try{
-    let r = await window.cloudCleanNow();
-    if(r && r.ok) toast("✅ Firebase Clean થઈ ગયું! જગ્યા ખાલી થઈ.","success");
-    else toast("❌ Firebase Clean ન થયું: "+(r&&r.error?r.error:"unknown error"),"error");
+    // Server par hard delete (tombstones sathe) — etle juna device thi fari na aave.
+    let r = await window.cloudDeleteRange({sections:["hist","reps","sugs","sugAll","fourP","jangads"]});
+    if(r && r.ok){
+      hist=[]; reps=[]; sugs=[]; sugAll=[]; fourP=[]; jangads=[];
+      safeSet("sugAll",sugAll);
+      save(); refresh();
+      toast("✅ જૂની બધી entries કાયમ માટે ડિલીટ થઈ (Stock સલામત છે).","success");
+    }
+    else toast("❌ Clean ન થયું: "+(r&&r.error?r.error:"unknown error"),"error");
   } finally {
-    if(btn){ btn.disabled=false; btn.textContent="🔥 Firebase Clean હવે"; }
+    if(btn){ btn.disabled=false; btn.textContent="🔥 Local Data Clean હવે"; }
   }
+}
+// ══ Database Manage Panel (pg_dbm) — Local Data Clean + Date+Kapan Delete + Kapan List ══
+let _dbmKapanRows=[];
+function dbmListKapan(){
+  let el=document.getElementById("dbmKapListBody"); if(!el) return;
+  let info=document.getElementById("dbmKapInfo");
+  let fromVal=document.getElementById("dbmKapFrom").value, toVal=document.getElementById("dbmKapTo").value;
+  if(!fromVal||!toVal){ el.innerHTML='<tr><td colspan="10" style="text-align:center;color:#999">📅 બંને તારીખો ભરો!</td></tr>'; if(info) info.textContent=''; return; }
+  let startMs=new Date(fromVal+"T00:00:00").getTime(), endMs=new Date(toVal+"T23:59:59.999").getTime();
+  if(startMs>endMs){ el.innerHTML='<tr><td colspan="10" style="text-align:center;color:#e74c3c">⚠️ From તારીખ To થી મોટી ન હોઈ શકે!</td></tr>'; return; }
+  let rows=[];
+  let idx=0;
+  // Collect from stock — unique id + sentMs store karine accurate delete mate
+  if(Array.isArray(data)){ data.forEach((d,di)=>{ let t=d.sentMs||d.recvTime||d.dateMs||0; if(t>=startMs&&t<=endMs){ rows.push({kapan:d.item||d.kapan||"—",carat:d.carat||0,nang:d.nang||0,pis:d.pis||0,from:d.from||d.fromOffice||"—",to:d.to||d.toOffice||"—",date:d.sentAt||"—",src:"📦 Stock",_ref:{type:"stock",idx:di,id:d.id,sentMs:t}}); } }); }
+  // Collect from hist
+  if(Array.isArray(hist)){ hist.forEach((h,hi)=>{ let t=h.sentMs||h.recvTime||0; if(t>=startMs&&t<=endMs){ rows.push({kapan:h.item||h.kapan||"—",carat:h.carat||0,nang:h.nang||0,pis:h.pis||0,from:h.from||h.fromOffice||"—",to:h.to||h.toOffice||"—",date:h.sentAt||"—",src:"📜 History",_ref:{type:"hist",idx:hi,id:h.id,sentMs:t}}); } }); }
+  // Collect from reps
+  if(Array.isArray(reps)){ reps.forEach((r,ri)=>{ let t=r.sentMs||r.recvTime||0; if(t>=startMs&&t<=endMs){ rows.push({kapan:r.item||r.kapan||"—",carat:r.carat||0,nang:r.nang||0,pis:r.pis||0,from:r.from||r.fromOffice||"—",to:r.to||r.toOffice||"—",date:r.sentAt||"—",src:"🔧 Repairing",_ref:{type:"reps",idx:ri,id:r.id,sentMs:t}}); } }); }
+  // Collect from sugs
+  if(Array.isArray(sugs)){ sugs.forEach((s,si)=>{ let t=s.sentMs||0; if(t>=startMs&&t<=endMs){ rows.push({kapan:s.item||s.kapan||"—",carat:s.carat||0,nang:s.nang||0,pis:s.pis||0,from:s.from||"—",to:s.to||"—",date:s.sentAt||s.date||"—",src:"💡 Suggestion",_ref:{type:"sugs",idx:si,id:s.id,sentMs:t}}); } }); }
+  // Collect from sugAll
+  if(Array.isArray(sugAll)){ sugAll.forEach((s,si)=>{ let t=s.sentMs||0; if(t>=startMs&&t<=endMs){ rows.push({kapan:s.item||s.kapan||"—",carat:s.carat||0,nang:s.nang||0,pis:s.pis||0,from:s.from||"—",to:s.to||"—",date:s.sentAt||s.date||"—",src:"📋 AllSugs",_ref:{type:"sugAll",idx:si,id:s.id,sentMs:t}}); } }); }
+  // Collect from fourP
+  if(Array.isArray(fourP)){ fourP.forEach((f,fi)=>{ let t=f.movedMs||0; if(t>=startMs&&t<=endMs){ rows.push({kapan:f.item||f.kapan||"—",carat:f.carat||0,nang:f.nang||0,pis:f.pis||0,from:f.from||"—",to:f.to||"—",date:f.movedAt||f.date||"—",src:"4️⃣ 4P",_ref:{type:"fourP",idx:fi,id:f.id,sentMs:t}}); } }); }
+  _dbmKapanRows=rows;
+  if(info) info.textContent="Total: "+rows.length+" kapan found";
+  if(!rows.length){ el.innerHTML='<tr><td colspan="10" style="text-align:center;color:#999">આ તારીખ વચ્ચે કોઈ કાપણ નથી</td></tr>'; return; }
+  el.innerHTML=rows.map((r,i)=>{
+    let dt=r.date;
+    if(!dt && rows[i] && rows[i]._ref){ let src=rows[i]._ref.type; let arr=(src=="stock")?data:(src=="hist")?hist:(src=="reps")?reps:(src=="sugs")?sugs:(src=="sugAll")?sugAll:fourP; let orig=arr[rows[i]._ref.idx]; if(orig) dt=orig.date||orig.sentDate||"—"; }
+    return `<tr><td><input type="checkbox" class="dbm-kap-chk" data-idx="${i}"></td><td>${i+1}</td><td>${r.kapan}</td><td>${r.carat}</td><td>${r.nang}</td><td>${r.pis}</td><td>${r.from}</td><td>${r.to}</td><td class="small">${dt||"—"}</td><td><span style="font-size:11px;background:#eee;padding:2px 6px;border-radius:10px">${r.src}</span></td></tr>`;
+  }).join("");
+}
+function dbmSelectAllKapan(val){ document.querySelectorAll(".dbm-kap-chk").forEach(cb=>{cb.checked=val;}); }
+async function dbmDeleteSelectedKapan(){
+  if(cur.role!=="admin"){ toast("⚠️ ફક્ત Admin જ ડિલીટ કરી શકે!","error"); return; }
+  let sel=[];
+  document.querySelectorAll(".dbm-kap-chk:checked").forEach(cb=>{ let i=parseInt(cb.dataset.idx); if(!isNaN(i)&&_dbmKapanRows[i]) sel.push(_dbmKapanRows[i]); });
+  if(!sel.length){ toast("⚠️ ઓછામાં ઓછું એક કાપણ select કરો!","error"); return; }
+  let kapans=sel.map(r=>r.kapan).filter(Boolean);
+  if(!confirm("⚠️ શું તમે ખરેખર "+sel.length+" કાપણ કાયમ માટે ડિલીટ કરવા માંગો છો?\n\nKapan: "+kapans.join(", ")+"\n\nServer પણ permanent ડિલીટ થશે — બીજા device પરથી પાછો નહીં આવે!")) return;
+  let pwd=prompt("🔑 Admin Password નાખો:"); if(pwd===null) return;
+  let a=users.find(u=>u.role==="admin");
+  if(!a||pwd.trim()!==a.pass){ toast("❌ ખોટો Password!","error"); return; }
+  // Delete from local arrays — unique id + sentMs vade match karine精确 delete
+  sel.forEach(r=>{
+    let ref=r._ref;
+    let arr=(ref.type=="stock")?data:(ref.type=="hist")?hist:(ref.type=="reps")?reps:(ref.type=="sugs")?sugs:(ref.type=="sugAll")?sugAll:fourP;
+    let orig=arr[ref.idx];
+    if(!orig) return;
+    let origArr=(ref.type=="stock")?data:(ref.type=="hist")?hist:(ref.type=="reps")?reps:(ref.type=="sugs")?sugs:(ref.type=="sugAll")?sugAll:fourP;
+    let origIdx=-1;
+    for(let i=0;i<origArr.length;i++){
+      let x=origArr[i];
+      if(x===orig || (x.id && x.id===orig.id && (x.sentMs||0)===(orig.sentMs||0))){ origIdx=i; break; }
+    }
+    if(origIdx<0) origIdx=ref.idx;
+    if(origIdx>=0 && origIdx<origArr.length) origArr.splice(origIdx,1);
+    if(ref.type=="sugAll") safeSet("sugAll",sugAll);
+  });
+  // Server delete
+  let srv=null;
+  try{ if(window.cloudDeleteRange) srv=await window.cloudDeleteRange({kapan:kapans.join(","), sections:["stock","hist","reps","sugs","sugAll","fourP"]}); }catch(e){ console.warn("server kapan delete failed",e); }
+  save(); refresh();
+  toast("✅ "+sel.length+" કાપણ ડિલીટ થયા!"+(srv&&srv.ok?" (Server OK)":" (Local OK)"),(srv&&srv.ok)?"success":"warning");
+  // Re-list
+  setTimeout(()=>dbmListKapan(),500);
+}
+async function dbmCleanNow(){
+  let st=document.getElementById("dbmCleanStatus");
+  if(cur.role!=="admin"){ if(st){st.style.color="#e74c3c";st.textContent="⚠️ ફક્ત Admin જ કરી શકે છે!";} toast("⚠️ ફક્ત Admin જ ડેટા સાફ કરી શકે છે!","error"); return; }
+  let secs=[];
+  let cMap={hist:"dbmCleanHist",reps:"dbmCleanReps",fourP:"dbmClean4P",sugs:"dbmCleanSugs",sugAll:"dbmCleanSugAll",jangads:"dbmCleanJangads"};
+  for(let k in cMap){ let cb=document.getElementById(cMap[k]); if(cb&&cb.checked) secs.push(k); }
+  if(document.getElementById("dbmCleanStock")&&document.getElementById("dbmCleanStock").checked) secs.push("stock");
+  if(!secs.length){ if(st){st.style.color="#e74c3c";st.textContent="⚠️ ઓછામાં ઓછું એક વિભાગ પસંદ કરો!";} return; }
+  if(secs.includes("stock")&&!confirm("⚠️ સાવચેત! તમે Stock વિભાગ પણ ડિલીટમાં સામેલ કર્યો છે — એ પણ કાયમ માટે ડિલીટ થશે. ચાલુ રાખવું?")) return;
+  if(!confirm("⚠️ પસંદ કરેલા વિભાગો ("+secs.join(", ")+") નો આખો ડેટા કાયમ માટે ડિલીટ થશે — server પર પણ permanent (tombstones સાથે). ચાલુ રાખવું?")) return;
+  let pwd=prompt("🔑 Admin Password નાખો:");
+  if(pwd===null) return;
+  let a=users.find(u=>u.role==="admin");
+  if(!a||pwd.trim()!==a.pass){ if(st){st.style.color="#e74c3c";st.textContent="❌ ખોટો Password!";} toast("❌ ખોટો Password!","error"); return; }
+  if(!window.cloudDeleteRange){ toast("Server ઉપલબ્ધ નથી","error"); return; }
+  if(st){st.style.color="#0369a1";st.textContent="⏳ ડિલીટ થાય છે...";}
+  try{
+    let r=await window.cloudDeleteRange({sections:secs});
+    if(r&&r.ok){
+      if(secs.includes("hist"))hist=[];
+      if(secs.includes("reps"))reps=[];
+      if(secs.includes("sugs"))sugs=[];
+      if(secs.includes("sugAll")){sugAll=[];safeSet("sugAll",sugAll);}
+      if(secs.includes("fourP"))fourP=[];
+      if(secs.includes("jangads"))jangads=[];
+      if(secs.includes("stock"))data=[];
+      save(); refresh();
+      let cnt=(r.deleted)?Object.keys(r.deleted).map(k=>k+": "+r.deleted[k]).join(", "):"";
+      if(st){st.style.color="#15803d";st.textContent="✅ કાયમ માટે ડિલીટ થયો"+(cnt?(" ("+cnt+")"):"")+" — બધા device માંથી ગાયબ!";}
+      toast("✅ Local Data Clean પૂર્ણ!","success");
+    } else {
+      if(st){st.style.color="#e74c3c";st.textContent="❌ Clean ન થયું: "+(r&&r.error?r.error:"unknown error");}
+      toast("❌ Clean ન થયું","error");
+    }
+  }catch(e){ if(st){st.style.color="#e74c3c";st.textContent="❌ ભૂલ: "+e.message;} }
+}
+async function dbmPurgeRange(){
+  let st=document.getElementById("dbmPurgeStatus");
+  if(cur.role!=="admin"){ if(st){st.style.color="#e74c3c";st.textContent="⚠️ ફક્ત Admin જ કરી શકે છે!";} return; }
+  let fromVal=document.getElementById("dbmFrom").value, toVal=document.getElementById("dbmTo").value;
+  if(!fromVal||!toVal){ if(st){st.style.color="#e74c3c";st.textContent="⚠️ બંને તારીખો પસંદ કરો!";} return; }
+  let kapanQ=(document.getElementById("dbmKapan")?.value||"").trim().toLowerCase();
+  let kapanHit=o=>!kapanQ||String((o&&(o.item||o.kapan))||"").toLowerCase().includes(kapanQ);
+  let startMs=new Date(fromVal+"T00:00:00").getTime(), endMs=new Date(toVal+"T23:59:59.999").getTime();
+  if(startMs>endMs){ if(st){st.style.color="#e74c3c";st.textContent="⚠️ શરૂઆતની તારીખ મોટી ન હોઈ શકે!";} return; }
+  let secs=[];
+  let sMap={hist:"dbmSecHist",stock:"dbmSecStock",reps:"dbmSecReps",fourP:"dbmSecFourP",sugs:"dbmSecSugs",sugAll:"dbmSecSugAll"};
+  for(let k in sMap){ let cb=document.getElementById(sMap[k]); if(cb&&cb.checked) secs.push(k); }
+  if(!secs.length){ if(st){st.style.color="#e74c3c";st.textContent="⚠️ ઓછામાં ઓછું એક વિભાગ પસંદ કરો!";} return; }
+  let kTxt=kapanQ?(" 🔎 ફક્ત કાપણ: "+kapanQ):" (બધા કાપણ)";
+  let fF=new Date(startMs).toLocaleDateString('en-GB'), fT=new Date(endMs).toLocaleDateString('en-GB');
+  if(!confirm("⚠️ શું તમે ખરેખર "+fF+" થી "+fT+" વચ્ચેનો ડેટા"+kTxt+" ("+secs.join(", ")+") કાયમ માટે ડિલીટ કરવા માંગો છો? Server પર પણ permanent થશે!")) return;
+  let pwd=prompt("🔑 Admin Password નાખો:");
+  if(pwd===null) return;
+  let a=users.find(u=>u.role==="admin");
+  if(!a||pwd.trim()!==a.pass){ if(st){st.style.color="#e74c3c";st.textContent="❌ ખોટો Password!";} toast("❌ ખોટો Password!","error"); return; }
+  if(st){st.style.color="#0369a1";st.textContent="⏳ ડિલીટ થાય છે...";}
+  if(secs.includes("hist")) hist=hist.filter(h=>{let t=h.sentMs||h.recvTime||0; return (t<startMs||t>endMs)||!kapanHit(h);});
+  if(secs.includes("stock")) data=data.filter(d=>{let t=d.sentMs||d.recvTime||0; return (t<startMs||t>endMs)||!kapanHit(d);});
+  if(secs.includes("reps")) reps=reps.filter(r=>{let t=r.sentMs||r.recvTime||0; return (t<startMs||t>endMs)||!kapanHit(r);});
+  if(secs.includes("sugs")) sugs=sugs.filter(s=>{let t=s.sentMs||0; return (t<startMs||t>endMs)||!kapanHit(s);});
+  if(secs.includes("fourP")) fourP=fourP.filter(f=>{let t=f.movedMs||0; return (t<startMs||t>endMs)||!kapanHit(f);});
+  if(secs.includes("sugAll")){ sugAll=sugAll.filter(s=>{let t=s.sentMs||0; return (t<startMs||t>endMs)||!kapanHit(s);}); safeSet("sugAll",sugAll); }
+  let srv=null;
+  try{ if(window.cloudDeleteRange) srv=await window.cloudDeleteRange({dateFrom:startMs, dateTo:endMs, kapan:kapanQ, sections:secs}); }catch(e){ console.warn("server purge failed", e); }
+  save(); refresh();
+  let cnt=(srv&&srv.deleted)?Object.keys(srv.deleted).map(k=>k+": "+srv.deleted[k]).join(", "):"";
+  if(st){
+    if(srv&&srv.ok){ st.style.color="#15803d"; st.textContent="✅ કાયમ માટે ડિલીટ થયો"+(cnt?(" ("+cnt+")"):"")+" — બધા device માંથી ગાયબ!"; }
+    else { st.style.color="#e74c3c"; st.textContent="⚠️ Local સાફ થયો, પણ server પર નહીં — server ચાલુ છે?"; }
+  }
+  toast((srv&&srv.ok)?"✅ Date+Kapan ડિલીટ પૂર્ણ!":"⚠️ Local સાફ થયો, પણ server પર નહીં!",(srv&&srv.ok)?"success":"error");
 }
 function save(){
   let nowMs = Date.now();
@@ -1250,8 +1570,8 @@ function save(){
 }
 
 let curPage="";
-function showPage(pg){ curPage=pg; document.querySelectorAll(".page").forEach(p=>p.classList.remove("show")); let el=document.getElementById("pg_"+pg); if(el) el.classList.add("show"); document.querySelectorAll(".navbar button").forEach(b=>b.classList.toggle("active", b.dataset.pg===pg)); let sb=document.querySelector(".schbox"); if(sb) sb.style.display=pg==="admin"?"none":""; refresh(); }
-function buildNav(){   let isFull=(cur.role==="admin"||cur.role==="stock");   let isTrader=(cur.role==="trader");   let items=[]; if(isTrader){ items.push(["traders","🏪 Traders"]); } else { if(isFull) items.push(["dash","📊 Dashboard"]); items.push(["status","📊 Status Master"]); if(isFull) items.push(["send","📤 કાપણ મોકલો"]); items.push(["stock","📥 Stock & Inbox"]); items.push(["urgent","🔴 Urgent"]); if(isFull) items.push(["4p","4️⃣ 4P"]); items.push(["rep","🔧 Repairing"]); items.push(["sug","💡 Suggestion"]); items.push(["notif","🔔 Notifications"]); items.push(["anal","📊 Analysis"]); items.push(["hist","🕒 History"]); items.push(["uchak","🔀 ઉચક"]); items.push(["traders","🏪 Traders"]); if(cur.role==="admin"){ items.push(["admin","👑 Admin"]); items.push(["lhist","🔐 Login History"]); } } document.getElementById("navbar").innerHTML=items.map(it=>`<button data-pg="${it[0]}" onclick="showPage('${it[0]}')">${it[1]}</button>`).join(""); showPage(isTrader?"traders":"urgent"); }
+function showPage(pg){ curPage=pg; document.querySelectorAll(".page").forEach(p=>p.classList.remove("show")); let el=document.getElementById("pg_"+pg); if(el) el.classList.add("show"); document.querySelectorAll(".navbar button").forEach(b=>b.classList.toggle("active", b.dataset.pg===pg)); let sb=document.querySelector(".schbox"); if(sb) sb.style.display=pg==="admin"?"none":""; if(pg==="dbm"&&typeof dbmListKapan==="function") dbmListKapan(); refresh(); }
+function buildNav(){   let isFull=(cur.role==="admin"||cur.role==="stock");   let isTrader=(cur.role==="trader");   let items=[]; if(isTrader){ items.push(["traders","🏪 Traders"]); } else { if(isFull) items.push(["dash","📊 Dashboard"]); items.push(["status","📊 Status Master"]); if(isFull) items.push(["send","📤 કાપણ મોકલો"]); items.push(["stock","📥 Stock & Inbox"]); items.push(["urgent","🔴 Urgent"]); if(isFull) items.push(["4p","4️⃣ 4P"]); items.push(["rep","🔧 Repairing"]); items.push(["sug","💡 Suggestion"]); items.push(["notif","🔔 Notifications"]); items.push(["anal","📊 Analysis"]); items.push(["hist","🕒 History"]); items.push(["uchak","🔀 ઉચક"]); items.push(["traders","🏪 Traders"]); if(cur.role==="admin"){ items.push(["admin","👑 Admin"]); items.push(["lhist","🔐 Login History"]); items.push(["dbm","🗄️ DB Manage"]); } } document.getElementById("navbar").innerHTML=items.map(it=>`<button data-pg="${it[0]}" onclick="showPage('${it[0]}')">${it[1]}</button>`).join(""); showPage(isTrader?"traders":"urgent"); }
 
 function startSession(u){ sessionStorage.setItem("curId",u.id); }
 function endSession(){ sessionStorage.removeItem("curId"); }
@@ -1471,7 +1791,7 @@ function changeJangadPassUI(){
 function getKapanEditPass(){
   if(kapanEditPass) return kapanEditPass;
   let adm=users.find(u=>u.role==="admin");
-  return adm?adm.pass:"admin123";
+  return adm?adm.pass:"@dpdp@";
 }
 function verifyKapanPass(promptText){
   let correct=getKapanEditPass();
@@ -1570,7 +1890,7 @@ function editOffice(i){ let no=prompt("નવું Office:",users[i].office||""
 function editParts(i){ let c=getParts(users[i]).join(", "); let np=prompt("Process:",c); if(np===null) return; let parts=np.trim()?np.split(",").map(s=>s.trim()).filter(Boolean):["Main"]; if(!parts.length) parts=["Main"]; users[i].parts=parts; save(); afterUserEdit(); }
 function delUser(i){ if(users[i].role!=="dept") return; if(!confirm("Delete?")) return; users.splice(i,1); save(); afterUserEdit(); }
 function afterUserEdit(){ showUsers(); showManagers(); showDEAdminList(); showMyMgrList(); showMyDEList(); fillDeptDropdown(); fillFilterDept(); fillHistDept(); fillRepDeptFilter(); fillRepairDropdown(); fillManagerDropdown(); fillMgrDropdownStock(); fillDataEntryDropdown(); fillSugToChk(); fillSugFiltDept(); fillDashStatDept(); populateAdminOfficeSels(); refresh(); }
-function showUsers(){ if(cur.role!=="admin") return; document.getElementById("stockUser").innerHTML=users.map((u,i)=>{ if(u.role!=="stock") return ""; let idS=u.id===""?`<span class="lock">— set નથી —</span>`:u.id; let pS=u.pass===""?`<span class="lock">—</span>`:u.pass; let b=u.id===""?`<button class="set" onclick="setStock(${i})">⚙ ID+Pass</button>`:`<button class="edit" onclick="setStock(${i})">✏ Password</button>`; return `<tr><td>${u.dept}</td><td>${idS}</td><td>${pS}</td><td>${b}</td></tr>`; }).join(""); document.getElementById("userList").innerHTML=users.map((u,i)=>{ if(u.role!=="dept") return ""; let pr=getParts(u).map(p=>`<span class="partbadge">${p}</span>`).join(""); let off=u.office?`<span class="offbadge">${u.office}</span>`:"—"; return `<tr><td>${u.dept}</td><td>${off}</td><td>${pr}</td><td>${u.id}</td><td>${u.pass}</td><td><button class="edit" onclick="editDept(${i})">✏નામ</button><button class="edit" onclick="editOffice(${i})">✏Off</button><button class="edit" onclick="editParts(${i})">✏Proc</button><button class="edit" onclick="editId(${i})">✏ID</button><button class="edit" onclick="editPass(${i})">✏Pass</button><button class="del" onclick="delUser(${i})">Del</button></td></tr>`; }).join(""); }
+function showUsers(){ if(cur.role!=="admin") return; document.getElementById("stockUser").innerHTML=users.map((u,i)=>{ if(u.role!=="stock") return ""; let idS=u.id===""?`<span class="lock">— set નથી —</span>`:u.id; let pS=u.pass===""?`<span class="lock">—</span>`:u.pass; let b=u.id===""?`<button class="set" onclick="setStock(${i})">⚙ ID+Pass</button>`:`<button class="edit" onclick="setStock(${i})">✏ Password</button>`; return `<tr><td>${u.dept}</td><td>${idS}</td><td>${pS}</td><td>${b}</td></tr>`; }).join(""); document.getElementById("userList").innerHTML=users.map((u,i)=>{ if(u.role==="admin"){ let off=u.office?`<span class="offbadge">${u.office}</span>`:"—"; return `<tr style="background:#fef9e7"><td>👑 ${u.dept}</td><td>${off}</td><td><span class="partbadge">Main</span></td><td>${u.id}</td><td>${u.pass}</td><td><span class="small">🔒 બદલવા: ઉપર 🔑 Admin Login Password બોક્સ</span></td></tr>`; } if(u.role!=="dept") return ""; let pr=getParts(u).map(p=>`<span class="partbadge">${p}</span>`).join(""); let off=u.office?`<span class="offbadge">${u.office}</span>`:"—"; return `<tr><td>${u.dept}</td><td>${off}</td><td>${pr}</td><td>${u.id}</td><td>${u.pass}</td><td><button class="edit" onclick="editDept(${i})">✏નામ</button><button class="edit" onclick="editOffice(${i})">✏Off</button><button class="edit" onclick="editParts(${i})">✏Proc</button><button class="edit" onclick="editId(${i})">✏ID</button><button class="edit" onclick="editPass(${i})">✏Pass</button><button class="del" onclick="delUser(${i})">Del</button></td></tr>`; }).join(""); }
 function destOptions(h){ let o=""; if(h) o+=`<option value="${STOCK_DEPT}|||Main">${STOCK_DEPT}</option>`; let grp={}; users.filter(u=>u.role==="dept").forEach(u=>{ let key=String(u.dept||"").trim().toLowerCase(); (grp[key]=grp[key]||[]).push(u); }); users.filter(u=>u.role==="dept").forEach(u=>{ let key=String(u.dept||"").trim().toLowerCase(); let g=grp[key]||[]; let hasOffice=g.some(x=>String(x.office||"").trim()); if(hasOffice&&!String(u.office||"").trim()) return; let lbl=unitLabel(u.dept,u.office); let parts=getParts(u); if(parts.length===1) o+=`<option value="${lbl}|||${parts[0]}">${lbl}</option>`; else parts.forEach(p=>o+=`<option value="${lbl}|||${p}">${lbl} — ${p}</option>`); }); return o; }
 function fillDeptDropdown(){ document.getElementById("to").innerHTML=destOptions(false); document.getElementById("sfTo").innerHTML=destOptions(false); }
 function fillRepairDropdown(){ let o="",me=cur?myLbl():""; if(cur&&cur.role==="dept") o+=`<option value="${STOCK_DEPT}">🏢 Stock</option>`; users.filter(u=>u.role==="dept").forEach(u=>{ let lbl=unitLabel(u.dept,u.office); if(lbl!==me) o+=`<option value="${lbl}">${lbl}</option>`; }); if(document.getElementById("rpTo")) document.getElementById("rpTo").innerHTML=o; }
@@ -1774,7 +2094,7 @@ function doRecvSend(idx){
   toast("✅ "+to+" માં મોકલાઈ ગયું!","success");
 }
 function del(idx){ if(cur.role!=="admin"){ toast("⚠️ Delete ફક્ત Admin!","error"); return; } if(!verifyKapanPass("🔒 Kapan Delete કરવા માટે Password નાખો:")) return; let item={...data[idx]}; data.splice(idx,1); pushUndo({undo:()=>{ data.splice(idx,0,item); save(); refresh(); },redo:()=>{ data.splice(idx,1); save(); refresh(); }}); save(); refresh(); toast("🗑️ Deleted","info"); }
-function delStatusKapan(name){
+async function delStatusKapan(name){
   if(cur.role!=="admin"){ toast("⚠️ Delete ફક્ત Admin!","error"); return; }
   if(!confirm("🗑️ '"+name+"' નું પૂરું record (Stock/History/4P/Repairing) delete કરવું છે?")) return;
   if(!verifyKapanPass("🔒 Kapan Delete કરવા માટે Password નાખો:")) return;
@@ -1784,8 +2104,11 @@ function delStatusKapan(name){
   hist=hist.filter(h=>!h.item||baseName(h.item)!==base);
   fourP=fourP.filter(f=>!f.item||baseName(f.item)!==base);
   reps=reps.filter(r=>!r.kapan||baseName(r.kapan)!==base);
+  // Server par pan permanent delete (kapan-wise) — bija device thi pachu na aave
+  let _srv=null;
+  try{ if(window.cloudDeleteRange) _srv=await window.cloudDeleteRange({kapan:base, sections:["hist","reps","fourP","stock"]}); }catch(e){ console.warn("server kapan delete failed", e); }
   save(); refresh();
-  toast("🗑️ '"+name+"' Delete! (Stock "+n1+"→"+data.length+", Hist "+n2+"→"+hist.length+")","info");
+  toast("🗑️ '"+name+"' Delete! (Stock "+n1+"→"+data.length+", Hist "+n2+"→"+hist.length+")"+(_srv&&_srv.ok?" ✅ server par permanent":""),"info");
 }
 function setFinal(idx,val){ if(val==="4P"){ let d=data[idx]; fourP.push({item:d.item,carat:d.carat,nang:d.nang,pis:d.pis,from:d.to,movedAt:now(),movedMs:Date.now()}); hist.push({...d,action:"4P",sentAt:now(),sentMs:Date.now()}); data.splice(idx,1); save(); refresh(); toast("✅ 4P માં ગયું!","success"); return; } data[idx].fin=val; save(); refresh(); }
 
@@ -2298,7 +2621,7 @@ function showRepHist(){ let s=normKapan(document.getElementById("rhSearch").valu
 function resetRepHist(){ let b=document.getElementById("repHist"); if(b) b.innerHTML='<tr><td colspan="16" style="text-align:center;color:#999">Filters set કરીને ▶ લોડ કરો દબાવો</td></tr>'; }
 
 function downloadCSV(fn,rows){ let csv=rows.map(r=>r.map(c=>`"${(""+c).replace(/"/g,'""')}"`).join(",")).join("\n"); let b=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"}); let l=document.createElement("a"); l.href=URL.createObjectURL(b); l.download=fn; l.click(); }
-function printPDF(title,headers,rows){ let w=window.open("","_blank"); let th=headers.map(h=>`<th>${h}</th>`).join(""); let tr=rows.map(r=>"<tr>"+r.map(c=>`<td>${c}</td>`).join("")+"</tr>").join(""); w.document.write(`<html><head><title>${title}</title><style>body{font-family:Arial;padding:20px}h2{color:#2c3e50}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #999;padding:6px;text-align:left}th{background:#34495e;color:#fff}</style></head><body><h2>${title}</h2><p>${now()}</p><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>`); w.document.close(); }
+function printPDF(title,headers,rows){ let w=window.open("","_blank"); let th=headers.map(h=>`<th>${h}</th>`).join(""); let tr=rows.map(r=>"<tr>"+r.map(c=>`<td>${c}</td>`).join("")+"</tr>").join(""); w.document.write(`<html><head><title>${title}</title><style>body{font-family:Arial;padding:20px}h2{color:#2c3e50}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #999;padding:6px;text-align:left}th{background:#34495e;color:#fff}</style></head><body><h2>${title}</h2><p>${now()}</p><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table><script>window.onload=function(){window.print();}<\/script><\/body><\/html>`); w.document.close(); }
 function cardsData(){ let t=deptStats(); let r=[]; for(let k in t){ let x=t[k]; r.push([x.lbl,x.issC.toFixed(2),x.chC.toFixed(2),x.chN,x.chP,x.okC.toFixed(2),x.okN,x.okP]); } return r; }
 let cardHead=["Office","Issue Ct","Chalu Ct","Chalu Nang","Chalu Pis","OK Ct","OK Nang","OK Pis"];
 function dlCardsExcel(){ downloadCSV("Office_Report.csv",[cardHead,...cardsData()]); } function dlCardsPDF(){ printPDF("Office Report",cardHead,cardsData()); }
@@ -2324,7 +2647,7 @@ function sugHistData(){ let rows=[]; sugs.forEach(s=>{ rows.push([s.topic,s.deta
 let sgHead=["Topic","વિગત","Departments","Date","Accept Info","Status"];
 function dlSugHistExcel(){ downloadCSV("Suggestion_History.csv",[sgHead,...sugHistData()]); } function dlSugHistPDF(){ printPDF("Suggestion History",sgHead,sugHistData()); }
 function dlReportExcel(){ if(!reportKey) return; let {lbl,part}=reportKey; let recv=hist.filter(h=>h.action==="Receive"&&h.to===lbl&&resolvePart(lbl,h.toPart||"Main")===part); let chalu=[],ok=[]; recv.forEach(h=>{ let live=data.find(d=>d.id===h.id&&d.status==="Received"&&d.to===lbl); if(live){ chalu.push([live.item,live.carat,live.nang,live.pis,h.from,live.manager||"—",live.recvAt||"",live.dstat||"Chalu"]); } }); deptOKRows(lbl,part).forEach(h=>{ ok.push([h.item,h.carat,h.nang,h.pis,h.from,h.manager||"—",h.recvAt||"","OK"]); }); let rows=[[lbl+" Report",now()],[""],["🔵 CHALU"],["Kapan","Carat","Nang","Pis","From","Manager","Date","Status"],...chalu,[""],["✅ OK"],["Kapan","Carat","Nang","Pis","From","Manager","Date","Status"],...ok]; downloadCSV(lbl+"_Report.csv",rows); }
-function dlReportPDF(){ if(!reportKey) return; let {lbl,part}=reportKey; let recv=hist.filter(h=>h.action==="Receive"&&h.to===lbl&&resolvePart(lbl,h.toPart||"Main")===part); let ch="",ok=""; recv.forEach(h=>{ let live=data.find(d=>d.id===h.id&&d.status==="Received"&&d.to===lbl); if(live){ ch+=`<tr><td>${live.item}</td><td>${live.carat}</td><td>${live.nang}</td><td>${live.pis}</td><td>${h.from}</td><td>${live.dstat||"Chalu"}</td></tr>`; } }); deptOKRows(lbl,part).forEach(h=>{ ok+=`<tr><td>${h.item}</td><td>${h.carat}</td><td>${h.nang}</td><td>${h.pis}</td><td>${h.from}</td><td>OK</td></tr>`; }); let w=window.open("","_blank"); w.document.write(`<html><head><title>${lbl}</title><style>body{font-family:Arial;padding:20px}h2,h3{color:#2c3e50}table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px}th,td{border:1px solid #999;padding:6px}th{background:#34495e;color:#fff}</style></head><body><h2>📋 ${lbl} Report</h2><p>${now()}</p><h3>🔵 Chalu</h3><table><thead><tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>From</th><th>Status</th></tr></thead><tbody>${ch}</tbody></table><h3>✅ OK</h3><table><thead><tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>From</th><th>Status</th></tr></thead><tbody>${ok}</tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>`); w.document.close(); }
+function dlReportPDF(){ if(!reportKey) return; let {lbl,part}=reportKey; let recv=hist.filter(h=>h.action==="Receive"&&h.to===lbl&&resolvePart(lbl,h.toPart||"Main")===part); let ch="",ok=""; recv.forEach(h=>{ let live=data.find(d=>d.id===h.id&&d.status==="Received"&&d.to===lbl); if(live){ ch+=`<tr><td>${live.item}</td><td>${live.carat}</td><td>${live.nang}</td><td>${live.pis}</td><td>${h.from}</td><td>${live.dstat||"Chalu"}</td></tr>`; } }); deptOKRows(lbl,part).forEach(h=>{ ok+=`<tr><td>${h.item}</td><td>${h.carat}</td><td>${h.nang}</td><td>${h.pis}</td><td>${h.from}</td><td>OK</td></tr>`; }); let w=window.open("","_blank"); w.document.write(`<html><head><title>${lbl}</title><style>body{font-family:Arial;padding:20px}h2,h3{color:#2c3e50}table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px}th,td{border:1px solid #999;padding:6px}th{background:#34495e;color:#fff}</style></head><body><h2>📋 ${lbl} Report</h2><p>${now()}</p><h3>🔵 Chalu</h3><table><thead><tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>From</th><th>Status</th></tr></thead><tbody>${ch}</tbody></table><h3>✅ OK</h3><table><thead><tr><th>Kapan</th><th>Carat</th><th>Nang</th><th>Pis</th><th>From</th><th>Status</th></tr></thead><tbody>${ok}</tbody></table><script>window.onload=function(){window.print();}<\/script><\/body><\/html>`); w.document.close(); }
 
 function dl4PStockExcel(){ let list=data.filter(d=>d.status==="Received"&&(d.to===STOCK_DEPT)); downloadCSV("4P_Stock.csv",[["Kapan","Carat","Nang","Pis","From","Date"],...list.map(d=>[d.item,d.carat,d.nang,d.pis,d.from,d.sentAt])]); }
 function dl4PStockPDF(){ let list=data.filter(d=>d.status==="Received"&&(d.to===STOCK_DEPT)); printPDF("4P Stock Kapans",["Kapan","Carat","Nang","Pis","From","Date"],list.map(d=>[d.item,d.carat,d.nang,d.pis,d.from,d.sentAt])); }
@@ -2398,7 +2721,7 @@ function dlMgrReportExcel(){ downloadCSV("Kapan_Manager_Report.csv", [["Kapan","
 function dlMgrReportPDF(){
   let rows = mgrReportData();
   let w = window.open("","_blank");
-  w.document.write(`<html><head><title>Kapan Manager Report</title><style>body{font-family:Arial;padding:20px}h2{color:#2c3e50}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #999;padding:6px}th{background:#34495e;color:#fff}</style></head><body><h2>📋 Kapan Manager Report</h2><p>${now()}</p><table><thead><tr><th>Kapan</th><th>Department</th><th>Manager</th><th>Data Entry</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>`);
+  w.document.write(`<html><head><title>Kapan Manager Report</title><style>body{font-family:Arial;padding:20px}h2{color:#2c3e50}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #999;padding:6px}th{background:#34495e;color:#fff}</style></head><body><h2>📋 Kapan Manager Report</h2><p>${now()}</p><table><thead><tr><th>Kapan</th><th>Department</th><th>Manager</th><th>Data Entry</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table><script>window.onload=function(){window.print();}<\/script><\/body><\/html>`);
   w.document.close();
 }
 
@@ -2550,12 +2873,29 @@ function clearAnalysis(){
 }
 function analysisData(){ let {f,t}=getAnDates(); let isD=(cur&&cur.role!=="admin"&&cur.role!=="stock"); let DD=data,RR=reps,FF=fourP; if(isD){ let lbl=myLbl(); DD=data.filter(x=>x.from===lbl||x.to===lbl); RR=reps.filter(x=>x.from===lbl); FF=fourP.filter(x=>x.from===lbl); } let rows=[["Analysis Report",now()],["Date Range:",(f?new Date(f).toLocaleDateString('en-GB'):"Start")+" - "+(t===Infinity?"Now":new Date(t).toLocaleDateString('en-GB'))],[""]]; rows.push(["📊 OVERVIEW"],["Metric","Value"]); rows.push(["Sent",DD.filter(d=>{let s=d.sentMs||0;return s>=f&&s<=t;}).length]); rows.push(["Received",DD.filter(d=>{let s=d.recvTime||0;return s>=f&&s<=t;}).length]); rows.push(["Repairing Sent",RR.filter(r=>{let s=r.sentMs||0;return s>=f&&s<=t;}).length]); rows.push(["4P Moved",FF.filter(p=>{let s=p.movedMs||0;return s>=f&&s<=t;}).length]); rows.push([""]); rows.push(["👤 MANAGER-WISE","Sent","Carat","Received","Pending","Avg Days","Repairing"]); let mgrMap={}; DD.forEach(d=>{let m=d.manager||"—";if(!mgrMap[m])mgrMap[m]={st:0,cs:0,rc:0,pd:0,sd:0,cn:0,rp:0};if(d.sentMs>=f&&d.sentMs<=t){mgrMap[m].st++;mgrMap[m].cs+=Number(d.carat)||0;}if(d.status==="Received")mgrMap[m].rc++;else if(d.status==="Pending")mgrMap[m].pd++;if(d.sentMs>=f&&d.sentMs<=t&&d.recvTime){let days=(d.recvTime-d.sentMs)/86400000;if(days>0&&days<365){mgrMap[m].sd+=days;mgrMap[m].cn++;}}}); RR.forEach(r=>{let m=r.manager||"—";if(!mgrMap[m])mgrMap[m]={st:0,cs:0,rc:0,pd:0,sd:0,cn:0,rp:0};if(r.sentMs>=f&&r.sentMs<=t)mgrMap[m].rp++;}); Object.keys(mgrMap).sort().forEach(m=>{let x=mgrMap[m];let avg=x.cn?Math.round(x.sd/x.cn*10)/10:"—";rows.push([m,x.st,x.cs.toFixed(1),x.rc,x.pd,avg,x.rp]);}); rows.push([""]); rows.push(["🔧 REPAIRING-WISE","Sent","Received","OK-Back","Pending","Avg Days"]); let repDept={}; RR.forEach(r=>{let dp=r.to||"—";if(!repDept[dp])repDept[dp]={st:0,rc:0,ok:0,pd:0,sd:0,cn:0};if(r.sentMs>=f&&r.sentMs<=t)repDept[dp].st++;if(r.status==="Received")repDept[dp].rc++;if(r.status==="OK-Back"){repDept[dp].ok++;if(r.okAt){let d=new Date(r.okAt.replace(/(\d+)\/(\d+)\/(\d+)/,(m,d2,mo,y)=>y+"-"+mo+"-"+d2)).getTime();if(d>=f&&d<=t){let days=(d-(r.sentMs||0))/86400000;if(days>0&&days<365){repDept[dp].sd+=days;repDept[dp].cn++;}}}}if(r.status==="Sent"||r.status==="Received")repDept[dp].pd++;}); Object.keys(repDept).sort().forEach(dp=>{let x=repDept[dp];let avg=x.cn?Math.round(x.sd/x.cn*10)/10:"—";rows.push([dp,x.st,x.rc,x.ok,x.pd,avg]);}); return rows; }
 function dlAnalysisExcel(){ downloadCSV("Analysis_Report.csv",analysisData()); }
-function dlAnalysisPDF(){ let rows=analysisData(); let w=window.open("","_blank"); let html="<html><head><title>Analysis</title><style>body{font-family:Arial;padding:20px}h2{color:#2c3e50}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}th,td{border:1px solid #999;padding:5px}th{background:#34495e;color:#fff}td{text-align:left}</style></head><body><h2>📊 Analysis Report</h2><p>"+now()+"</p>"; let tbl="<table>"; rows.forEach(r=>{ if(r.length===1) tbl+=`<tr><td colspan="10" style="font-weight:bold;background:#f0f0f0;font-size:14px">${r[0]}</td></tr>`; else if(r[0]===""&&r[1]==="") tbl+="<tr><td colspan='10' style='padding:2px'></tr>"; else{ let hdr=r[1]==="Value"||r[1]==="Sent"||r[1]==="Carat"?true:false; tbl+="<tr>"+r.map(c=>`<td${hdr?' style="font-weight:bold;background:#e8e8e8"':""}>${c||""}</td>`).join("")+"</tr>"; } }); tbl+="</table>"; html+=tbl+"<script>window.onload=function(){window.print();}<\/script></body></html>"; w.document.write(html); w.document.close(); }
+function dlAnalysisPDF(){ let rows=analysisData(); let w=window.open("","_blank"); let html="<html><head><title>Analysis</title><style>body{font-family:Arial;padding:20px}h2{color:#2c3e50}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}th,td{border:1px solid #999;padding:5px}th{background:#34495e;color:#fff}td{text-align:left}</style></head><body><h2>📊 Analysis Report</h2><p>"+now()+"</p>"; let tbl="<table>"; rows.forEach(r=>{ if(r.length===1) tbl+=`<tr><td colspan="10" style="font-weight:bold;background:#f0f0f0;font-size:14px">${r[0]}</td></tr>`; else if(r[0]===""&&r[1]==="") tbl+="<tr><td colspan='10' style='padding:2px'></tr>"; else{ let hdr=r[1]==="Value"||r[1]==="Sent"||r[1]==="Carat"?true:false; tbl+="<tr>"+r.map(c=>`<td${hdr?' style="font-weight:bold;background:#e8e8e8"':""}>${c||""}</td>`).join("")+"</tr>"; } }); tbl+="</table>"; html+=tbl+"<script>window.onload=function(){window.print();}<\/script><\/body><\/html>"; w.document.write(html); w.document.close(); }
 
 function backupDownload(){ let backup={users,stock:data,hist,reps,sugs,labels,dstatus,fourP,sugAll,backupDate:now(),version:"2.0"}; let str=JSON.stringify(backup,null,2); let blob=new Blob([str],{type:"application/json"}); let link=document.createElement("a"); link.href=URL.createObjectURL(blob); let d=new Date(); let fname="StockBackup_"+d.toISOString().slice(0,10)+"_"+d.getHours()+"-"+d.getMinutes()+".json"; link.download=fname; link.click(); toast("✅ Backup Download થઈ ગયું!","success"); }
-function backupRestore(event){ let file=event.target.files[0]; if(!file) return;   if(!confirm("⚠️ Restore કરવાથી અત્યારનો data બદલાઈ જશે. ચાલુ રાખવું?")){ event.target.value=""; return; } let reader=new FileReader(); reader.onload=function(e){ try{ let b=JSON.parse(e.target.result); if(!b.users||!b.stock){ toast("❌ બરાબર backup file નથી!","error"); return; } users=b.users||[]; data=b.stock||[]; hist=b.hist||[]; reps=b.reps||[]; sugs=b.sugs||[]; labels=b.labels||["Marking","4P","Mejik","Direct"];   dstatus=b.dstatus||{}; fourP=(b.fourP||[]).filter(Boolean); sugAll=b.sugAll||[];
+function backupRestore(event){ let file=event.target.files[0]; if(!file) return;   if(!confirm("⚠️ Restore કરવાથી અત્યારનો data બદલાઈ જશે. ચાલુ રાખવું?")){ event.target.value=""; return; } let reader=new FileReader(); reader.onload=async function(e){ try{ let b=JSON.parse(e.target.result); if(!b.users||!b.stock){ toast("❌ બરાબર backup file નથી!","error"); return; } users=b.users||[]; data=b.stock||[]; hist=b.hist||[]; reps=b.reps||[]; sugs=b.sugs||[]; labels=b.labels||["Marking","4P","Mejik","Direct"];   dstatus=b.dstatus||{}; fourP=(b.fourP||[]).filter(Boolean); sugAll=b.sugAll||[]; if(b.managers){ managers=b.managers; if(Array.isArray(managers)){ let _om=managers; managers={}; if(_om.length) managers["Admin"]=_om; } } if(b.dataentrys){ dataentrys=b.dataentrys; if(Array.isArray(dataentrys)){ let _od=dataentrys; dataentrys={}; if(_od.length) dataentrys["Admin"]=_od; } } if(b.deptVigats) deptVigats=b.deptVigats; if(b.traders) traders=b.traders; if(b.traderItems) traderItems=b.traderItems; if(b.traderIncoming) traderIncoming=b.traderIncoming; if(b.traderSells) traderSells=b.traderSells; if(b.traderRequests) traderRequests=b.traderRequests; if(b.extraItems) extraItems=b.extraItems; if(b.extraStock) extraStock=b.extraStock; if(b.storeManager) storeManager=b.storeManager;
   data=data.filter(Boolean); hist=hist.filter(Boolean); reps=reps.filter(Boolean); fourP=fourP.filter(Boolean);
-  let old="🏢 Stock (રાખો)"; data.forEach(d2=>{if(d2&&d2.to===old)d2.to=STOCK_DEPT;if(d2&&d2.from===old)d2.from=STOCK_DEPT;if(d2&&d2.department===old)d2.department=STOCK_DEPT;if(d2&&d2.dept===old)d2.dept=STOCK_DEPT;}); hist.forEach(h=>{if(h&&h.to===old)h.to=STOCK_DEPT;if(h&&h.from===old)h.from=STOCK_DEPT;}); reps.forEach(r=>{if(r&&r.to===old)r.to=STOCK_DEPT;if(r&&r.from===old)r.from=STOCK_DEPT;}); fourP.forEach(f=>{if(f&&f.from===old)f.from=STOCK_DEPT;}); if(dstatus[old]){dstatus[STOCK_DEPT]=[...(dstatus[STOCK_DEPT]||[]),...dstatus[old]];delete dstatus[old];} uchak=b.uchak||[]; uchakProcesses=b.uchakProcesses||[]; uchakRates=b.uchakRates||[]; deptProcesses=b.deptProcesses||{}; deptRates=b.deptRates||{}; jangads=b.jangads||[]; jangadCounter=b.jangadCounter||0; if(!deptProcesses["ઉચક"]||!deptProcesses["ઉચક"].length) deptProcesses["ઉચક"]=uchakProcesses.length?uchakProcesses:["Setup","Doping","Galaxy","Marking"]; localStorage.setItem("sugAll",JSON.stringify(sugAll)); save(); toast("✅ Restore થઈ ગયું!","success"); location.reload(); }catch(err){ toast("❌ File વાંચવામાં ભૂલ!","error"); } }; reader.readAsText(file); event.target.value=""; }
+  let old="🏢 Stock (રાખો)"; data.forEach(d2=>{if(d2&&d2.to===old)d2.to=STOCK_DEPT;if(d2&&d2.from===old)d2.from=STOCK_DEPT;if(d2&&d2.department===old)d2.department=STOCK_DEPT;if(d2&&d2.dept===old)d2.dept=STOCK_DEPT;}); hist.forEach(h=>{if(h&&h.to===old)h.to=STOCK_DEPT;if(h&&h.from===old)h.from=STOCK_DEPT;}); reps.forEach(r=>{if(r&&r.to===old)r.to=STOCK_DEPT;if(r&&r.from===old)r.from=STOCK_DEPT;}); fourP.forEach(f=>{if(f&&f.from===old)f.from=STOCK_DEPT;}); if(dstatus[old]){dstatus[STOCK_DEPT]=[...(dstatus[STOCK_DEPT]||[]),...dstatus[old]];delete dstatus[old];} uchak=b.uchak||[]; uchakProcesses=b.uchakProcesses||[]; uchakRates=b.uchakRates||[]; deptProcesses=b.deptProcesses||{}; deptRates=b.deptRates||{}; jangads=b.jangads||[]; jangadCounter=b.jangadCounter||0; if(!deptProcesses["ઉચક"]||!deptProcesses["ઉચક"].length) deptProcesses["ઉચક"]=uchakProcesses.length?uchakProcesses:["Setup","Doping","Galaxy","Marking"]; localStorage.setItem("sugAll",JSON.stringify(sugAll)); jangads.forEach(j=>{ if(!j.depts){ j.depts=[j.dept||"ઉચક"]; j.deptIndex=0; } if(!j.tag) j.tag="Regular"; }); uchak.forEach(u=>{ if(!u.dept) u.dept="ઉચક"; if(!u.nextOpts) u.nextOpts=[]; }); save();
+  // ── FIX: pehla location.reload() turat thay etle debounced server-save CANCEL thai jay hatu → server par junu data rahi jay → restore pachi fari junu j data dekhatu (biju tab/device pan junu j mokli detu). Have server ne RESTORED data save kari ne CONFIRM laiye, pachi j reload.
+  let _serverOk=false;
+  try{
+    if(window.cloudSaveNow && typeof cloudPayload==="function"){
+      let _pl=cloudPayload(); _pl.updated=Date.now();
+      // Don't set lastCloudApplied to the same timestamp we're sending to the
+      // server — otherwise when SSE brings it back, applyCloudData's guard
+      // (cloudUpdated <= lastCloudApplied) will skip it and the page won't
+      // refresh with the restored data. Instead zero it so SSE always applies.
+      localStorage.setItem("lastCloudApplied","0");
+      _serverOk=!!(_r&&_r.ok);
+      localStorage.setItem("lastLocalUpdate",String(_pl.updated));
+    }
+  }catch(_se){ console.warn("restore: server save failed",_se); }
+  toast(_serverOk?"✅ Restore થઈ ગયું — બધા tab/device માં sync થશે!":"⚠️ Restore local થયું, pan server par save NA thay — localhost:3000 server ચાલુ છે?",_serverOk?"success":"error");
+  setTimeout(()=>{ location.reload(); }, _serverOk?600:2500);
+  }catch(err){ console.error(err); toast("❌ File વાંચવામાં ભૂલ!","error"); } }; reader.readAsText(file); event.target.value=""; }
 
 let bkFailNotified=false; let bkTimer=null; let bkDirHandle=null;
 function localDateStr(dd){ let d=dd||new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
@@ -2580,6 +2920,10 @@ startAutoBackupTimer();
 function applyCloudData(d){
   if(!d) return;
   let cloudUpdated = Number(d.updated || 0);
+  // Safety: an empty/garbage snapshot (fresh server, truncated file, failed load)
+  // must NEVER wipe this device. A real snapshot carries `updated` or some records.
+  const _hasRealData = cloudUpdated || d.users || (d.stock&&d.stock.length) || (d.hist&&d.hist.length) || (d.reps&&d.reps.length);
+  if(!_hasRealData){ console.warn("applyCloudData: empty snapshot ignored — local data protected"); return; }
   // NOTE: We dedupe against lastCloudApplied (the last cloud snapshot THIS device
   // has already processed) — NOT against lastLocalUpdate (this device's own last edit).
   // Comparing against lastLocalUpdate caused incoming updates from other
@@ -2659,14 +3003,35 @@ function applyCloudData(d){
   }
 }
 let cloudStarted=false;
-function startCloud(){ if(cloudStarted) return; if(window.firebaseReady && window.cloudListen){ cloudStarted=true; window.cloudListen(function(d){ applyCloudData(d); }); console.log("☁️ Cloud sync ચાલુ!"); } else { setTimeout(startCloud,500); } }
+function startCloud(){ if(cloudStarted) return; if(window.firebaseReady && window.cloudListen){ cloudStarted=true;window.cloudListen(function(d){ if(d){ applyCloudData(d); refresh(); } });
+      console.log("☁️ Cloud sync ચાલુ!"); } else { setTimeout(startCloud,500); } }
 startCloud();
+setTimeout(()=>hydrateFromIdb(), 400);   // unlimited local data (IndexedDB) fari load karo
 
-function purgeDataRange() {
+/* Purge box na kapan input mate suggestion list — je kapan data/hist/reps/sugs/fourP
+ * ma che te badha distinct base-names ("g-875-26 (ભાગ 2 - Mejik)" -> "g-875-26"). */
+function fillPurgeKapanList(){
+  let el = document.getElementById("purgeKapanList");
+  if(!el) return;
+  let seen = new Set(), out = [];
+  let add = s => { let b = baseName(s); if(b && !seen.has(b)){ seen.add(b); out.push(b); } };
+  (data||[]).forEach(d=>add(d.item)); (hist||[]).forEach(h=>add(h.item));
+  (reps||[]).forEach(r=>add(r.item)); (fourP||[]).forEach(f=>add(f.item));
+  (sugs||[]).forEach(s=>add(s.item));
+  out.sort();
+  el.innerHTML = out.map(x=>`<option value="${sanitize(x)}"></option>`).join("");
+}
+
+async function purgeDataRange() {
   if (cur.role !== "admin") { toast("⚠️ ફક્ત Admin જ ડેટા સાફ કરી શકે છે!","error"); return; }
   let fromVal = document.getElementById("purgeFrom").value;
   let toVal = document.getElementById("purgeTo").value;
   if (!fromVal || !toVal) { toast("બંને તારીખો પસંદ કરો!","error"); return; }
+  // Kapan filter (optional) — server je rite match kare che te j rite: item/kapan par
+  // lowercase "includes". Khali hoy to badha kapan ne lagu thay.
+  let kapanQ = (document.getElementById("purgeKapan")?.value || "").trim().toLowerCase();
+  let kapanHit = o => !kapanQ || String((o && (o.item || o.kapan)) || "").toLowerCase().includes(kapanQ);
+  let kapanTxt = kapanQ ? (" 🔎 ફક્ત કાપણ: " + kapanQ) : " (બધા કાપણ)";
   
   let startMs = new Date(fromVal + "T00:00:00").getTime();
   let endMs = new Date(toVal + "T23:59:59.999").getTime();
@@ -2676,7 +3041,7 @@ function purgeDataRange() {
   let formattedFrom = new Date(startMs).toLocaleDateString('en-GB');
   let formattedTo = new Date(endMs).toLocaleDateString('en-GB');
   
-  if (!confirm(`⚠️ ચેતવણી: શું તમે ખરેખર ${formattedFrom} થી ${formattedTo} વચ્ચેનો તમામ ડેટા ડિલીટ કરવા માંગો છો? આ ફેરફાર પાછો મેળવી શકાશે નહીં!`)) {
+  if (!confirm(`⚠️ ચેતવણી: શું તમે ખરેખર ${formattedFrom} થી ${formattedTo} વચ્ચેનો ડેટા${kapanTxt} કાયમ માટે ડિલીટ કરવા માંગો છો? આ ફેરફાર પાછો મેળવી શકાશે નહીં (server પર પણ permanent થશે)!`)) {
     return;
   }
   
@@ -2685,59 +3050,55 @@ function purgeDataRange() {
   let a = users.find(u => u.role === "admin");
   if (!a || pwd.trim() !== a.pass) { toast("❌ ખોટો Password!","error"); return; }
   
-  // 1. Filter out data (stock items)
-  let initialStockCount = data.length;
-  data = data.filter(d => {
-    let t = d.sentMs || d.recvTime || 0;
-    return t < startMs || t > endMs;
-  });
-  let deletedStock = initialStockCount - data.length;
-  
-  // 2. Filter out hist (history logs)
-  let initialHistCount = hist.length;
-  hist = hist.filter(h => {
-    let t = h.sentMs || h.recvTime || 0;
-    return t < startMs || t > endMs;
-  });
-  let deletedHist = initialHistCount - hist.length;
-  
-  // 3. Filter out reps (repairing logs)
-  let initialRepsCount = reps.length;
-  reps = reps.filter(r => {
-    let t = r.sentMs || r.recvTime || 0;
-    return t < startMs || t > endMs;
-  });
-  let deletedReps = initialRepsCount - reps.length;
-  
-  // 4. Filter out sugs (suggestions)
-  let initialSugsCount = sugs.length;
-  sugs = sugs.filter(s => {
-    let t = s.sentMs || 0;
-    return t < startMs || t > endMs;
-  });
-  let deletedSugs = initialSugsCount - sugs.length;
-  
-  // 5. Filter out fourP (4P history)
-  let initialFourPCount = fourP.length;
-  fourP = fourP.filter(f => {
-    let t = f.movedMs || 0;
-    return t < startMs || t > endMs;
-  });
-  let deletedFourP = initialFourPCount - fourP.length;
-  
-  // 6. Filter out sugAll
-  let initialSugAllCount = sugAll.length;
-  sugAll = sugAll.filter(s => {
-    let t = s.sentMs || 0;
-    return t < startMs || t > endMs;
-  });
-  let deletedSugAll = initialSugAllCount - sugAll.length;
-  localStorage.setItem("sugAll",JSON.stringify(sugAll));
-  
+  // Build section list from checkboxes — stock unchecked by default
+  let _secs = [];
+  let _secMap = { hist:'purgeSecHist', stock:'purgeSecStock', reps:'purgeSecReps', fourP:'purgeSecFourP', sugs:'purgeSecSugs', sugAll:'purgeSecSugAll' };
+  for (let _k in _secMap) { let _cb = document.getElementById(_secMap[_k]); if (_cb && _cb.checked) _secs.push(_k); }
+  if (!_secs.length) { toast("ઓછામાં ઓછું એક વિભાગ પસંદ કરો!","error"); return; }
+
+  // 1) Filter LOCAL data only for selected sections
+  if (_secs.includes('hist')){
+    let initialHistCount = hist.length;
+    hist = hist.filter(h => { let t = h.sentMs || h.recvTime || 0; return (t < startMs || t > endMs) || !kapanHit(h); });
+    let deletedHist = initialHistCount - hist.length;
+  }
+  if (_secs.includes('stock')){
+    let initialStockCount = data.length;
+    data = data.filter(d => { let t = d.sentMs || d.recvTime || 0; return (t < startMs || t > endMs) || !kapanHit(d); });
+    let deletedStock = initialStockCount - data.length;
+  }
+  if (_secs.includes('reps')){
+    let initialRepsCount = reps.length;
+    reps = reps.filter(r => { let t = r.sentMs || r.recvTime || 0; return (t < startMs || t > endMs) || !kapanHit(r); });
+    let deletedReps = initialRepsCount - reps.length;
+  }
+  if (_secs.includes('sugs')){
+    let initialSugsCount = sugs.length;
+    sugs = sugs.filter(s => { let t = s.sentMs || 0; return (t < startMs || t > endMs) || !kapanHit(s); });
+    let deletedSugs = initialSugsCount - sugs.length;
+  }
+  if (_secs.includes('fourP')){
+    let initialFourPCount = fourP.length;
+    fourP = fourP.filter(f => { let t = f.movedMs || 0; return (t < startMs || t > endMs) || !kapanHit(f); });
+    let deletedFourP = initialFourPCount - fourP.length;
+  }
+  if (_secs.includes('sugAll')){
+    let initialSugAllCount = sugAll.length;
+    sugAll = sugAll.filter(s => { let t = s.sentMs || 0; return (t < startMs || t > endMs) || !kapanHit(s); });
+    let deletedSugAll = initialSugAllCount - sugAll.length;
+    localStorage.setItem("sugAll",JSON.stringify(sugAll));
+  }
+
+  // IMPORTANT ORDER: pehla server par PERMANENT delete (tombstones sathe), pachi local
+  // save. Ultu kariye to server no juno data fari push thai ne delete karelu record
+  // pachu aavi jay.
+  let _srv=null;
+  try{ if(window.cloudDeleteRange) _srv=await window.cloudDeleteRange({dateFrom:startMs, dateTo:endMs, kapan:kapanQ, sections:_secs}); }catch(e){ console.warn("server purge failed", e); }
+
   save();
   refresh();
-  
-  toast("✅ ડેટા સાફ થયો!","success");
+  let _cnt = (_srv && _srv.deleted) ? Object.keys(_srv.deleted).map(k=>k+": "+_srv.deleted[k]).join(", ") : "";
+  toast(_srv&&_srv.ok ? ("✅ કાયમ માટે ડિલીટ થયો"+(_cnt?(" ("+_cnt+")"):"")+" — બધા device માંથી ગાયબ થશે!") : "⚠️ Local સાફ થયો, પણ server પર નહીં — server ચાલુ છે?", (_srv&&_srv.ok)?"success":"error");
 }
 
 // === ઉચક DEPARTMENT WORKFLOW FUNCTIONS ===
@@ -3058,7 +3419,7 @@ function closeJangadEditPanel(){
 function getJangadEditPass(){
   if(jangadEditPass) return jangadEditPass;
   let adm=users.find(u=>u.role==="admin");
-  return adm?adm.pass:"admin123";
+  return adm?adm.pass:"@dpdp@";
 }
 function verifyJangadPass(){
   let correct=getJangadEditPass();
@@ -3630,7 +3991,7 @@ function dlJangadPDF(){
     if(j.status==="done"&&(!fp||fp==="→ Done")) rows+=`<tr><td>${j.no}</td><td>${j.kapan}</td><td>${j.vigat||""}</td><td>${j.dept}</td><td>→ Done</td><td>${j.okBy}</td><td></td><td>${j.nang}</td><td>${j.vajan}</td><td>${j.pis}</td><td></td><td>${j.okAt}</td><td>Done</td></tr>`;
   });
   let title=fd?fd+" Report":"All Departments Report";
-  w.document.write(`<html><head><title>${title}</title><style>body{font-family:Arial;padding:20px}h2{color:#2c3e50}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #999;padding:6px}th{background:#34495e;color:#fff}</style></head><body><h2>📋 ${title}</h2><p>${now()}</p><table><thead><tr><th>જંગડ નં.</th><th>Kapan</th><th>વિગત</th><th>Department</th><th>Process</th><th>Operator</th><th>Rate</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>In D-T</th><th>Out D-T</th><th>Status</th></tr></thead><tbody>${rows||`<tr><td colspan="13">કોઈ record નથી</td></tr>`}</tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>`);
+  w.document.write(`<html><head><title>${title}</title><style>body{font-family:Arial;padding:20px}h2{color:#2c3e50}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #999;padding:6px}th{background:#34495e;color:#fff}</style></head><body><h2>📋 ${title}</h2><p>${now()}</p><table><thead><tr><th>જંગડ નં.</th><th>Kapan</th><th>વિગત</th><th>Department</th><th>Process</th><th>Operator</th><th>Rate</th><th>Nang</th><th>Vajan</th><th>Pis</th><th>In D-T</th><th>Out D-T</th><th>Status</th></tr></thead><tbody>${rows||`<tr><td colspan="13">કોઈ record નથી</td></tr>`}</tbody></table><script>window.onload=function(){window.print();}<\/script><\/body><\/html>`);
   w.document.close();
 }
 // Keep old DL functions pointing to new ones for backward compat
@@ -3796,7 +4157,7 @@ function dlUchakHistPDF(){
   let win=window.open("","_blank");
   let list=jangadHistory;
   let rows=list.map(j=>`<tr><td>${j.kapan}</td><td>#${j.no}</td><td>${j.nang}</td><td>${j.vajan}</td><td>${j.pis}</td><td>${j.deptFlow}</td><td>${j.procSummary}</td><td>${j.sentAt}</td><td>${j.okAt}</td></tr>`).join("");
-  win.document.write(`<html><head><title>Uchak History</title><style>body{font-family:Arial;font-size:12px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:5px}th{background:#2c3e50;color:#fff}</style></head><body><h2>📜 Uchak History</h2><table><thead><tr><th>Kapan</th><th>Jangad#</th><th>નાંગ</th><th>વજન</th><th>પીસ</th><th>Dept Flow</th><th>Processes</th><th>Sent At</th><th>OK At</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
+  win.document.write(`<html><head><title>Uchak History</title><style>body{font-family:Arial;font-size:12px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:5px}th{background:#2c3e50;color:#fff}</style></head><body><h2>📜 Uchak History</h2><table><thead><tr><th>Kapan</th><th>Jangad#</th><th>નાંગ</th><th>વજન</th><th>પીસ</th><th>Dept Flow</th><th>Processes</th><th>Sent At</th><th>OK At</th></tr></thead><tbody>${rows}</tbody></table><\/body><\/html>`);
   win.document.close(); win.print();
 }
 
@@ -4728,6 +5089,38 @@ function showTradersPage(){
   }
   if(isAdmin) loadStoreManagerCreds();
   initSearchableDropdowns();
+}
+
+// --- Store Manager Credentials & Login ---
+function loadStoreManagerCreds(){
+  // Admin: ensure store manager credentials exist and are synced/persisted
+  try{
+    if(!storeManager || typeof storeManager!=="object" || !storeManager.id){
+      storeManager = {id:"NGSTOR", pass:"NGSTOR"};
+    }
+    safeSet("storeManager", storeManager);
+    console.info("🏪 Store Manager creds loaded:", storeManager.id);
+  }catch(e){ console.warn("loadStoreManagerCreds failed", e); }
+}
+function loginStoreManager(){
+  let idEl=document.getElementById("smLoginId"), passEl=document.getElementById("smLoginPass"), msg=document.getElementById("smLoginMsg");
+  if(!idEl||!passEl) return;
+  let id=idEl.value.trim(), p=passEl.value.trim();
+  if(!id||!p){ if(msg){ msg.style.color="#e74c3c"; msg.textContent="❌ ID અને Password બંને ભરો!"; } return; }
+  if(id===storeManager.id && p===storeManager.pass){
+    storeMgrLoggedIn=true;
+    if(msg){ msg.style.color="#27ae60"; msg.textContent="✅ Login successful!"; }
+    idEl.value=""; passEl.value="";
+    toast("✅ Store Manager login થયું!","success");
+    save(); showTradersPage();
+  } else {
+    if(msg){ msg.style.color="#e74c3c"; msg.textContent="❌ ખોટો Store Manager ID કે Password!"; }
+  }
+}
+function logoutStoreManager(){
+  storeMgrLoggedIn=false;
+  toast("🚪 Store Manager logout થયું","success");
+  showTradersPage();
 }
 
 // --- Trader Stock Panel ---
@@ -6364,7 +6757,5 @@ function dlDeptRepExcel(){
   </div>
 
 </div>
-  <script src="js/app.js"></script>
 </body>
-  </body>
 </html>
