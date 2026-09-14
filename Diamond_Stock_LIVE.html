@@ -3183,14 +3183,15 @@ function showActiveUchakEntries(){
     let safe=eid.replace(/[^a-zA-Z0-9]/g,"_");
     kapanIdx[k]=(kapanIdx[k]||0)+1;
     let entryBadge=kapanCounts[k]>1?` <span style="background:#8e44ad;color:#fff;font-size:10px;padding:1px 5px;border-radius:8px">E${kapanIdx[k]}</span>`:"";
-    let procs={}; g.items.forEach(j=>{ let cs=j.steps[j.currentStep]; let p=cs.process; let st=cs.status==="done"?"✅":"⏳"; if(!procs[p]) procs[p]={done:0,pend:0}; if(cs.status==="done") procs[p].done++; else procs[p].pend++; });
+    let procs={}; g.items.forEach(j=>{ let cs=j.steps&&j.steps[j.currentStep]; if(!cs) return; let p=cs.process||"?"; let st=cs.status==="done"?"✅":"⏳"; if(!procs[p]) procs[p]={done:0,pend:0}; if(cs.status==="done") procs[p].done++; else procs[p].pend++; });
     let procStr=Object.entries(procs).map(([p,cv])=>`<span class="small">${p}: ${cv.done}✅ ${cv.pend}⏳</span>`).join(" ");
     let deptStr=[...new Set(g.items.map(j=>j.dept))].join(", ");
     let allGroupDone=g.items.every(j=>j.steps.every(s=>s.status==="done"));
     let okBtn=allGroupDone&&!isDept?`<button onclick="event.stopPropagation();uchakOkEntry('${eid}')" style="background:#27ae60;padding:3px 10px;margin:0 0 0 8px;font-size:11px">✅ Uchak OK</button>`:"";
     let detailRows=g.items.map(j=>{
-      let cs=j.steps[j.currentStep];
-      let st=cs.status==="done"?"✅ Done":"⏳ "+cs.process;
+      let cs=j.steps&&j.steps[j.currentStep];
+      if(!cs) return "";
+      let st=cs.status==="done"?"✅ Done":"⏳ "+(cs.process||"");
       let prog=j.steps.length>1?" ("+(j.currentStep+1)+"/"+j.steps.length+")":"";
       let vig=j.vigat?` <span class='small'>(${j.vigat})</span>`:"";
       let canAct=cur.role==="admin"||cur.role==="stock";
