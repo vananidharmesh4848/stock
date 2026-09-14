@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Diamond Stock System</title>
+<title>Diamond Stock System — LOCAL (Offline)</title>
 <script>
   window.onerror = function(msg, url, line, col, error) {
     console.error("JS Error: " + msg + " at " + url + ":" + line);
@@ -13,113 +13,67 @@
     console.error("Unhandled Promise Rejection: " + event.reason);
   });
 </script>
-<script type="text/javascript">
-  // ═══════════════════════════════════════════
-  //  Local Server Sync — replaces Firebase
+<script type="text/javascript">  // ═══════════════════════════════════════════
+  //  LOCAL-ONLY Mode — no server needed
   // ═══════════════════════════════════════════
 
   window.setView = function(mode){ localStorage.setItem('viewMode',mode); if(typeof applyView==='function') applyView(mode); document.querySelectorAll('input[name="viewMode"]').forEach(function(r){ r.checked=(r.value===mode); }); };
   window.setView('desktop');
 
-  // No cloud trimming needed locally — unlimited storage
   window.cloudTrim = function(p) { return p; };
 
-  // Get server base URL (auto-detect)
-  const API_BASE = window.location.origin;
-
-  // ─── Project scope (LiveHost shared link) ───
-  // When this file is opened through LiveHost the page lives at /f/<project>/…
-  // Scope every server call to that project so the LiveHost server can keep a
-  // separate data blob per project (otherwise /api/data just 404s and the app
-  // silently falls back to this browser's localStorage — nothing syncs).
-  const PROJ_KEY = (function () {
-    const m = /^\/f\/([^\/]+)\//.exec(window.location.pathname);
-    return m ? decodeURIComponent(m[1]) : '';
-  })();
-  function apiUrl(p) {
-    if (!PROJ_KEY) return API_BASE + p;
-    return API_BASE + p + (p.indexOf('?') >= 0 ? '&' : '?') + 'p=' + encodeURIComponent(PROJ_KEY);
-  }
-
-  // ─── Save: POST /api/data (debounced) ───
-  let _saveTimeout = null;
+  // ─── LOCAL-ONLY: all data in localStorage/IndexedDB, no server ───
   window.cloudSave = function(p) {
-    if (_saveTimeout) clearTimeout(_saveTimeout);
-    _saveTimeout = setTimeout(async () => {
-      try {
-        await fetch(apiUrl('/api/data'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(p)
-        });
-      } catch(e) {
-        console.error('Save err', e);
-        if (window.toast) window.toast('❌ સેવ ન થયું: ' + e.message, 'error');
-      }
-    }, 150);
+    // localStorage already saves via safeSet(); no server needed
+    console.log('💾 Local save (no server)');
+  };
+  window.cloudSaveNow = function(p) { return Promise.resolve({ok:true}); };
+  window.cloudLoad = function(cb) { cb(null); };
+  window.cloudListen = function(cb) { /* no server */ };
+  window.cloudCleanNow = async function() { return {ok:true}; };
+  window.cloudDeleteRange = async function(q) {
+    // Local-only: just return ok, actual delete done by local arrays
+    return {ok:true, deleted:{}};
   };
 
-  // ─── Immediate save: POST /api/data (no debounce — Backup Restore vite reload cancel na thay etle) ───
-  window.cloudSaveNow = function(p) {
-    return fetch(apiUrl('/api/data'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(p)
+  // ─── Export / Import for sharing ───
+  window.exportAllData = function() {
+    let payload = {};
+    try {
+      for(let i=0; i<localStorage.length; i++) {
+        let k = localStorage.key(i);
+        if(k && !k.startsWith('_') && k !== 'loginAttempts') {
+          payload[k] = localStorage.getItem(k);
+        }
+      }
+    } catch(e) { console.warn('Export error', e); }
+    let blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.href = url;
+    a.download = 'Diamond_Stock_Backup_' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    if(window.toast) window.toast('📦 Data exported!', 'success');
+  };
+  window.importAllData = function(file) {
+    return new Promise((resolve, reject) => {
+      let reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          let payload = JSON.parse(e.target.result);
+          for(let k in payload) {
+            if(payload.hasOwnProperty(k)) localStorage.setItem(k, payload[k]);
+          }
+          resolve(true);
+        } catch(err) { reject(err); }
+      };
+      reader.readAsText(file);
     });
   };
 
-  // ─── Load: GET /api/data ───
-  window.cloudLoad = function(cb) {
-    fetch(apiUrl('/api/data'))
-      .then(r => r.json())
-      .then(d => cb(d))
-      .catch(e => { console.warn('Load err', e); cb(null); });
-  };
-
-  // ─── Listen: SSE /api/stream (real-time) ───
-  window.cloudListen = function(cb) {
-    const es = new EventSource(apiUrl('/api/stream'));
-    es.onmessage = function(e) {
-      try { cb(JSON.parse(e.data)); } catch(_) {}
-    };
-    es.onerror = function() {
-      // EventSource auto-reconnects
-    };
-  };
-
-  // ─── Clean: overwrite with empty data ───
-  window.cloudCleanNow = async function() {
-    try {
-      await fetch(apiUrl('/api/data'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      });
-      return { ok: true };
-    } catch(e) {
-      return { ok: false, error: e.message };
-    }
-  };
-
-  // ─── Hard delete on the server (date range / kapan) ───
-  // Delete PERMANENT thay: server potana store mathi kadhi nakhe che ane tombstones
-  // rakhe che, jethi juna data vala device fari push kari ne delete karelu record
-  // pachu na lave.
-  window.cloudDeleteRange = async function(q) {
-    try {
-      const r = await fetch(apiUrl('/api/data/delete'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(q || {})
-      });
-      return await r.json();
-    } catch(e) {
-      return { ok:false, error:e.message };
-    }
-  };
-
   window.firebaseReady = true;
-  console.log('✅ Local Server જોડાઈ ગયું!');
+  console.log('✅ LOCAL Mode — no server needed');
 </script>
 <style>
   * { box-sizing: border-box; font-family: Arial, sans-serif; }
@@ -381,7 +335,7 @@
 </div>
 
 <div id="app" class="hide">
-  <div class="top"><span>💎 Diamond Stock System</span><span style="display:flex;align-items:center;gap:12px"><span onclick="manualRefresh()" style="cursor:pointer" id="refreshBtn" title="Refresh">🔄</span> <span class="notifbell" onclick="showPage('notif');showNotifPage()" id="notifBell">🔔<span class="notifcount hide" id="notifCount">0</span></span> <span onclick="toggleDarkMode()" style="cursor:pointer" id="darkToggle">🌙</span> <span onclick="undoAction()" id="undoBtn2" style="cursor:pointer;opacity:0.5" title="Undo (Ctrl+Z)">↩</span><span onclick="redoAction()" id="redoBtn2" style="cursor:pointer;opacity:0.5" title="Redo (Ctrl+Y)">↪</span> <span onclick="toggleViewMode()" style="cursor:pointer" id="viewToggle">📱</span> <b id="who"></b> | <a href="#" onclick="logout()" style="color:#fff;">Logout</a></span></div>
+  <div class="top"><span>💎 Diamond Stock System</span><span style="display:flex;align-items:center;gap:12px"><span onclick="manualRefresh()" style="cursor:pointer" id="refreshBtn" title="Refresh">🔄</span> <span class="notifbell" onclick="showPage('notif');showNotifPage()" id="notifBell">🔔<span class="notifcount hide" id="notifCount">0</span></span> <span onclick="exportAllData()" style="cursor:pointer;font-size:14px" title="📦 Export Data">📦</span> <label style="cursor:pointer;font-size:14px;margin:0" title="📥 Import Data">📥<input type="file" accept=".json" style="display:none" onchange="if(this.files[0]){importAllData(this.files[0]).then(()=>{location.reload()}).catch(e=>alert('Import error: '+e.message))}"></label> <span onclick="toggleDarkMode()" style="cursor:pointer" id="darkToggle">🌙</span> <span onclick="undoAction()" id="undoBtn2" style="cursor:pointer;opacity:0.5" title="Undo (Ctrl+Z)">↩</span><span onclick="redoAction()" id="redoBtn2" style="cursor:pointer;opacity:0.5" title="Redo (Ctrl+Y)">↪</span> <span onclick="toggleViewMode()" style="cursor:pointer" id="viewToggle">📱</span> <b id="who"></b> | <a href="#" onclick="logout()" style="color:#fff;">Logout</a></span></div>
   <div class="navbar" id="navbar"></div>
   <div class="undobar hide" id="undoBar" style="display:none!important"><button onclick="undoAction()" id="undoBtn" disabled>↩ Undo</button><button onclick="redoAction()" id="redoBtn" disabled>↪ Redo</button></div>
 
